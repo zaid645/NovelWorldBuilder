@@ -56,12 +56,12 @@ export const NovelBasicInfoModule = {
                         
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Sinopsis Utama</label>
-                            <textarea id="storySynopsis" oninput="app.saveStoryInfo()" rows="6" placeholder="Tuliskan sinopsis cerita di sini..." class="w-full bg-slate-900 text-slate-200 px-3 py-2 rounded border border-slate-700 focus:outline-none focus:border-indigo-500">${info.synopsis || ''}</textarea>
+                            <textarea id="storySynopsis" oninput="app.saveStoryInfo()" rows="12" placeholder="Tuliskan sinopsis cerita di sini..." class="w-full bg-slate-900 text-slate-200 px-3 py-2 rounded border border-slate-700 focus:outline-none focus:border-indigo-500">${info.synopsis || ''}</textarea>
                         </div>
                         
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">World Building / Aturan Dunia</label>
-                            <textarea id="storyWorld" oninput="app.saveStoryInfo()" rows="5" placeholder="Tuliskan aturan dunia, sistem sihir, geografi, atau sejarah penting semesta di sini..." class="w-full bg-slate-900 text-slate-200 px-3 py-2 rounded border border-slate-700 focus:outline-none focus:border-indigo-500">${info.worldBuilding || ''}</textarea>
+                            <textarea id="storyWorld" oninput="app.saveStoryInfo()" rows="12" placeholder="Tuliskan aturan dunia, sistem sihir, geografi, atau sejarah penting semesta di sini..." class="w-full bg-slate-900 text-slate-200 px-3 py-2 rounded border border-slate-700 focus:outline-none focus:border-indigo-500">${info.worldBuilding || ''}</textarea>
                         </div>
                     </div>
                 </div>

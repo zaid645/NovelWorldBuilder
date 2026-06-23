@@ -39,7 +39,7 @@ export const UniverseArcModule = {
                 <div id="addArcForm" class="hidden bg-slate-800 border border-slate-700 p-4 rounded-lg space-y-3 shadow-lg">
                     <h3 id="arcFormTitle" class="text-sm font-bold text-slate-200">Buat Arc Cerita Baru</h3>
                     <input type="text" id="newArcName" placeholder="Nama Arc Cerita" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm w-full focus:outline-none focus:border-indigo-500">
-                    <textarea id="newArcSyn" placeholder="Sinopsis Singkat Arc" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm w-full focus:outline-none focus:border-indigo-500" rows="3"></textarea>
+                    <textarea id="newArcSyn" placeholder="Sinopsis Singkat Arc" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm w-full focus:outline-none focus:border-indigo-500" rows="7"></textarea>
                     <div class="flex justify-end space-x-2">
                         <button onclick="app.setPanelState('addArcForm', false)" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs transition">Batal</button>
                         <button id="saveArcBtn" onclick="app.saveArc()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs transition">Simpan Arc</button>
@@ -71,7 +71,6 @@ export const UniverseArcModule = {
             return `
                 <p class="text-sm text-slate-500 italic text-center py-8 bg-slate-800/30 rounded-lg border border-slate-800">Tidak ada data arc cerita yang ditemukan.</p>
                 <button onclick="app.openAddArc()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg text-sm font-semibold transition mt-3 flex items-center justify-center gap-1 shadow-md">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     + Tambah Arc Baru
                 </button>
             `;
@@ -138,7 +137,7 @@ export const UniverseArcModule = {
                             <div id="subarcForm_${arc.id}" class="hidden bg-slate-900 p-3 rounded border border-slate-700 mb-3 space-y-2 shadow-inner">
                                 <h5 id="subarcFormTitle_${arc.id}" class="text-xs font-bold text-slate-300">Tambah Sub-Bab</h5>
                                 <input type="text" id="newSubarcName_${arc.id}" placeholder="Nama Sub-Bab (cth: 'Pertemuan Pertama')" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:outline-none focus:border-amber-500">
-                                <textarea id="newSubarcDesc_${arc.id}" placeholder="Rincian alur runtutan kejadian..." class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:outline-none focus:border-amber-500" rows="3"></textarea>
+                                <textarea id="newSubarcDesc_${arc.id}" placeholder="Rincian alur runtutan kejadian..." class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:outline-none focus:border-amber-500" rows="12"></textarea>
                                 <div class="flex justify-end space-x-1.5">
                                     <button onclick="app.setPanelState('subarcForm_${arc.id}', false)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] transition">Batal</button>
                                     <button id="saveSubarcBtn_${arc.id}" onclick="app.saveSubarc('${arc.id}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] transition">Simpan</button>
@@ -157,7 +156,6 @@ export const UniverseArcModule = {
         // MODIFIKASI: Tombol tambah Arc diposisikan paling bawah, berukuran penuh memanjang lebar layar (w-full)
         html += `
             <button onclick="app.openAddArc()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg text-sm font-semibold transition mt-2 flex items-center justify-center gap-1.5 shadow-lg border border-indigo-700/50">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 + Tambah Arc Baru
             </button>
         `;
