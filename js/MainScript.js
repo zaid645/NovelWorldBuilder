@@ -126,8 +126,18 @@ const coreApp = {
                     if (!this.data.skills) this.data.skills = [];
                     if (!this.data.itemTags) this.data.itemTags = [];
                     if (!this.data.items) this.data.items = [];
+
                     if (!this.data.familiarTags) this.data.familiarTags = [];
                     if (!this.data.familiars) this.data.familiars = [];
+                    this.data.familiars.forEach(fam => {
+                        if (fam.personality === undefined) {
+                                fam.personality = ''; // Default string kosong jika watak belum ada
+                            }
+                            if (!fam.dialogues) {
+                                fam.dialogues = []; // Default array kosong jika kolom dialog belum ada
+                            }
+                        }
+                    );
                     
                     // --- MIGRASI ARC (Lini Cerita Global) ---
                     if (!this.data.arcs) {

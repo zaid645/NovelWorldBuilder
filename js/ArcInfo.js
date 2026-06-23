@@ -145,7 +145,7 @@ export const UniverseArcModule = {
                                 </div>
                             </div>
 
-                            <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            <div class="space-y-2">
                                 ${subarcsHTML}
                             </div>
                         </div>

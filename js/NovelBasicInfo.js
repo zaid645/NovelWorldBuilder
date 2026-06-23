@@ -149,39 +149,48 @@ export const NovelBasicInfoModule = {
 
                         // Populate Familiars beserta nested skills & items-nya
                         foundChar.familiars = (match.familiarIds || []).map(familiarId => {
-                            const familiarMatch = this.data.familiars.find(f => f.id === familiarId);
-                            
-                            if (familiarMatch) {
-                                const detailedFamiliar = { ...familiarMatch };
-                                
-                                detailedFamiliar.skills = (familiarMatch.skillIds || []).map(skillId => {
-                                    const skill = this.data.skills.find(s => s.id === skillId);
-                                    return skill ? { ...skill } : { id: skillId, name: "Skill tidak valid" };
-                                });
-                                delete detailedFamiliar.skillIds; 
-                                
-                                detailedFamiliar.items = (familiarMatch.itemIds || []).map(itemId => {
-                                    const item = this.data.items.find(i => i.id === itemId);
-                                    return item ? { ...item } : { id: itemId, name: "Item tidak valid" };
-                                });
-                                delete detailedFamiliar.itemIds; 
-
-                                detailedFamiliar.tags = (familiarMatch.tagIds || []).map(tagId => {
-                                    const tag = this.data.familiarTags.find(t => t.id === tagId);
-                                    return tag ? { ...tag } : { id: tagId, name: "Tag tidak valid" };
-                                });
-                                delete detailedFamiliar.tagIds; 
-                                
-                                return detailedFamiliar;
-                            } else {
-                                return { id: familiarId, name: "Familiar tidak valid" };
-                            }
-                        });
+                        const familiarMatch = this.data.familiars.find(f => f.id === familiarId);
                         
-                        break;
+                        if (familiarMatch) {
+                            const detailedFamiliar = { ...familiarMatch };
+                            
+                            // ============================================================
+                            // PERUBAHAN DI SINI: Proteksi data watak & dialog familiar
+                            // ============================================================
+                            detailedFamiliar.personality = familiarMatch.personality || '';
+                            detailedFamiliar.dialogues = familiarMatch.dialogues || [];
+                            // ============================================================
+                            
+                            // Populate Nested Skills untuk Familiar
+                            detailedFamiliar.skills = (familiarMatch.skillIds || []).map(skillId => {
+                                const skill = this.data.skills.find(s => s.id === skillId);
+                                return skill ? { ...skill } : { id: skillId, name: "Skill tidak valid" };
+                            });
+                            delete detailedFamiliar.skillIds; 
+                            
+                            // Populate Nested Items untuk Familiar
+                            detailedFamiliar.items = (familiarMatch.itemIds || []).map(itemId => {
+                                const item = this.data.items.find(i => i.id === itemId);
+                                return item ? { ...item } : { id: itemId, name: "Item tidak valid" };
+                            });
+                            delete detailedFamiliar.itemIds; 
+
+                            // Populate Tags untuk Familiar
+                            detailedFamiliar.tags = (familiarMatch.tagIds || []).map(tagId => {
+                                const tag = this.data.familiarTags.find(t => t.id === tagId);
+                                return tag ? { ...tag } : { id: tagId, name: "Tag tidak valid" };
+                            });
+                            delete detailedFamiliar.tagIds; 
+                            
+                            return detailedFamiliar;
+                        } else {
+                            return { id: angularId, name: "Familiar tidak valid" };
+                        }
+                    });
+                    break;
                     }
                 }
-                if (foundChar) break;
+            if (foundChar) break;
             }
             return foundChar || { id: charId, name: "Karakter telah dihapus dari semesta" };
         });
