@@ -7,7 +7,7 @@ const defaultData = {
     items: [],
     familiarTags: [],
     familiars: [],
-    arcs: [], // <--- Tambahan state global baru untuk Arc
+    arcs: [],
     universes: [
         {
             id: "u1",
@@ -38,15 +38,16 @@ const defaultData = {
 // --- IMPORT MODUL KOMPONEN ---
 // ==========================================
 
-import { NovelBasicInfoModule } from './NovelBasicInfo.js';
+import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo.js';
+import { UniverseArcModule } from './HeaderMenu/ArcInfo.js';
+import { AIEnchanterModule } from './HeaderMenu/AIEnchanter.js';
+import { WatakListModule } from './HeaderMenu/WatakList.js';
 import { SkillModule } from './FantasyComponent/Skill.js';
 import { ItemModule } from './FantasyComponent/Item.js';
 import { PetModule } from './FantasyComponent/Pet.js';
 import { UniverseBasicModule } from './UniverseComponent/BasicUniverse.js';
 import { UniverseCharacterModule } from './UniverseComponent/UniverseCharacter.js';
 import { UniverseLocationModule } from './UniverseComponent/UniverseLocation.js';
-import { UniverseArcModule } from './ArcInfo.js';
-import { AIEnchanterModule } from './AIEnchanter.js';
 
 // ==========================================
 // --- CORE APPLICATION LOGIC ---
@@ -296,19 +297,19 @@ const coreApp = {
                 contentArea.innerHTML = this.renderStoryInfo();
             }
         } else if (viewId === 'skills') {
-            titleEl.innerText = "Manajemen Skill & Kategori";
+            titleEl.innerText = "Manajemen Skill";
             if (typeof this.renderSkillsView === 'function') {
                 contentArea.innerHTML = this.renderSkillsView();
                 this.renderSkillGrid(); 
             }
         } else if (viewId === 'items') {
-            titleEl.innerText = "Manajemen Item & Tag Item";
+            titleEl.innerText = "Manajemen Item";
             if (typeof this.renderItemsView === 'function') {
                 contentArea.innerHTML = this.renderItemsView();
                 this.renderItemGrid(); 
             }
         } else if (viewId === 'familiars') { 
-            titleEl.innerText = "Manajemen Familiar & Pet";
+            titleEl.innerText = "Manajemen Familiar";
             if (typeof this.renderFamiliarsView === 'function') {
                 contentArea.innerHTML = this.renderFamiliarsView();
                 this.renderFamiliarGrid(); 
@@ -323,7 +324,13 @@ const coreApp = {
             if (typeof this.renderAIEnchanterView === 'function') {
                 contentArea.innerHTML = this.renderAIEnchanterView();
             }
-        } else { 
+        } else if (viewId === 'watak') {
+            titleEl.innerText = "Master Daftar Watak Karakter";
+            if (typeof this.renderWatakView === 'function') {
+                contentArea.innerHTML = this.renderWatakView();
+            }
+        } 
+        else { 
             const univ = this.data.universes.find(u => u.id === viewId);
             if (univ) {
                 titleEl.innerText = `Semesta: ${univ.name}`;
@@ -418,21 +425,24 @@ const coreApp = {
                 </svg>
                 AI Novel Enchanter
             </button>
+            <button onclick="app.switchView('watak')" id="menu-watak" class="w-full flex items-center gap-3 px-4 py-3 rounded text-sm text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition">
+                <span>🎭</span> Master Watak
+            </button>
         `;
 
         const fantasyMenuList = document.getElementById('fantasyMenuList');
         fantasyMenuList.innerHTML = `
             <button onclick="app.switchView('skills')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center ${this.currentView === 'skills' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
                 <svg class="w-4 h-4 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                Skills & Tags
+                Skills
             </button>
             <button onclick="app.switchView('items')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center ${this.currentView === 'items' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
                 <svg class="w-4 h-4 mr-2 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                Manajemen Item
+                Item
             </button>
             <button onclick="app.switchView('familiars')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center ${this.currentView === 'familiars' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
                 <svg class="w-4 h-4 mr-2 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
-                Familiar & Pet
+                Familiar
             </button>
         `;
 
@@ -461,15 +471,16 @@ window.app = Object.assign(
     {}, 
     coreApp,
     NovelBasicInfoModule,
+    UniverseArcModule,
+    AIEnchanterModule,
+    WatakListModule,
     
     SkillModule,
     ItemModule,
     PetModule,
     UniverseBasicModule,
     UniverseCharacterModule,
-    UniverseLocationModule,
-    UniverseArcModule,
-    AIEnchanterModule
+    UniverseLocationModule
 );
 
 // Event Listeners Global
@@ -484,4 +495,5 @@ document.addEventListener('click', (e) => {
 // Initialize App saat DOM siap
 window.onload = () => {
     window.app.init();
+    app.initWatakData();
 };
