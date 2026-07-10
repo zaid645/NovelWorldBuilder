@@ -192,7 +192,7 @@ export const UniverseBasicModule = {
                 <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div class="flex-1 w-full">
                         <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Deskripsi Semesta</label>
-                        <textarea id="univDesc_${univ.id}" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200 text-sm focus:border-indigo-500 focus:outline-none" rows="12" onchange="app.updateUniverseDesc('${univ.id}', this.value)">${univ.description || ''}</textarea>
+                        <textarea id="univDesc_${univ.id}" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200 text-sm focus:border-indigo-500 focus:outline-none" rows="12" oninput="app.updateUniverseDesc('${univ.id}', this.value)">${univ.description || ''}</textarea>
                     </div>
                     <div class="flex sm:flex-col gap-2 w-full sm:w-auto shrink-0">
                         <button onclick="app.exportSpecificUniverse('${univ.id}')" class="flex-1 bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-xs text-indigo-300 border border-slate-600 transition flex items-center justify-center">
@@ -226,5 +226,15 @@ export const UniverseBasicModule = {
 
         </div>
         `;
-    }
+    },
+
+    updateUniverseDesc(id, newValue) {
+        const uni = this.data.universes.find(u => u.id === id);
+        if (!uni) return;
+        
+        uni.description = newValue;
+        
+        // Menyimpan data secara silent (tanpa pop-up alert sukses yang mengganggu saat mengetik/pindah fokus)
+        this.saveData(true); 
+    },
 };

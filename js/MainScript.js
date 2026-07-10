@@ -45,7 +45,8 @@ import { PetModule } from './FantasyComponent/Pet.js';
 import { UniverseBasicModule } from './UniverseComponent/BasicUniverse.js';
 import { UniverseCharacterModule } from './UniverseComponent/UniverseCharacter.js';
 import { UniverseLocationModule } from './UniverseComponent/UniverseLocation.js';
-import { UniverseArcModule } from './ArcInfo.js'; // <--- Modul Arc Diaktifkan
+import { UniverseArcModule } from './ArcInfo.js';
+import { AIEnchanterModule } from './AIEnchanter.js';
 
 // ==========================================
 // --- CORE APPLICATION LOGIC ---
@@ -158,9 +159,41 @@ const coreApp = {
                         }
                     }
 
+                    if (this.data.arcs) {
+                        this.data.arcs.forEach(arc => {
+                            // 1. Cek & Migrasi data dari Sub-arc pertama jika Arc belum memiliki nilainya
+                            if (typeof arc.targetSubarcCount === 'undefined') {
+                                if (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].targetSubarcCount) {
+                                    arc.targetSubarcCount = arc.subarcs[0].targetSubarcCount;
+                                } else {
+                                    arc.targetSubarcCount = 10; // Default jika kosong
+                                }
+                            }
+
+                            if (typeof arc.universeId === 'undefined') {
+                                if (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].universeId) {
+                                    arc.universeId = arc.subarcs[0].universeId;
+                                } else {
+                                    arc.universeId = ''; // Default tanpa semesta
+                                }
+                            }
+
+                            // 2. Membersihkan variabel sisa-sisa di dalam Sub-arc (opsional untuk menjaga file JSON tetap bersih)
+                            if (arc.subarcs) {
+                                arc.subarcs.forEach(sub => {
+                                    delete sub.targetSubarcCount;
+                                    delete sub.universeId;
+                                });
+                            }
+                        });
+                    }
+
                     // === TAMBAHAN MIGRASI: Inisialisasi Array Dialog Karakter ===
                     if (this.data.universes) {
                         this.data.universes.forEach(u => {
+                            if (typeof u.description === 'undefined') {
+                                u.description = "";
+                            }
                             if (u.characters) {
                                 for (let category in u.characters) {
                                     if (Array.isArray(u.characters[category])) {
@@ -284,7 +317,11 @@ const coreApp = {
             titleEl.innerText = "Manajemen Lini Cerita (Arc)";
             if (typeof this.renderArcsView === 'function') {
                 contentArea.innerHTML = this.renderArcsView();
-                this.renderArcGrid(); 
+            }
+        } else if (viewId === 'ai-enchanter') {
+            titleEl.innerText = "Integrasi AI Novel Enchanter & Settings";
+            if (typeof this.renderAIEnchanterView === 'function') {
+                contentArea.innerHTML = this.renderAIEnchanterView();
             }
         } else { 
             const univ = this.data.universes.find(u => u.id === viewId);
@@ -375,6 +412,12 @@ const coreApp = {
                 <svg class="w-4 h-4 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 Manajemen Arc Cerita
             </button>
+            <button onclick="app.switchView('ai-enchanter')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center ${this.currentView === 'ai-enchanter' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
+                <svg class="w-4 h-4 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4M4 19h4m12-7v4m-2-2h4m-5.5-5.5l-3 3m0 0l-3-3m3 3v6m0-6h6"></path>
+                </svg>
+                AI Novel Enchanter
+            </button>
         `;
 
         const fantasyMenuList = document.getElementById('fantasyMenuList');
@@ -425,7 +468,8 @@ window.app = Object.assign(
     UniverseBasicModule,
     UniverseCharacterModule,
     UniverseLocationModule,
-    UniverseArcModule // <--- Modul Arc digabungkan di sini
+    UniverseArcModule,
+    AIEnchanterModule
 );
 
 // Event Listeners Global
