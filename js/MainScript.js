@@ -1,39 +1,3 @@
-// --- DEFAULT TEMPLATE ---
-const defaultData = {
-    metadata: { version: "1.0.0", lastSaved: new Date().toISOString() },
-    skillTags: [],
-    skills: [],
-    itemTags: [],
-    items: [],
-    familiarTags: [],
-    familiars: [],
-    arcs: [],
-    universes: [
-        {
-            id: "u1",
-            name: "Bumi Alternate",
-            description: "Bumi dengan sihir.",
-            characters: {
-                "Main Character": [
-                    { id: "c1", name: "Budi", personality: "Pemberani", skillIds: ["sk1"], background: "Anak petani.", appearance: "Rambut hitam, mata coklat." }
-                ],
-                "Villain": []
-            },
-            locations: [
-                { id: "l1", name: "Ibu Kota", description: "Pusat pemerintahan.", visuals: "Gedung-gedung tinggi bercahaya.", children: [] }
-            ],
-            // storylines lama masih dipertahankan di default hanya untuk referensi jika dibutuhkan, tapi kita gunakan 'arcs' global sekarang.
-            storylines: [] 
-        }
-    ],
-    storyInfo: {
-        title: "",
-        synopsis: "",
-        worldBuilding: "",
-        mainCharacters: []
-    }
-};
-
 // ==========================================
 // --- IMPORT MODUL KOMPONEN ---
 // ==========================================
@@ -55,6 +19,7 @@ import { UniverseLocationModule } from './UniverseComponent/UniverseLocation.js'
 const coreApp = {
     // Data utama yang akan diolah
     data: null,
+    defaultData: null, // Data default dari DefaultData.json
 
     // State edit yang sedang aktif (untuk modal atau panel edit)
     editCharId: null,
@@ -87,7 +52,10 @@ const coreApp = {
         }
     },
 
-    init() {
+    async init() {
+        // Tahan render sampai default data berhasil diambil
+        await this.loadDefaultData();
+        
         this.loadData();
         this.setupAutoSave();
         this.renderSidebar();
@@ -108,6 +76,40 @@ const coreApp = {
         this.setupShortcuts();
     },
 
+    // --- FETCH DATA JSON EKSTERNAL ---
+    async loadDefaultData() {
+        try {
+            // Menggunakan import.meta.url agar path-nya selalu relatif terhadap letak MainScript.js ini
+            const jsonUrl = new URL('./DefaultData.json', import.meta.url);
+            const response = await fetch(jsonUrl);
+            
+            if (!response.ok) throw new Error("Gagal mengambil file JSON");
+            this.defaultData = await response.json();
+        } catch (error) {
+            console.error("Gagal memuat DefaultData.json. Pastikan Anda menjalankan aplikasi via lokal server (misal: Live Server) dan file json ada di folder yang sama.", error);
+            // Fallback minimal agar aplikasi tidak hancur lebur
+            this.defaultData = { metadata: { version: "1.0.0" } };
+        }
+    },
+
+    // --- LOGIKA PENGECEKAN STRUKTUR OTOMATIS ---
+    // Deep check & inject: Jika kunci data belum ada di target (dari localStorage), 
+    // ia akan disalin dari template (DefaultData.json).
+    ensureStructure(target, template) {
+        if (!template) return;
+        
+        for (const key in template) {
+            // Jika cabang belum ada di data user, kloning dari template
+            if (target[key] === undefined) {
+                target[key] = JSON.parse(JSON.stringify(template[key]));
+            } 
+            // Jika cabang sudah ada dan berupa Objek murni (bukan array/null), masuk dan cek lebih dalam
+            else if (typeof template[key] === 'object' && template[key] !== null && !Array.isArray(template[key])) {
+                this.ensureStructure(target[key], template[key]);
+            }
+        }
+    },
+
     // --- DATA MANAGEMENT ---
     loadData() {
         const saved = localStorage.getItem('novelLoreData');
@@ -117,69 +119,47 @@ const coreApp = {
                 if (parsed.metadata && parsed.metadata.version) {
                     this.data = parsed;
 
-                    // === MIGRASI DATA UNTUK VERSI BARU ===
-                    if (!this.data.storyInfo) this.data.storyInfo = { title: "", synopsis: "", mainCharacters: [], worldBuilding: "" };
-                    if (!this.data.storyInfo.title) this.data.storyInfo.title = "";
-                    if (!this.data.storyInfo.synopsis) this.data.storyInfo.synopsis = "";
-                    if (!this.data.storyInfo.mainCharacters) this.data.storyInfo.mainCharacters = [];
-                    if (typeof this.data.storyInfo.worldBuilding === 'undefined') this.data.storyInfo.worldBuilding = "";
+                    // ==============================================================
+                    // MAGISNYA DI SINI: Pengecekan struktur cabang secara otomatis!
+                    // Sekarang Anda bisa menambahkan variabel dan object sebanyak apapun
+                    // di DefaultData.json, dan itu akan otomatis termigrasi tanpa membuat If baru.
+                    // ==============================================================
+                    this.ensureStructure(this.data, this.defaultData);
 
-                    if (!this.data.skillTags || this.data.skillTags.length === 0) this.data.skillTags = this.data.tags || [];
-                    if (!this.data.skills) this.data.skills = [];
-                    if (!this.data.itemTags) this.data.itemTags = [];
-                    if (!this.data.items) this.data.items = [];
+                    // --- MIGRASI KUSTOM & SPESIFIK (DIPERTAHANKAN) ---
+                    // Logika spesifik untuk objek di dalam array dan perpindahan data
+                    // tetap ditulis manual karena ensureStructure hanya mengurus cabang dasar.
 
-                    if (!this.data.familiarTags) this.data.familiarTags = [];
-                    if (!this.data.familiars) this.data.familiars = [];
-                    this.data.familiars.forEach(fam => {
-                        if (fam.personality === undefined) {
-                                fam.personality = ''; // Default string kosong jika watak belum ada
-                            }
-                            if (!fam.dialogues) {
-                                fam.dialogues = []; // Default array kosong jika kolom dialog belum ada
-                            }
-                        }
-                    );
-                    
-                    // --- MIGRASI ARC (Lini Cerita Global) ---
-                    if (!this.data.arcs) {
-                        this.data.arcs = [];
-                        
-                        // Migrasi otomatis: Jika ada save lama yang arc/storylines-nya masih terjebak di dalam semesta
-                        if (this.data.universes) {
-                            this.data.universes.forEach(u => {
-                                if (u.storylines && u.storylines.length > 0) {
-                                    // Pindahkan semua storyline ke array arcs global
-                                    u.storylines.forEach(arc => {
-                                        this.data.arcs.push(arc);
-                                    });
-                                    // Kosongkan dari semesta agar tidak double saat di-save ulang
-                                    u.storylines = []; 
-                                }
-                            });
+                    // Migrasi Watak List dari local storage versi kuno
+                    if (!this.data.watakList || this.data.watakList.length === 0) {
+                        const oldWatak = localStorage.getItem('novel_watak_list_data');
+                        if (oldWatak) {
+                            try { this.data.watakList = JSON.parse(oldWatak); } 
+                            catch (e) { this.data.watakList = [...(this.defaultData.watakList || [])]; }
                         }
                     }
+                    
+                    // Migrasi Arc Cerita (Lini Cerita yang keluar dari Universe)
+                    if (this.data.universes) {
+                        this.data.universes.forEach(u => {
+                            if (u.storylines && u.storylines.length > 0) {
+                                u.storylines.forEach(arc => this.data.arcs.push(arc));
+                                u.storylines = []; 
+                            }
+                        });
+                    }
 
+                    // Injeksi/Pembersihan Properti Arc yang ada di Sub-Arc
                     if (this.data.arcs) {
                         this.data.arcs.forEach(arc => {
-                            // 1. Cek & Migrasi data dari Sub-arc pertama jika Arc belum memiliki nilainya
                             if (typeof arc.targetSubarcCount === 'undefined') {
-                                if (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].targetSubarcCount) {
-                                    arc.targetSubarcCount = arc.subarcs[0].targetSubarcCount;
-                                } else {
-                                    arc.targetSubarcCount = 10; // Default jika kosong
-                                }
+                                arc.targetSubarcCount = (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].targetSubarcCount) 
+                                    ? arc.subarcs[0].targetSubarcCount : 10;
                             }
-
                             if (typeof arc.universeId === 'undefined') {
-                                if (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].universeId) {
-                                    arc.universeId = arc.subarcs[0].universeId;
-                                } else {
-                                    arc.universeId = ''; // Default tanpa semesta
-                                }
+                                arc.universeId = (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].universeId) 
+                                    ? arc.subarcs[0].universeId : '';
                             }
-
-                            // 2. Membersihkan variabel sisa-sisa di dalam Sub-arc (opsional untuk menjaga file JSON tetap bersih)
                             if (arc.subarcs) {
                                 arc.subarcs.forEach(sub => {
                                     delete sub.targetSubarcCount;
@@ -189,17 +169,21 @@ const coreApp = {
                         });
                     }
 
-                    // === TAMBAHAN MIGRASI: Inisialisasi Array Dialog Karakter ===
+                    // Injeksi array kosong untuk variabel di dalam Familiars dan Characters lama
+                    if (this.data.familiars) {
+                        this.data.familiars.forEach(fam => {
+                            if (fam.personality === undefined) fam.personality = ''; 
+                            if (!fam.dialogues) fam.dialogues = []; 
+                        });
+                    }
+
                     if (this.data.universes) {
                         this.data.universes.forEach(u => {
-                            if (typeof u.description === 'undefined') {
-                                u.description = "";
-                            }
+                            if (typeof u.description === 'undefined') u.description = "";
                             if (u.characters) {
                                 for (let category in u.characters) {
                                     if (Array.isArray(u.characters[category])) {
                                         u.characters[category].forEach(c => {
-                                            // Jika file save lama belum punya array dialogues, buat baru
                                             if (!c.dialogues) c.dialogues = [];
                                         });
                                     }
@@ -211,10 +195,12 @@ const coreApp = {
                     this.updateLastSavedUI();
                     return;
                 }
-            } catch (e) { console.error("Format save lokal korup."); }
+            } catch (e) { console.error("Format save lokal korup.", e); }
         }
-        this.data = JSON.parse(JSON.stringify(defaultData));
-        this.saveData();
+        
+        // Jika belum ada file save di local (pengguna pertama kali)
+        this.data = JSON.parse(JSON.stringify(this.defaultData));
+        this.saveData(true);
     },
 
     saveData(silent = false) {
@@ -280,7 +266,7 @@ const coreApp = {
         }
     },
 
-    // Router Utama - Meneruskan tugas render ke modul-modul lain yang digabungkan
+    // Router Utama
     switchView(viewId) {
         if (this.currentView !== viewId) {
             this.panelStates.clear();
@@ -376,11 +362,16 @@ const coreApp = {
                     throw new Error("Format tidak valid (Metadata hilang).");
                 }
                 this.data = json;
-                if (!this.data.storyInfo) {
-                    this.data.storyInfo = { title: "", synopsis: "", mainCharacters: [] };
-                }
+                
+                // Pastikan struktur import langsung divalidasi juga
+                this.ensureStructure(this.data, this.defaultData);
+                
                 this.saveData();
-                this.init();
+                
+                // Refresh interface setelah import
+                this.switchView('story-info'); 
+                this.renderSidebar();
+                
                 this.showAlert("Data Master berhasil dimuat!", "success");
             } catch (err) {
                 this.showAlert("Gagal memuat file: " + err.message, "error");
@@ -495,5 +486,4 @@ document.addEventListener('click', (e) => {
 // Initialize App saat DOM siap
 window.onload = () => {
     window.app.init();
-    app.initWatakData();
 };

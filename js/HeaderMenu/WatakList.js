@@ -1,55 +1,18 @@
 /**
  * WatakListModule
  * Mengelola daftar watak (sifat karakter) berupa array of strings.
- * Disimpan secara independen dan terpisah dari data master (JSON utama).
+ * Kini terintegrasi langsung dengan data master (JSON utama) agar ikut ter-eksport/import.
  */
 
-const LOCAL_STORAGE_KEY = 'novel_watak_list_data';
-const DEFAULT_WATAK = [
-    'Ramah', 'Tenang', 'Pemarah', 'Ceria', 'Dingin', 
-    'Licik', 'Naif', 'Pemberani', 'Pengecut', 'Bijaksana'
-];
-
 export const WatakListModule = {
-    // State internal penyimpan array string watak
-    watakData: [],
-
-    // ==========================================
-    // --- INISIALISASI & PENYIMPANAN DATA ---
-    // ==========================================
-    
-    initWatakData() {
-        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (stored) {
-            try {
-                this.watakData = JSON.parse(stored);
-            } catch (e) {
-                console.error("Gagal parsing data watak, memuat default.", e);
-                this.watakData = [...DEFAULT_WATAK];
-            }
-        } else {
-            // Jika belum ada data sama sekali, muat default
-            this.watakData = [...DEFAULT_WATAK];
-            this.saveWatakData();
-        }
-        
-        // Urutkan alfabet saat inisialisasi
-        this.watakData.sort((a, b) => a.localeCompare(b));
-    },
-
-    saveWatakData() {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this.watakData));
-    },
 
     // ==========================================
     // --- RENDER VIEW UTAMA ---
     // ==========================================
     
     renderWatakView() {
-        // Pastikan data dimuat sebelum dirender
-        if (this.watakData.length === 0) {
-            this.initWatakData();
-        }
+        // Fallback untuk berjaga-jaga jika data belum siap
+        const watakList = this.data?.watakList || [];
 
         return `
             <div class="flex flex-col gap-6">
@@ -60,7 +23,7 @@ export const WatakListModule = {
                         <div>
                             <h3 class="font-bold text-slate-200 text-lg flex items-center gap-2">
                                 🎭 Master Daftar Watak Karakter
-                                <span class="text-xs bg-indigo-600 px-2 py-0.5 rounded-full text-white">${this.watakData.length}</span>
+                                <span class="text-xs bg-indigo-600 px-2 py-0.5 rounded-full text-white">${watakList.length}</span>
                             </h3>
                             <p class="text-xs text-slate-400 mt-1">Gunakan tag watak ini nantinya untuk mendeskripsikan tokoh di semesta Anda.</p>
                         </div>
@@ -97,11 +60,13 @@ export const WatakListModule = {
     },
 
     renderWatakBadges() {
-        if (this.watakData.length === 0) {
+        const watakList = this.data?.watakList || [];
+
+        if (watakList.length === 0) {
             return `<p class="text-sm text-slate-500 italic w-full text-center py-4">Belum ada watak yang terdaftar.</p>`;
         }
 
-        return this.watakData.map(watak => `
+        return watakList.map(watak => `
             <span class="bg-slate-900 text-slate-300 text-sm px-3 py-1.5 rounded-md border border-slate-600 flex items-center group hover:border-indigo-500 transition-colors shadow-sm">
                 ${watak}
                 <div class="ml-3 flex items-center border-l border-slate-700 pl-2 opacity-0 group-hover:opacity-100 transition-opacity space-x-1.5">
@@ -121,8 +86,6 @@ export const WatakListModule = {
         if (container) {
             container.innerHTML = this.renderWatakBadges();
         }
-        // Jika ada fungsi render ulang view global di app Anda, Anda bisa memanggilnya
-        // app.switchView('watak'); // Opsional, agar angka count di header terupdate
     },
 
     // ==========================================
@@ -130,6 +93,8 @@ export const WatakListModule = {
     // ==========================================
 
     addWatak() {
+        if (!this.data.watakList) this.data.watakList = [];
+        
         const input = document.getElementById('newWatakInput');
         if (!input) return;
 
@@ -140,25 +105,28 @@ export const WatakListModule = {
         val = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
 
         // Validasi Duplikasi (Case-Insensitive)
-        const isDuplicate = this.watakData.some(w => w.toLowerCase() === val.toLowerCase());
+        const isDuplicate = this.data.watakList.some(w => w.toLowerCase() === val.toLowerCase());
         
         if (isDuplicate) {
             alert(`Watak '${val}' sudah ada di dalam daftar!`);
             return;
         }
 
-        this.watakData.push(val);
-        this.watakData.sort((a, b) => a.localeCompare(b));
-        this.saveWatakData();
+        this.data.watakList.push(val);
+        this.data.watakList.sort((a, b) => a.localeCompare(b));
+        
+        // Simpan menggunakan fungsi master app.saveData()
+        this.saveData(true); 
         
         input.value = '';
         this.refreshWatakUI();
         
-        // Asumsi app.switchView atau sejenisnya ada untuk render ulang penuh agar angka di header update
         if(typeof app.switchView === 'function') app.switchView('watak');
     },
 
     editWatak(oldVal) {
+        if (!this.data.watakList) return;
+
         let newVal = prompt(`Ubah nama watak '${oldVal}':`, oldVal);
         if (newVal !== null && newVal.trim() !== "") {
             newVal = newVal.trim();
@@ -166,27 +134,33 @@ export const WatakListModule = {
 
             // Validasi Duplikasi jika namanya berubah
             if (newVal.toLowerCase() !== oldVal.toLowerCase()) {
-                const isDuplicate = this.watakData.some(w => w.toLowerCase() === newVal.toLowerCase());
+                const isDuplicate = this.data.watakList.some(w => w.toLowerCase() === newVal.toLowerCase());
                 if (isDuplicate) {
                     alert(`Gagal merubah! Watak '${newVal}' sudah ada di dalam daftar.`);
                     return;
                 }
             }
 
-            const index = this.watakData.indexOf(oldVal);
+            const index = this.data.watakList.indexOf(oldVal);
             if (index > -1) {
-                this.watakData[index] = newVal;
-                this.watakData.sort((a, b) => a.localeCompare(b));
-                this.saveWatakData();
+                // Catatan: Jika ingin merubah nama watak di karakter/familiar yang sudah terlanjur pakai oldVal, 
+                // harus dilakukan perulangan ke universe dan familiars di sini. 
+                // Namun untuk kesederhanaan saat ini, kita ubah di master list-nya saja.
+                this.data.watakList[index] = newVal;
+                this.data.watakList.sort((a, b) => a.localeCompare(b));
+                
+                this.saveData(true);
                 this.refreshWatakUI();
             }
         }
     },
 
     deleteWatak(val) {
+        if (!this.data.watakList) return;
+
         if (confirm(`Apakah Anda yakin ingin menghapus watak '${val}' dari master daftar?`)) {
-            this.watakData = this.watakData.filter(w => w !== val);
-            this.saveWatakData();
+            this.data.watakList = this.data.watakList.filter(w => w !== val);
+            this.saveData(true);
             this.refreshWatakUI();
             
             if(typeof app.switchView === 'function') app.switchView('watak');
@@ -198,14 +172,15 @@ export const WatakListModule = {
     // ==========================================
 
     async generateWatakAI() {
+        if (!this.data.watakList) this.data.watakList = [];
+        
         const btn = document.getElementById('btnAiWatak');
         btn.disabled = true;
         btn.classList.add('opacity-50', 'cursor-not-allowed');
         const originalText = btn.innerHTML;
         btn.innerHTML = '✨ Meminta saran AI...';
 
-        // Merangkai string daftar watak eksisting agar AI tahu apa yang tidak boleh diulang
-        const existingString = this.watakData.join(', ');
+        const existingString = this.data.watakList.join(', ');
 
         const payload = {
             moduleName: "Watak-Generator",
@@ -215,30 +190,23 @@ export const WatakListModule = {
             additional_instruction: {
                 focus: "Buatkan 7 watak/sifat kepribadian manusia yang BERBEDA dan BELUM ADA di 'daftarWatakSaatIni'. Berikan variasi sifat positif, negatif, atau netral.",
                 tone: "Karakteristik Psikologis",
-                // Sangat penting untuk memaksa output hanya comma-separated
                 length: "HANYA BERIKAN teks yang dipisahkan dengan koma. Contoh: Ambisius, Pesimis, Idealis. JANGAN berikan kalimat pembuka/penutup."
             }
         };
 
         try {
-            // Asumsi method requestEnchant sudah tersedia di global 'app' sesuai struktur file Anda
             const resultText = await app.requestEnchant(payload);
-            
-            // Parsing hasil dari AI
             const rawNewWataks = resultText.split(',').map(s => s.trim().replace(/['"]/g, '')).filter(s => s.length > 0);
             
             let addedCount = 0;
             let duplicateCount = 0;
 
             rawNewWataks.forEach(w => {
-                // Formatting
                 const cleanStr = w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-                
-                // Validasi Manual Lapis Kedua: Pastikan AI benar-benar tidak memberikan yang duplikat
-                const exists = this.watakData.some(existing => existing.toLowerCase() === cleanStr.toLowerCase());
+                const exists = this.data.watakList.some(existing => existing.toLowerCase() === cleanStr.toLowerCase());
                 
                 if (!exists) {
-                    this.watakData.push(cleanStr);
+                    this.data.watakList.push(cleanStr);
                     addedCount++;
                 } else {
                     duplicateCount++;
@@ -246,15 +214,14 @@ export const WatakListModule = {
             });
 
             if (addedCount > 0) {
-                this.watakData.sort((a, b) => a.localeCompare(b));
-                this.saveWatakData();
+                this.data.watakList.sort((a, b) => a.localeCompare(b));
+                this.saveData(true);
                 this.refreshWatakUI();
                 if(typeof app.switchView === 'function') app.switchView('watak');
                 
                 let msg = `Berhasil! AI menambahkan ${addedCount} watak baru.`;
                 if (duplicateCount > 0) msg += ` (${duplicateCount} saran diabaikan karena sudah ada di daftar Anda).`;
                 
-                // Gunakan fungsi alert kustom jika ada, atau alert bawaan
                 if (typeof app.showAlert === 'function') {
                     app.showAlert(msg, "success");
                 } else {
@@ -267,7 +234,6 @@ export const WatakListModule = {
         } catch (error) {
             alert("Gagal menggunakan AI Enchanter: " + error.message);
         } finally {
-            // Reset Button
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
             btn.innerHTML = originalText;

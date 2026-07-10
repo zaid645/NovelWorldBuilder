@@ -1,0 +1,211 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "lastSaved": "2026-07-10T09:34:36.842Z"
+  },
+  "storyInfo": {
+    "title": "Ini adalah judul cerita",
+    "synopsis": "Sinopsis utama di sini",
+    "worldBuilding": "Berisi Gambaran dunia",
+    "mainCharacters": [
+      "c1"
+    ]
+  },
+  "arcs": [
+    {
+      "id": "arc1",
+      "name": "Budi the Magician",
+      "synopsis": "Mengikuti cerita Budi yang merupakan anak petani di daerah pinggiran. Ia pergi ke ibu kota untuk menjadi penyihir ahli.",
+      "subarcs": [
+        {
+          "id": "sub_g5v6zrtsb",
+          "name": "Kedatangan Budi di Ibu Kota",
+          "description": "Budi tiba di Ibu Kota, sebuah kota megah yang dipenuhi gedung-gedung tinggi bercahaya, sebuah pemandangan kontras dengan kehidupan pedesaan yang ia tinggalkan. Segera setelah kedatangannya, Budi menghadapi rintangan pertama: ia kehilangan semua uang dan bekalnya akibat penipuan oleh pedagang kaki lima yang tampak ramah. Terlantar dan tanpa arah di kota yang asing, Budi harus segera mencari cara untuk bertahan hidup sekaligus menemukan jalan menuju akademi sihir impiannya."
+        },
+        {
+          "id": "sub_coa4gddmt",
+          "name": "Menelusuri Jejak si Penipu",
+          "description": "Setelah kehilangan semua hartanya, Budi terpaksa bertahan hidup di jalanan Ibu Kota. Ia mencoba mencari pekerjaan kasar untuk mendapatkan sedikit uang, namun pengalamannya yang minim dan penampilan lusuhnya membuatnya sering ditolak. Di tengah keputusasaannya, Budi mendengar desas-desus tentang seorang penyihir misterius yang konon dapat memberikan bantuan kepada kaum terpinggirkan, namun juga dikenal licik dan seringkali menipu. Budi melihat ini sebagai satu-satunya harapan dan memutuskan untuk menelusuri jejak si penipu tersebut, berharap ia bisa mendapatkan pertolongan, atau setidaknya informasi untuk membawanya ke akademi sihir."
+        }
+      ],
+      "targetSubarcCount": 10,
+      "universeId": "u1"
+    },
+    {
+      "id": "arc_f8b77zmp5",
+      "name": "Akademi Sihir",
+      "synopsis": "Cerita dalam akademi sihir.",
+      "universeId": "",
+      "targetSubarcCount": 10,
+      "subarcs": []
+    }
+  ],
+  "watakList": [
+    "Bijaksana",
+    "Ceria",
+    "Dingin",
+    "Empati",
+    "Keras kepala",
+    "Licik",
+    "Misterius",
+    "Naif",
+    "Pemarah",
+    "Pemberani",
+    "Pengecut",
+    "Perfeksionis",
+    "Ramah",
+    "Setia",
+    "Skeptis",
+    "Tenang"
+  ],
+  "skillTags": [
+    {
+      "id": "t1",
+      "name": "Magic"
+    },
+    {
+      "id": "t2",
+      "name": "Swordsman"
+    },
+    {
+      "id": "t_fy8x8nsjv",
+      "name": "Physic"
+    }
+  ],
+  "skills": [
+    {
+      "id": "sk_mgznmpjyl",
+      "name": "Amarah Titan",
+      "background": "Amarah Titan adalah manifestasi energi mentah yang berasal dari ketidakpuasan primordial, sering kali dipicu oleh ketidakadilan ekstrem atau ancaman eksistensial. Kemampuan ini bukanlah ciptaan entitas tunggal, melainkan respons alam semesta atau kekuatan kosmik terhadap gangguan keseimbangan fundamental. Penguasaan Amarah Titan bergantung pada kemampuan individu untuk menyalurkan dan mengendalikan badai emosi destruktif tanpa kehilangan kesadaran diri, suatu disiplin yang sangat langka dan sulit dicapai, sering kali ditemukan pada individu yang telah mengalami trauma mendalam atau memiliki hubungan unik dengan kekuatan alam yang liar.",
+      "description": "Amarah Titan memungkinkan pengguna untuk melepaskan gelombang energi destruktif yang masif dari dalam diri. Energi ini bermanifestasi sebagai ledakan aura merah kehitaman yang merusak segala sesuatu dalam radius tertentu, memberikan luka fisik yang parah dan efek ketakutan psikologis pada musuh. Kekuatan serangan Amarah Titan berbanding lurus dengan tingkat kemarahan pengguna, namun dapat menyebabkan kelelahan mental dan fisik yang signifikan setelah digunakan.",
+      "tagIds": [
+        "t1",
+        "t_fy8x8nsjv"
+      ]
+    }
+  ],
+  "itemTags": [
+    {
+      "id": "it_s3s12wzyt",
+      "name": "Artefak"
+    }
+  ],
+  "items": [
+    {
+      "id": "i_mqo4ukg0i",
+      "name": "Parang Magis",
+      "appearance": "Parang Magis memiliki bilah melengkung yang ditempa dari logam gelap yang memantulkan cahaya biru tua dan ungu pekat, seperti pecahan bintang jauh. Permukaan bilah dipenuhi pola halus menyerupai kristal, serta garis-garis energi yang berdenyut samar. Gagang parang terbuat dari tulang berwarna krem pucat yang terasa hangat saat disentuh, dihiasi ukiran rumit yang menyatu dengan materialnya. Seluruh item memancarkan aura cahaya astral yang tenang, terkadang berdenyut dengan intensitas warna safir dan amethyst saat energi diserap atau dilepaskan.",
+      "description": "Parang Magis, artefak kuno yang tercipta dari sisa-sisa energi asteroid, bukan sekadar senjata. Bilahnya yang memukau, ditempa dari inti bintang yang jatuh, mampu memanifestasikan sekaligus menyerap energi astral. Saat digunakan untuk menyerang, parang ini mengiris udara dengan kilatan safir dan amethyst, meninggalkan jejak energi yang dapat melumpuhkan musuh atau mengikis pertahanan mereka. Namun, kekuatan sejatinya terletak pada kemampuannya menyerap. Dengan gerakan yang tepat, parang ini dapat menarik energi magis dari lingkungan sekitar atau bahkan dari serangan lawan, mengumpulkannya di dalam gagang tulang naganya yang hangat. Energi yang terserap ini kemudian dapat dilepaskan kembali, memperkuat serangan berikutnya atau digunakan untuk berbagai keperluan magis lainnya, menjadikannya alat yang sangat fleksibel di tangan penggunanya.",
+      "tagIds": [
+        "it_s3s12wzyt"
+      ]
+    }
+  ],
+  "familiarTags": [
+    {
+      "id": "ft_20wviuze1",
+      "name": "Kambing"
+    },
+    {
+      "id": "ft_e59q2kmd0",
+      "name": "Magis"
+    },
+    {
+      "id": "ft_zl5ep8718",
+      "name": "Bencana"
+    }
+  ],
+  "familiars": [
+    {
+      "id": "f_9aygrqmty",
+      "name": "Kambing Petaka",
+      "personality": [
+        "Licik",
+        "Misterius",
+        "Pemarah",
+        "Tenang"
+      ],
+      "appearance": "Kambing Petaka memiliki wujud fisik seekor kambing hitam legam, dengan mata merah menyala memancarkan cahaya redup. Tanduknya melengkung tajam ke belakang, terbuat dari materi gelap yang menyerupai batu obsidian. Bulunya tebal dan kasar, sesekali terlihat gerakan halus di bawah permukaan yang mengisyaratkan otot yang kuat namun tersembunyi. Ekornya pendek dan berumbai, dan di kakinya terdapat kuku yang kokoh, mampu menapak di berbagai medan. Nada suaranya serak dan dalam, jarang terdengar kecuali saat marah atau berkomunikasi.",
+      "description": "Kambing Petaka berasal dari rimba terlarang yang dihuni oleh makhluk-makhluk pembawa nasib buruk. Ia menjadi peliharaan melalui sebuah perjanjian yang mengikat antara dirinya dan pengendalinya, di mana kekuatan penghancur sang kambing ditukar dengan perlindungan dan pengasingan dari perburuan para pemburu. Watak liciknya dimanfaatkan untuk menghindari bahaya, sementara ketenangan misteriusnya menyembunyikan potensi amarah yang meledak saat terprovokasi.",
+      "dialogues": [
+        "Meekkk... (suara seringai licik tersembunyi di balik geraman rendah)*",
+        "Meeeek! (geraman dalam yang bergetar, ancaman tak terucap)*",
+        "Mbekkkk... (ekspresi tenang menyembunyikan mata yang menari penuh perhitungan)*",
+        "MMMEEEKKK! (raungan marah yang mengejutkan, meledak dari keheningan yang menyesatkan)*",
+        "Meekkk... (mendengus penuh kepuasan, membayangkan kekuasaan yang terbentang luas)*"
+      ],
+      "tagIds": [
+        "ft_20wviuze1",
+        "ft_e59q2kmd0",
+        "ft_zl5ep8718"
+      ],
+      "skillIds": [],
+      "itemIds": []
+    }
+  ],
+  "universes": [
+    {
+      "id": "u1",
+      "name": "Bumi Alternate",
+      "description": "Pada tahun 2015, sebuah asteorid menabrak bumi. Asteroid tersebut membuat umat manusia bisa memakai kekuatan sihir meskipun sebagai gantinya Bumi mengalami kerusakan parah. Beralih ke 10 tahun kemudian, pada 2025, akhirnya peradaban baru yang stabil berhasil dibentuk.",
+      "characters": {
+        "Main Character": [
+          {
+            "id": "c1",
+            "name": "Budi",
+            "personality": [
+              "Empati",
+              "Pemberani"
+            ],
+            "skillIds": [],
+            "background": "Merupakan anak petani dari desa pinggiran yang merantau ke kota.",
+            "appearance": "Budi memiliki rambut hitam lurus dan mata coklat gelap. Ia berpostur sedang, hasil dari kehidupannya sebagai anak petani yang kini beradaptasi di lingkungan perkotaan. Pakaian yang dominan dikenakannya adalah kemeja sederhana berwarna netral dan celana panjang berbahan kuat, mencerminkan kepraktisannya dalam menjalani keseharian di Bumi Alternate pasca-asteroid.",
+            "itemIds": [],
+            "familiarIds": [],
+            "dialogues": []
+          }
+        ],
+        "Villain": []
+      },
+      "locations": [
+        {
+          "id": "l1",
+          "name": "Ibu Kota",
+          "description": "Pusat pemerintahan.",
+          "visuals": "Gedung-gedung tinggi bercahaya.",
+          "children": [
+            {
+              "id": "l_swese0nd3",
+              "name": "Perpustakaan Arsip Kejadian",
+              "description": "Menjadi gudang utama untuk semua catatan dan pengetahuan yang diperoleh sejak era pasca-asteroid, tempat ini menjadi saksi bisu evolusi peradaban manusia di Bumi Alternate.",
+              "visuals": "Bangunan megah yang terbuat dari campuran baja daur ulang dan batu alam, dengan jendela-jendela besar yang memancarkan cahaya hangat dari lampu-lampu sihir yang tertanam di dindingnya.",
+              "children": [
+                {
+                  "id": "l_itfwp0azw",
+                  "name": "Ruang Resonansi Kristal Asteroid",
+                  "description": "Ruangan ini menyimpan fragmen inti asteroid yang memicu kebangkitan sihir global sebagai referensi utama bagi para peneliti untuk mempelajari evolusi energi magis.",
+                  "visuals": "Cahaya biru berpendar redup memancar dari kristal besar yang melayang di tengah ruangan yang dikelilingi oleh rak-rak kaca berisi artefak sisa dampak benturan tahun 2015.",
+                  "children": []
+                },
+                {
+                  "id": "l_v6yg349jb",
+                  "name": "Ruang Kristal Memori",
+                  "description": "Ruangan ini berfungsi sebagai repositori fisik tempat ingatan kolektif dari era pra-asteroid disimpan dalam bentuk fragmen kristal bercahaya untuk dianalisis oleh para sejarawan.",
+                  "visuals": "Dinding ruangan dipenuhi rak-rak logam tinggi yang menampung ribuan kristal berpendar biru redup, menciptakan suasana sunyi yang diselimuti oleh debu-debu magis yang melayang di udara.",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "l_itdh1bd9j",
+              "name": "Menara Arus Asteria",
+              "description": "Fasilitas penelitian pusat yang didirikan di atas kawah bekas hantaman meteorit untuk menyuling energi magis sisa asteroid menjadi sumber daya utama ibu kota.",
+              "visuals": "Bangunan berbentuk pilar kaca transparan raksasa yang memancarkan pendar cahaya biru konstan dan dikelilingi oleh detektor sihir yang berputar di setiap sisinya.",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -365,7 +365,7 @@ export const UniverseCharacterModule = {
     // =========================================
 
     renderCharactersArea(universe) {
-        const daftarWatak = app.watakData || [];
+        const daftarWatak = app.data.watakList || [];
 
         let html = `
         <div class="mb-4 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden mt-6">
@@ -493,7 +493,7 @@ export const UniverseCharacterModule = {
 
     renderCharacterCard(char, category) {
         // Validasi Dinamis untuk Watak String Array (Cek terhadap Master Watak)
-        const masterWatakList = app.watakData || [];
+        const masterWatakList = app.data.watakList || [];
         let parsedWataks = [];
         
         if (Array.isArray(char.personality)) {

@@ -119,36 +119,90 @@ export const UniverseBasicModule = {
         this.showAlert("Data Semesta berhasil di-eksport.", "success");
     },
 
-    searchUniverse(univId, query) {
+    /**
+     * Fitur pencarian modular untuk semesta aktif.
+     * Menggunakan click button / enter key agar tidak berat diproses 
+     * saat data sudah banyak (menghindari oninput event).
+     */
+    searchUniverse(univId) {
+        const queryInput = document.getElementById('searchInput');
         const resultBox = document.getElementById('searchResults');
-        if (!query || query.trim() === '') {
+        
+        if (!queryInput) return;
+        
+        const rawQuery = queryInput.value.trim();
+        const query = rawQuery.toLowerCase();
+
+        // Jika form kosong, sembunyikan kotak hasil
+        if (query === '') {
             resultBox.classList.add('hidden');
+            resultBox.innerHTML = '';
             return;
         }
         
-        query = query.toLowerCase();
         const universe = this.data.universes.find(u => u.id === univId);
+        if (!universe) return;
+        
         let results = [];
 
-        // Search characters
-        for (let category in universe.characters) {
-            universe.characters[category].forEach(c => {
-                if (c.name.toLowerCase().includes(query) || (c.background && c.background.toLowerCase().includes(query))) {
-                    results.push({ type: 'Tokoh', category: category, name: c.name, desc: c.background });
-                }
-            });
+        // 1. Search characters
+        if (universe.characters) {
+            for (let category in universe.characters) {
+                universe.characters[category].forEach(c => {
+                    if (c.name.toLowerCase().includes(query) || (c.background && c.background.toLowerCase().includes(query))) {
+                        results.push({ 
+                            type: 'Tokoh', 
+                            category: category, 
+                            name: c.name, 
+                            desc: c.background || 'Tidak ada deskripsi.' 
+                        });
+                    }
+                });
+            }
         }
         
-        // Search locations
-        const searchLoc = (locs) => {
-            locs.forEach(l => {
-                if (l.name.toLowerCase().includes(query) || (l.description && l.description.toLowerCase().includes(query))) {
-                    results.push({ type: 'Lokasi', category: 'Geografi', name: l.name, desc: l.description });
-                }
-                if (l.children) searchLoc(l.children);
-            });
-        };
-        searchLoc(universe.locations);
+        // 2. Search locations (Recursive)
+        if (universe.locations) {
+            const searchLoc = (locs) => {
+                locs.forEach(l => {
+                    if (l.name.toLowerCase().includes(query) || (l.description && l.description.toLowerCase().includes(query))) {
+                        results.push({ 
+                            type: 'Lokasi', 
+                            category: 'Geografi', 
+                            name: l.name, 
+                            desc: l.description || 'Tidak ada deskripsi.' 
+                        });
+                    }
+                    if (l.children && l.children.length > 0) searchLoc(l.children);
+                });
+            };
+            searchLoc(universe.locations);
+        }
+
+        // Tampilkan kotak hasil
+        resultBox.classList.remove('hidden');
+
+        // Jika tidak ada data yang relevan
+        if (results.length === 0) {
+            resultBox.innerHTML = `
+                <div class="p-4 text-center text-slate-400 text-sm">
+                    <svg class="w-8 h-8 mx-auto mb-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Tidak ada hasil yang cocok untuk "<b>${rawQuery}</b>" di Semesta ini.
+                </div>
+            `;
+            return;
+        }
+
+        // Render List Hasil
+        resultBox.innerHTML = results.map(r => `
+            <div class="p-3 border-b last:border-b-0 border-slate-700 hover:bg-slate-700/60 rounded transition cursor-pointer">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="font-bold text-indigo-300 text-sm">${r.name}</span>
+                    <span class="text-[10px] uppercase bg-slate-900 text-slate-300 px-2 py-0.5 rounded border border-slate-600 shadow-sm">${r.type} - ${r.category}</span>
+                </div>
+                <div class="text-xs text-slate-400 line-clamp-2">${r.desc}</div>
+            </div>
+        `).join('');
     },
 
     // =========================================
@@ -211,11 +265,24 @@ export const UniverseBasicModule = {
                 </div>
             </div>
 
-            <!-- NAVIGASI & PENCARIAN -->
+            <!-- NAVIGASI & PENCARIAN (Updated) -->
             <div class="mb-6 relative">
-                <input type="text" id="searchInput" placeholder="Cari tokoh, tempat, arc di semesta ini..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 pl-10 text-slate-200 focus:border-indigo-500 focus:outline-none" oninput="app.searchUniverse('${univ.id}', this.value)">
-                <svg class="w-5 h-5 absolute left-3 top-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                <div id="searchResults" class="hidden absolute w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-10 max-h-64 overflow-y-auto p-2"></div>
+                <div class="flex gap-2 relative z-10">
+                    <div class="relative flex-1">
+                        <!-- Menjalankan event pencarian hanya ketika Enter ditekan -->
+                        <input type="text" id="searchInput" placeholder="Cari tokoh, tempat, arc di semesta ini..." 
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 pl-10 text-slate-200 focus:border-indigo-500 focus:outline-none" 
+                            onkeydown="if(event.key === 'Enter') app.searchUniverse('${univ.id}')">
+                        <svg class="w-5 h-5 absolute left-3 top-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <!-- Tombol Pencarian -->
+                    <button onclick="event.stopPropagation(); app.searchUniverse('${univ.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-lg transition shadow font-medium">
+                        Cari
+                    </button>
+                </div>
+                
+                <!-- Dropdown Hasil Pencarian -->
+                <div id="searchResults" class="hidden absolute w-full mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-20 max-h-64 overflow-y-auto p-2"></div>
             </div>
 
             <!-- AREA MODUL KARAKTER -->

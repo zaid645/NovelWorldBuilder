@@ -10,7 +10,7 @@ export const PetModule = {
     // --- RENDER VIEW UTAMA (PETS & TAGS) ---
     // ==========================================
     renderFamiliarsView() {
-        const daftarWatak = app.watakData || [];
+        const daftarWatak = app.data.watakList || [];
         const daftarSemesta = app.data.universes || [];
 
         return `
@@ -578,7 +578,7 @@ export const PetModule = {
 
     renderFamiliarCard(fam) {
         // Validasi Dinamis untuk Watak String Array (Cek terhadap Master Watak)
-        const masterWatakList = app.watakData || [];
+        const masterWatakList = app.data.watakList || [];
         let parsedWataks = [];
         
         if (Array.isArray(fam.personality)) {
