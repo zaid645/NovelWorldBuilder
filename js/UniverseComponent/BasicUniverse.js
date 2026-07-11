@@ -99,7 +99,70 @@ export const UniverseBasicModule = {
         const universe = this.data.universes.find(u => u.id === id);
         if (!universe) return;
 
-        // Ekspor data spesifik tanpa storylines
+        // Kloning data karakter agar modifikasi tidak mengubah state aplikasi utama
+        const populatedCharacters = JSON.parse(JSON.stringify(universe.characters || {}));
+
+        // Mengubah array ID menjadi objek utuh untuk Skill, Item, dan Familiar
+        for (let category in populatedCharacters) {
+            if (Array.isArray(populatedCharacters[category])) {
+                populatedCharacters[category].forEach(char => {
+                    // Populate Skills (mencari dari skillIds)
+                    if (char.skillIds && Array.isArray(char.skillIds) && this.data.skills) {
+                        char.skills = char.skillIds.map(skillId => {
+                            const fullSkill = this.data.skills.find(s => s.id === skillId);
+                            return fullSkill ? fullSkill : { id: skillId, note: "Skill tidak ditemukan di data master" }; 
+                        });
+                        delete char.skillIds; // Hapus array ID agar rapi
+                    }
+                    
+                    // Populate Items (mencari dari itemIds)
+                    if (char.itemIds && Array.isArray(char.itemIds) && this.data.items) {
+                        char.items = char.itemIds.map(itemId => {
+                            const fullItem = this.data.items.find(i => i.id === itemId);
+                            return fullItem ? fullItem : { id: itemId, note: "Item tidak ditemukan di data master" };
+                        });
+                        delete char.itemIds;
+                    }
+
+                    // Populate Familiars (mencari dari familiarIds)
+                    if (char.familiarIds && Array.isArray(char.familiarIds) && this.data.familiars) {
+                        char.familiars = char.familiarIds.map(famId => {
+                            const masterFamiliar = this.data.familiars.find(f => f.id === famId);
+                            
+                            if (masterFamiliar) {
+                                // Clone (duplikat) familiar agar data utama master tidak ikut termodifikasi!
+                                const fullFamiliar = JSON.parse(JSON.stringify(masterFamiliar));
+                                
+                                // Populate Skill milik Familiar
+                                if (fullFamiliar.skillIds && Array.isArray(fullFamiliar.skillIds) && this.data.skills) {
+                                    fullFamiliar.skills = fullFamiliar.skillIds.map(skillId => {
+                                        const fullSkill = this.data.skills.find(s => s.id === skillId);
+                                        return fullSkill ? fullSkill : { id: skillId, note: "Skill tidak ditemukan di data master" };
+                                    });
+                                    delete fullFamiliar.skillIds;
+                                }
+
+                                // Populate Item milik Familiar
+                                if (fullFamiliar.itemIds && Array.isArray(fullFamiliar.itemIds) && this.data.items) {
+                                    fullFamiliar.items = fullFamiliar.itemIds.map(itemId => {
+                                        const fullItem = this.data.items.find(i => i.id === itemId);
+                                        return fullItem ? fullItem : { id: itemId, note: "Item tidak ditemukan di data master" };
+                                    });
+                                    delete fullFamiliar.itemIds;
+                                }
+
+                                return fullFamiliar;
+                            }
+                            
+                            return { id: famId, note: "Familiar tidak ditemukan di data master" };
+                        });
+                        delete char.familiarIds;
+                    }
+                });
+            }
+        }
+
+        // Ekspor data spesifik dengan karakter yang sudah dilengkapi (populated)
         const exportedData = {
             metadata: {
                 exportedAt: new Date().toISOString(),
@@ -109,14 +172,14 @@ export const UniverseBasicModule = {
                 id: universe.id,
                 name: universe.name,
                 description: universe.description,
-                characters: universe.characters || {},
+                characters: populatedCharacters,
                 locations: universe.locations || []
             }
         };
 
         const filename = `semesta_${universe.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_lore.json`;
         this.downloadJSON(filename, exportedData); // Memanggil fungsi dari MainScript
-        this.showAlert("Data Semesta berhasil di-eksport.", "success");
+        this.showAlert("Data Semesta berhasil di-eksport secara lengkap.", "success");
     },
 
     /**
