@@ -11,6 +11,11 @@ export const ItemModule = {
     // ==========================================
     renderItemsView() {
         const daftarSemesta = app.data?.universes || [];
+        
+        // Ambil data skill dan urutkan berdasarkan abjad (A-Z)
+        const sortedSkills = [...(this.data.skills || [])].sort((a, b) => 
+            (a.name || '').localeCompare(b.name || '')
+        );
 
         return `
             <div class="flex flex-col gap-6">
@@ -91,6 +96,22 @@ export const ItemModule = {
                                             <label class="flex items-center space-x-2 cursor-pointer">
                                                 <input type="checkbox" value="${t.id}" class="itemTagCheck form-checkbox rounded text-cyan-500 bg-slate-700 border-slate-600 focus:ring-cyan-500">
                                                 <span class="truncate text-slate-300 hover:text-white transition">${t.name}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- Checklist Skill Tertaut -->
+                                <div class="mb-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Skill Tertaut (Opsional):</label>
+                                    <p class="text-[10px] text-slate-500 mb-2">Pilih skill yang akan diberikan atau dapat digunakan oleh pengguna item ini.</p>
+                                    <!-- Dibagi menjadi 4 kolom (grid-cols-4) dan lebar penuh (w-full) -->
+                                    <div class="bg-slate-800 border border-slate-600 rounded p-3 max-h-32 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-sm w-full">
+                                        ${sortedSkills.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-full">Belum ada skill yang tersedia. Buat di menu Skill terlebih dahulu.</span>' : ''}
+                                        ${sortedSkills.map(s => `
+                                            <label class="flex items-center space-x-2 cursor-pointer w-full">
+                                                <input type="checkbox" value="${s.id}" class="itemSkillCheck form-checkbox rounded text-yellow-500 bg-slate-700 border-slate-600 focus:ring-yellow-500">
+                                                <span class="truncate text-slate-300 hover:text-white transition">${s.name}</span>
                                             </label>
                                         `).join('')}
                                     </div>
@@ -208,6 +229,7 @@ export const ItemModule = {
         document.getElementById('newItemApp').value = '';
         document.getElementById('newItemDesc').value = '';
         document.querySelectorAll('.itemTagCheck').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.itemSkillCheck').forEach(cb => cb.checked = false); // Reset checkbox skill
         
         // Reset pengaturan AI
         const aiUniverse = document.getElementById('aiItemUniverse');
@@ -227,7 +249,10 @@ export const ItemModule = {
         document.getElementById('newItemName').value = item.name;
         document.getElementById('newItemApp').value = item.appearance || '';
         document.getElementById('newItemDesc').value = item.description || '';
+        
         document.querySelectorAll('.itemTagCheck').forEach(cb => cb.checked = item.tagIds.includes(cb.value));
+        // Centang skill yang tertaut
+        document.querySelectorAll('.itemSkillCheck').forEach(cb => cb.checked = (item.skillIds || []).includes(cb.value));
         
         // Reset pengaturan AI setiap kali membuka form edit
         const aiUniverse = document.getElementById('aiItemUniverse');
@@ -245,14 +270,26 @@ export const ItemModule = {
         const appearance = document.getElementById('newItemApp').value.trim();
         const description = document.getElementById('newItemDesc').value.trim();
         const tagIds = Array.from(document.querySelectorAll('.itemTagCheck:checked')).map(cb => cb.value);
+        // Ambil data skill tertaut
+        const skillIds = Array.from(document.querySelectorAll('.itemSkillCheck:checked')).map(cb => cb.value);
 
         if (this.editItemId) {
             const item = this.data.items.find(i => i.id === this.editItemId);
-            if(item) { item.name = name; item.appearance = appearance; item.description = description; item.tagIds = tagIds; }
+            if(item) { 
+                item.name = name; 
+                item.appearance = appearance; 
+                item.description = description; 
+                item.tagIds = tagIds; 
+                item.skillIds = skillIds; // Update skill tertaut
+            }
             this.editItemId = null;
             this.showAlert("Item berhasil diupdate", "success");
         } else {
-            this.data.items.push({ id: this.generateId('i'), name, appearance, description, tagIds });
+            this.data.items.push({ 
+                id: this.generateId('i'), 
+                name, appearance, description, tagIds, 
+                skillIds // Simpan skill tertaut
+            });
             this.showAlert("Item baru disimpan", "success");
         }
 
@@ -287,18 +324,23 @@ export const ItemModule = {
         // Mengambil teks yang sudah ada untuk diberikan sebagai konteks silang
         const currentApp = document.getElementById('newItemApp').value.trim();
         const currentDesc = document.getElementById('newItemDesc').value.trim();
+        
+        // Tambahan referensi jika ada skill tertaut untuk AI
+        const linkedSkillNames = Array.from(document.querySelectorAll('.itemSkillCheck:checked')).map(cb => cb.nextElementSibling.innerText).join(', ');
+        const skillContext = linkedSkillNames ? `\n[CATATAN: Item ini memungkinkan pengguna untuk mengeluarkan skill: ${linkedSkillNames}. Pertimbangkan ini dalam merancang fungsinya.]` : "";
+
         let crossContext = "";
 
         if (targetField === 'appearance') {
             targetEl = document.getElementById('newItemApp');
             btnId = 'btnAiItemApp';
             aiFocusRule = "Kembangkan wujud fisik, bentuk, ukuran, material/tekstur, warna, dan aura cahaya/kegelapan yang dipancarkan dari item ini. Fokus murni pada VISUAL.";
-            if (currentDesc) crossContext = `\n[REFERENSI FUNGSI/EFEK ITEM UNTUK PENYESUAIAN VISUAL]: ${currentDesc}`;
+            if (currentDesc) crossContext = `\n[REFERENSI FUNGSI/EFEK ITEM UNTUK PENYESUAIAN VISUAL]: ${currentDesc}${skillContext}`;
         } else if (targetField === 'description') {
             targetEl = document.getElementById('newItemDesc');
             btnId = 'btnAiItemDesc';
             aiFocusRule = "Kembangkan apa kegunaan/fungsi item ini, efek magis atau mekanismenya, atau sedikit latar belakang sejarah tentang bagaimana item ini bekerja. Fokus murni pada FUNGSI/CERITA.";
-            if (currentApp) crossContext = `\n[REFERENSI WUJUD FISIK ITEM UNTUK PENYESUAIAN CERITA]: ${currentApp}`;
+            if (currentApp) crossContext = `\n[REFERENSI WUJUD FISIK ITEM UNTUK PENYESUAIAN CERITA]: ${currentApp}${skillContext}`;
         }
 
         const draftText = targetEl.value.trim();
@@ -371,11 +413,18 @@ export const ItemModule = {
                 const t = this.data.itemTags.find(tag => tag.id === id);
                 return (t && t.name) ? t.name.toLowerCase() : '';
             }).join(' ');
-            return { ...item, tagIds: item.tagIds || [], tagNames };
+            
+            // Pencarian juga berlaku untuk nama skill tertaut
+            const skillNames = (item.skillIds || []).map(id => {
+                const s = this.data.skills.find(sk => sk.id === id);
+                return (s && s.name) ? s.name.toLowerCase() : '';
+            }).join(' ');
+
+            return { ...item, tagIds: item.tagIds || [], skillIds: item.skillIds || [], searchString: tagNames + ' ' + skillNames };
         });
 
         const filtered = itemData.filter(i => 
-            (i.name || '').toLowerCase().includes(query) || i.tagNames.includes(query)
+            (i.name || '').toLowerCase().includes(query) || i.searchString.includes(query)
         );
 
         filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -392,6 +441,13 @@ export const ItemModule = {
             const tag = this.data.itemTags.find(t => t.id === id);
             return tag ? `<span class="bg-cyan-900/50 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-700/50">${tag.name}</span>` 
                         : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
+        }).join(' ');
+
+        // Render skill tertaut untuk UI
+        const itemSkills = (item.skillIds || []).map(id => {
+            const skill = this.data.skills.find(s => s.id === id);
+            return skill ? `<span class="bg-yellow-900/40 text-yellow-300 text-[10px] px-2 py-0.5 rounded border border-yellow-700/50 flex items-center gap-1">✨ ${skill.name}</span>`
+                         : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 line-through">Skill Invalid</span>`;
         }).join(' ');
 
         // Panel ID dinamis per Item
@@ -442,6 +498,12 @@ export const ItemModule = {
                         <div>
                             <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Tag Kategori Item:</span>
                             <div class="flex flex-wrap gap-1">${itemTags || '<span class="text-[10px] text-slate-600 italic bg-slate-800 px-2 py-0.5 rounded">Tanpa Tag</span>'}</div>
+                        </div>
+                        
+                        <!-- Panel untuk Skill Tertaut -->
+                        <div class="pt-2 border-t border-slate-800/50">
+                            <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Skill Tertaut:</span>
+                            <div class="flex flex-wrap gap-1">${itemSkills || '<span class="text-[10px] text-slate-600 italic bg-slate-800 px-2 py-0.5 rounded border border-slate-700">Tidak ada skill</span>'}</div>
                         </div>
                     </div>
 

@@ -98,7 +98,8 @@
       "description": "Parang Magis, artefak kuno yang tercipta dari sisa-sisa energi asteroid, bukan sekadar senjata. Bilahnya yang memukau, ditempa dari inti bintang yang jatuh, mampu memanifestasikan sekaligus menyerap energi astral. Saat digunakan untuk menyerang, parang ini mengiris udara dengan kilatan safir dan amethyst, meninggalkan jejak energi yang dapat melumpuhkan musuh atau mengikis pertahanan mereka. Namun, kekuatan sejatinya terletak pada kemampuannya menyerap. Dengan gerakan yang tepat, parang ini dapat menarik energi magis dari lingkungan sekitar atau bahkan dari serangan lawan, mengumpulkannya di dalam gagang tulang naganya yang hangat. Energi yang terserap ini kemudian dapat dilepaskan kembali, memperkuat serangan berikutnya atau digunakan untuk berbagai keperluan magis lainnya, menjadikannya alat yang sangat fleksibel di tangan penggunanya.",
       "tagIds": [
         "it_s3s12wzyt"
-      ]
+      ],
+      "skillIds": ["sk_mgznmpjyl"]
     }
   ],
   "familiarTags": [

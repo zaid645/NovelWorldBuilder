@@ -105,7 +105,7 @@ export const UniverseLoreModule = {
                 </h3>
             </div>
             
-            <div id="lorePanel_${universe.id}" class="p-3 space-y-3 ${this.getPanelClass('lorePanel_' + universe.id, 'open')}">
+            <div id="lorePanel_${universe.id}" class="p-3 space-y-3 ${this.getPanelClass('lorePanel_' + universe.id)}">
         `;
 
         if (lores.length === 0) {

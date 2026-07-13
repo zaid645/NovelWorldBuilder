@@ -93,6 +93,23 @@ const coreApp = {
         }
     },
 
+    // --- FUNGSI RESET DATA ---
+    resetData() {
+        if (confirm("Apakah Anda yakin ingin mereset semua data? Tindakan ini akan menghapus data yang tersimpan dan mengembalikannya ke pengaturan awal.")) {
+            // Mengembalikan data ke kondisi default menggunakan deep copy dari defaultData
+            this.data = JSON.parse(JSON.stringify(this.defaultData));
+            
+            // Menyimpan perubahan ke localStorage
+            this.saveData(true);
+            
+            // Memperbarui antarmuka dan mengarahkan kembali ke halaman utama
+            this.switchView('story-info');
+            this.renderSidebar();
+            
+            this.showAlert("Data berhasil direset ke pengaturan awal.", "success");
+        }
+    },
+
     // --- LOGIKA PENGECEKAN STRUKTUR OTOMATIS ---
     // Deep check & inject: Jika kunci data belum ada di target (dari localStorage), 
     // ia akan disalin dari template (DefaultData.json).
@@ -100,11 +117,37 @@ const coreApp = {
         if (!template) return;
         
         for (const key in template) {
-            // Jika cabang belum ada di data user, kloning dari template
+            // Jika cabang belum ada di data user
             if (target[key] === undefined) {
-                target[key] = JSON.parse(JSON.stringify(template[key]));
+                const templateValue = template[key];
+                
+                // 1. Cek jika tipe datanya Array
+                if (Array.isArray(templateValue)) {
+                    target[key] = [];
+                }
+                // 2. Cek jika tipe datanya Objek murni (bukan null)
+                else if (typeof templateValue === 'object' && templateValue !== null) {
+                    target[key] = {};
+                    this.ensureStructure(target[key], templateValue);
+                }
+                // 3. Cek jika tipe datanya String
+                else if (typeof templateValue === 'string') {
+                    target[key] = '';
+                }
+                // 4. Cek jika tipe datanya Number
+                else if (typeof templateValue === 'number') {
+                    target[key] = 0;
+                }
+                // 5. Cek jika tipe datanya Boolean
+                else if (typeof templateValue === 'boolean') {
+                    target[key] = false;
+                }
+                // Fallback untuk tipe data lainnya (null, dll)
+                else {
+                    target[key] = templateValue;
+                }
             } 
-            // Jika cabang sudah ada dan berupa Objek murni (bukan array/null), masuk dan cek lebih dalam
+            // Jika cabang sudah ada dan berupa Objek murni, masuk lebih dalam
             else if (typeof template[key] === 'object' && template[key] !== null && !Array.isArray(template[key])) {
                 this.ensureStructure(target[key], template[key]);
             }

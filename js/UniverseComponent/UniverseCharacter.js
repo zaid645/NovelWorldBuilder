@@ -445,23 +445,49 @@ export const UniverseCharacterModule = {
                                 <textarea id="newDialogues_${safeCat}" placeholder="Pisahkan tiap baris dialog dengan Enter..." class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500" rows="4"></textarea>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Skill Khusus:</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto flex flex-col gap-1 text-xs">
-                                        ${this.data.skills.map(s => `<label class="flex items-center space-x-2"><input type="checkbox" value="${s.id}" class="skillCheck_${safeCat} rounded text-indigo-500 bg-slate-800 border-slate-600"><span class="truncate text-slate-300 hover:text-white">${s.name}</span></label>`).join('')}
+                            <div class="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
+                                <!-- Skill Khusus (Lebar Penuh, 4 Kolom, Urut Abjad) -->
+                                <div class="mb-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Skill Khusus</label>
+                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                        ${[...this.data.skills]
+                                            .sort((a, b) => a.name.localeCompare(b.name))
+                                            .map(s => `
+                                                <label class="flex items-center space-x-2 cursor-pointer">
+                                                    <input type="checkbox" value="${s.id}" class="skillCheck_${safeCat} rounded text-indigo-500 bg-slate-800 border-slate-600">
+                                                    <span class="truncate text-slate-300 hover:text-white transition">${s.name}</span>
+                                                </label>
+                                            `).join('')}
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Item Bawaan:</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto flex flex-col gap-1 text-xs">
-                                        ${this.data.items.map(i => `<label class="flex items-center space-x-2"><input type="checkbox" value="${i.id}" class="itemCheck_${safeCat} rounded text-cyan-500 bg-slate-800 border-slate-600"><span class="truncate text-slate-300 hover:text-white">${i.name}</span></label>`).join('')}
+
+                                <!-- Item Bawaan (Lebar Penuh, 4 Kolom, Urut Abjad) -->
+                                <div class="mb-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Item Bawaan</label>
+                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                        ${[...this.data.items]
+                                            .sort((a, b) => a.name.localeCompare(b.name))
+                                            .map(i => `
+                                                <label class="flex items-center space-x-2 cursor-pointer">
+                                                    <input type="checkbox" value="${i.id}" class="itemCheck_${safeCat} rounded text-cyan-500 bg-slate-800 border-slate-600">
+                                                    <span class="truncate text-slate-300 hover:text-white transition">${i.name}</span>
+                                                </label>
+                                            `).join('')}
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Familiar / Pet:</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto flex flex-col gap-1 text-xs">
-                                        ${this.data.familiars.map(f => `<label class="flex items-center space-x-2"><input type="checkbox" value="${f.id}" class="familiarCheck_${safeCat} rounded text-fuchsia-500 bg-slate-800 border-slate-600"><span class="truncate text-slate-300 hover:text-white">${f.name}</span></label>`).join('')}
+
+                                <!-- Familiar / Pet (Lebar Penuh, 4 Kolom, Urut Abjad) -->
+                                <div class="mb-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Familiar / Pet</label>
+                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                        ${[...this.data.familiars]
+                                            .sort((a, b) => a.name.localeCompare(b.name))
+                                            .map(f => `
+                                                <label class="flex items-center space-x-2 cursor-pointer">
+                                                    <input type="checkbox" value="${f.id}" class="familiarCheck_${safeCat} rounded text-fuchsia-500 bg-slate-800 border-slate-600">
+                                                    <span class="truncate text-slate-300 hover:text-white transition">${f.name}</span>
+                                                </label>
+                                            `).join('')}
                                     </div>
                                 </div>
                             </div>
