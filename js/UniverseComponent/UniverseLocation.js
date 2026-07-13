@@ -18,20 +18,60 @@ export const UniverseLocationModule = {
         if (!loc) return;
         this.editLocationId = locId;
 
+        let targetFormId = "";
+
         if (parentId === null) {
-            this.setPanelState(`addRootLoc_${univId}`, true);
-            document.getElementById(`rootLocFormTitle_${univId}`).innerText = "Edit Tempat Utama";
-            document.getElementById(`rootLocFormBtn_${univId}`).innerText = "Update Tempat";
-            document.getElementById(`newLocName_${univId}`).value = loc.name;
-            document.getElementById(`newLocDesc_${univId}`).value = loc.description || '';
-            document.getElementById(`newLocVis_${univId}`).value = loc.visuals || '';
+            targetFormId = `addRootLoc_${univId}`;
+            this.setPanelState(targetFormId, true);
+            
+            const formTitle = document.getElementById(`rootLocFormTitle_${univId}`);
+            const formBtn = document.getElementById(`rootLocFormBtn_${univId}`);
+            const nameInput = document.getElementById(`newLocName_${univId}`);
+            const descInput = document.getElementById(`newLocDesc_${univId}`);
+            const visInput = document.getElementById(`newLocVis_${univId}`);
+
+            if (formTitle) formTitle.innerText = "Edit Tempat Utama";
+            if (formBtn) formBtn.innerText = "Update Tempat";
+            if (nameInput) nameInput.value = loc.name;
+            if (descInput) descInput.value = loc.description || '';
+            if (visInput) visInput.value = loc.visuals || '';
         } else {
-            this.setPanelState(`addChildLoc_${parentId}`, true);
-            document.getElementById(`childLocFormBtn_${parentId}`).innerText = "Update Child";
-            document.getElementById(`newLocName_${parentId}`).value = loc.name;
-            document.getElementById(`newLocDesc_${parentId}`).value = loc.description || '';
-            document.getElementById(`newLocVis_${parentId}`).value = loc.visuals || '';
+            // Karena kita mengedit child, form yang digunakan adalah form addChildLoc milik Parent-nya
+            targetFormId = `addChildLoc_${parentId}`;
+            this.setPanelState(targetFormId, true);
+            
+            const formBtn = document.getElementById(`childLocFormBtn_${parentId}`);
+            const nameInput = document.getElementById(`newLocName_${parentId}`);
+            const descInput = document.getElementById(`newLocDesc_${parentId}`);
+            const visInput = document.getElementById(`newLocVis_${parentId}`);
+
+            if (formBtn) formBtn.innerText = "Update Child";
+            if (nameInput) nameInput.value = loc.name;
+            if (descInput) descInput.value = loc.description || '';
+            if (visInput) visInput.value = loc.visuals || '';
         }
+
+        // --- FITUR AUTO-SCROLL & SOROTAN VISUAL ---
+        // Menunggu sebentar agar UI render selesai setelah state panel berubah menjadi terlihat (active)
+        setTimeout(() => {
+            const formElement = document.getElementById(targetFormId);
+            if (formElement) {
+                // Scroll ke posisi form secara mulus
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Tambahkan efek sorotan (pulsing outline/border) agar menarik perhatian pengguna
+                formElement.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-slate-900', 'transition-all', 'duration-500');
+                
+                // Fokuskan kursor langsung ke input nama tempat agar siap diketik
+                const nameInputField = parentId === null ? document.getElementById(`newLocName_${univId}`) : document.getElementById(`newLocName_${parentId}`);
+                if (nameInputField) nameInputField.focus();
+
+                // Hapus efek sorotan setelah 2 detik agar tidak permanen mengganggu estetika
+                setTimeout(() => {
+                    formElement.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-slate-900');
+                }, 2000);
+            }
+        }, 100);
     },
 
     addLocation(univId) {
@@ -117,6 +157,21 @@ export const UniverseLocationModule = {
 
         this.setPanelState(`locPanel_${univId}`, true);
         this.setPanelState(`addRootLoc_${univId}`, true);
+
+        // Auto-scroll ke form baru agar user langsung melihatnya
+        setTimeout(() => {
+            const formElement = document.getElementById(`addRootLoc_${univId}`);
+            if (formElement) {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                formElement.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-slate-900', 'transition-all', 'duration-500');
+                const nameInput = document.getElementById(`newLocName_${univId}`);
+                if (nameInput) nameInput.focus();
+                
+                setTimeout(() => {
+                    formElement.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-slate-900');
+                }, 2000);
+            }
+        }, 100);
     },
 
     cancelEditLocation(univId) {
@@ -136,6 +191,21 @@ export const UniverseLocationModule = {
         
         const toggleIcon = document.getElementById(`toggle-icon-${locId}`);
         if (toggleIcon) toggleIcon.classList.remove('-rotate-90');
+
+        // Auto-scroll ke form sub-tempat baru agar fokus mata user langsung ke sana
+        setTimeout(() => {
+            const formElement = document.getElementById(`addChildLoc_${locId}`);
+            if (formElement) {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                formElement.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-slate-900', 'transition-all', 'duration-500');
+                const nameInput = document.getElementById(`newLocName_${locId}`);
+                if (nameInput) nameInput.focus();
+                
+                setTimeout(() => {
+                    formElement.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-slate-900');
+                }, 2000);
+            }
+        }, 100);
     },
 
     cancelEditChildLocation(locId) {
@@ -372,7 +442,7 @@ export const UniverseLocationModule = {
             <div id="locPanel_${universe.id}" class="p-3 space-y-3 ${this.getPanelClass('locPanel_' + universe.id)}">
                 
                 <!-- ROOT LOCATION FORM -->
-                <div id="addRootLoc_${universe.id}" class="${this.getPanelClass('addRootLoc_' + universe.id)} bg-slate-900 border border-slate-700 p-4 rounded-lg mb-4">
+                <div id="addRootLoc_${universe.id}" class="${this.getPanelClass('addRootLoc_' + universe.id)} bg-slate-900 border border-slate-700 p-4 rounded-lg mb-4 transition-all duration-300">
                     <h4 id="rootLocFormTitle_${universe.id}" class="text-sm font-bold text-emerald-400 mb-3 border-b border-slate-700 pb-2">Buat Tempat Utama Baru</h4>
                     
                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block mt-2">Nama Tempat Utama <span class="text-rose-400">*</span></label>
@@ -468,7 +538,7 @@ export const UniverseLocationModule = {
                     </div>
 
                     <!-- CHILD LOCATION FORM -->
-                    <div id="addChildLoc_${loc.id}" class="${this.getPanelClass('addChildLoc_' + loc.id)} bg-slate-800 border border-slate-700 p-3 rounded mt-2 mb-3 shadow-inner">
+                    <div id="addChildLoc_${loc.id}" class="${this.getPanelClass('addChildLoc_' + loc.id)} bg-slate-800 border border-slate-700 p-3 rounded mt-2 mb-3 shadow-inner transition-all duration-300">
                         <label class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Nama Sub-Tempat <span class="text-rose-400">*</span></label>
                         <input type="text" id="newLocName_${loc.id}" placeholder="Nama Sub-Tempat" class="bg-slate-900 border border-slate-700 rounded p-2 text-xs w-full mb-2 outline-none focus:border-emerald-500">
                         

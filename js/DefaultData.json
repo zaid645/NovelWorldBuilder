@@ -148,6 +148,10 @@
       "id": "u1",
       "name": "Bumi Alternate",
       "description": "Pada tahun 2015, sebuah asteorid menabrak bumi. Asteroid tersebut membuat umat manusia bisa memakai kekuatan sihir meskipun sebagai gantinya Bumi mengalami kerusakan parah. Beralih ke 10 tahun kemudian, pada 2025, akhirnya peradaban baru yang stabil berhasil dibentuk.",
+      "lores": [
+          "Bumi pasca-asteroid kehilangan 40% daratan aslinya.",
+          "Energi magis pertama kali ditemukan oleh Dr. Xander pada tahun 2018."
+      ],
       "characters": {
         "Main Character": [
           {

@@ -172,6 +172,7 @@ export const UniverseBasicModule = {
                 id: universe.id,
                 name: universe.name,
                 description: universe.description,
+                lores: universe.lores || [],
                 characters: populatedCharacters,
                 locations: universe.locations || []
             }
@@ -293,6 +294,10 @@ export const UniverseBasicModule = {
 
         // Memanggil render dari modul Karakter dan Lokasi (Jika tersedia)
         // Kita gunakan validasi typeof agar tidak error jika modul belum termuat
+        const loreAreaHTML = typeof this.renderLoreArea === 'function'
+            ? this.renderLoreArea(univ)
+            : `<div class="p-4 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 text-sm italic">Modul Lore belum terhubung...</div>`;
+
         const charactersAreaHTML = typeof this.renderCharactersArea === 'function' 
             ? this.renderCharactersArea(univ) 
             : `<div class="p-4 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 text-sm italic">Modul Karakter belum terhubung...</div>`;
@@ -347,6 +352,9 @@ export const UniverseBasicModule = {
                 <!-- Dropdown Hasil Pencarian -->
                 <div id="searchResults" class="hidden absolute w-full mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-20 max-h-64 overflow-y-auto p-2"></div>
             </div>
+
+            <!-- AREA MODUL LORE (BARU) -->
+            ${loreAreaHTML}
 
             <!-- AREA MODUL KARAKTER -->
             ${charactersAreaHTML}

@@ -10,6 +10,7 @@ import { SkillModule } from './FantasyComponent/Skill.js';
 import { ItemModule } from './FantasyComponent/Item.js';
 import { PetModule } from './FantasyComponent/Pet.js';
 import { UniverseBasicModule } from './UniverseComponent/BasicUniverse.js';
+import { UniverseLoreModule } from './UniverseComponent/UniverseLore.js';
 import { UniverseCharacterModule } from './UniverseComponent/UniverseCharacter.js';
 import { UniverseLocationModule } from './UniverseComponent/UniverseLocation.js';
 
@@ -470,6 +471,7 @@ window.app = Object.assign(
     ItemModule,
     PetModule,
     UniverseBasicModule,
+    UniverseLoreModule,
     UniverseCharacterModule,
     UniverseLocationModule
 );
