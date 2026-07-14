@@ -115,11 +115,28 @@ export const UniverseBasicModule = {
                         delete char.skillIds; // Hapus array ID agar rapi
                     }
                     
-                    // Populate Items (mencari dari itemIds)
+                    // ==========================================================
+                    // PERUBAHAN: Populate Items milik Karakter + Skill di dalamnya
+                    // ==========================================================
                     if (char.itemIds && Array.isArray(char.itemIds) && this.data.items) {
                         char.items = char.itemIds.map(itemId => {
-                            const fullItem = this.data.items.find(i => i.id === itemId);
-                            return fullItem ? fullItem : { id: itemId, note: "Item tidak ditemukan di data master" };
+                            const masterItem = this.data.items.find(i => i.id === itemId);
+                            
+                            if (masterItem) {
+                                // Clone item agar data master tidak ikut termodifikasi
+                                const fullItem = JSON.parse(JSON.stringify(masterItem));
+                                
+                                // Populate Skill milik Item tersebut
+                                if (fullItem.skillIds && Array.isArray(fullItem.skillIds) && this.data.skills) {
+                                    fullItem.skills = fullItem.skillIds.map(skillId => {
+                                        const fullSkill = this.data.skills.find(s => s.id === skillId);
+                                        return fullSkill ? fullSkill : { id: skillId, note: "Skill tidak ditemukan di data master" };
+                                    });
+                                    delete fullItem.skillIds;
+                                }
+                                return fullItem;
+                            }
+                            return { id: itemId, note: "Item tidak ditemukan di data master" };
                         });
                         delete char.itemIds;
                     }
@@ -142,11 +159,27 @@ export const UniverseBasicModule = {
                                     delete fullFamiliar.skillIds;
                                 }
 
-                                // Populate Item milik Familiar
+                                // ==========================================================
+                                // PERUBAHAN: Populate Item milik Familiar + Skill di dalamnya
+                                // ==========================================================
                                 if (fullFamiliar.itemIds && Array.isArray(fullFamiliar.itemIds) && this.data.items) {
                                     fullFamiliar.items = fullFamiliar.itemIds.map(itemId => {
-                                        const fullItem = this.data.items.find(i => i.id === itemId);
-                                        return fullItem ? fullItem : { id: itemId, note: "Item tidak ditemukan di data master" };
+                                        const masterItem = this.data.items.find(i => i.id === itemId);
+                                        
+                                        if (masterItem) {
+                                            const fullItem = JSON.parse(JSON.stringify(masterItem));
+                                            
+                                            // Populate Skill di dalam Item milik Familiar
+                                            if (fullItem.skillIds && Array.isArray(fullItem.skillIds) && this.data.skills) {
+                                                fullItem.skills = fullItem.skillIds.map(skillId => {
+                                                    const fullSkill = this.data.skills.find(s => s.id === skillId);
+                                                    return fullSkill ? fullSkill : { id: skillId, note: "Skill tidak ditemukan di data master" };
+                                                });
+                                                delete fullItem.skillIds;
+                                            }
+                                            return fullItem;
+                                        }
+                                        return { id: itemId, note: "Item tidak ditemukan di data master" };
                                     });
                                     delete fullFamiliar.itemIds;
                                 }
@@ -179,7 +212,7 @@ export const UniverseBasicModule = {
         };
 
         const filename = `semesta_${universe.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_lore.json`;
-        this.downloadJSON(filename, exportedData); // Memanggil fungsi dari MainScript
+        this.downloadJSON(filename, exportedData); 
         this.showAlert("Data Semesta berhasil di-eksport secara lengkap.", "success");
     },
 

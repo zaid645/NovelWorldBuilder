@@ -99,8 +99,12 @@ export const UniverseCharacterModule = {
         document.getElementById(`newBg_${safeCat}`).value = '';
         document.getElementById(`newApp_${safeCat}`).value = '';
 
+        // Dialog dan catatan
         const dlgInput = document.getElementById(`newDialogues_${safeCat}`);
         if(dlgInput) dlgInput.value = '';
+
+        const notesInput = document.getElementById(`newNotes_${safeCat}`);
+        if(notesInput) notesInput.value = '';
         
         document.querySelectorAll(`.charWatakCheck_${safeCat}`).forEach(cb => cb.checked = false);
         document.querySelectorAll(`.skillCheck_${safeCat}`).forEach(cb => cb.checked = false);
@@ -132,6 +136,11 @@ export const UniverseCharacterModule = {
         if(dlgInput) {
             dlgInput.value = (char.dialogues || []).join('\n');
         }
+
+        const notesInput = document.getElementById(`newNotes_${safeCat}`);
+        if(notesInput) {
+            notesInput.value = (char.notes || []).join('\n');
+        }
         
         // Migrasi & Centang Data Watak
         let watakArray = [];
@@ -162,6 +171,12 @@ export const UniverseCharacterModule = {
         if (dlgInput) {
             dialogues = dlgInput.value.split('\n').map(d => d.trim()).filter(d => d !== '');
         }
+
+        let notes = [];
+        const notesInput = document.getElementById(`newNotes_${safeCat}`);
+        if (notesInput) {
+            notes = notesInput.value.split('\n').map(n => n.trim()).filter(n => n !== '');
+        }
         
         const personality = Array.from(document.querySelectorAll(`.charWatakCheck_${safeCat}:checked`)).map(cb => cb.value);
         const skillIds = Array.from(document.querySelectorAll(`.skillCheck_${safeCat}:checked`)).map(cb => cb.value);
@@ -177,6 +192,7 @@ export const UniverseCharacterModule = {
                 char.personality = personality; 
                 char.background = background;
                 char.appearance = appearance;
+                char.notes = notes;
                 char.dialogues = dialogues;
                 char.skillIds = skillIds; 
                 char.itemIds = itemIds;
@@ -194,6 +210,7 @@ export const UniverseCharacterModule = {
                 skillIds, 
                 itemIds, 
                 familiarIds,
+                notes,
                 dialogues
             });
             this.showAlert("Tokoh berhasil ditambahkan", "success");
@@ -250,6 +267,36 @@ export const UniverseCharacterModule = {
             
             if (char && char.dialogues) {
                 char.dialogues.splice(dlgIndex, 1);
+                this.saveData(true);
+                this.switchView(univId);
+            }
+        }
+    },
+
+    // --- FUNGSI ARRAY CATATAN ---
+    addNote(univId, category, charId) {
+        const inputEl = document.getElementById(`newNote_${charId}`);
+        const text = inputEl.value.trim();
+        
+        if (text) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const char = universe.characters[category].find(c => c.id === charId);
+            
+            if (!char.notes) char.notes = [];
+            char.notes.push(text);
+            
+            this.saveData(true); 
+            this.switchView(univId); 
+        }
+    },
+
+    deleteNote(univId, category, charId, noteIndex) {
+        if (confirm("Hapus catatan ini?")) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const char = universe.characters[category].find(c => c.id === charId);
+            
+            if (char && char.notes) {
+                char.notes.splice(noteIndex, 1);
                 this.saveData(true);
                 this.switchView(univId);
             }
@@ -438,6 +485,11 @@ export const UniverseCharacterModule = {
                             </div>
 
                             <div class="mb-4">
+                                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Catatan Karakter</label>
+                                <textarea id="newNotes_${safeCat}" placeholder="Pisahkan tiap baris catatan dengan Enter..." class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500" rows="3"></textarea>
+                            </div>
+
+                            <div class="mb-4">
                                 <div class="flex justify-between items-end mb-1">
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Contoh Dialog</label>
                                     <button id="btnAiDlg_${safeCat}" onclick="app.generateCharAI('${universe.id}', '${safeCat}', 'dialogues')" class="text-[10px] bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 px-2 py-1 rounded transition font-medium flex items-center gap-1">✨ AI Dialog</button>
@@ -554,15 +606,29 @@ export const UniverseCharacterModule = {
                         : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 line-through">Familiar ${id}</span>`;
         }).join('');
 
-        // Merender list contoh dialog
-        const dialoguesHtml = (char.dialogues || []).map((dlg, index) => `
-            <li class="flex justify-between items-start text-xs italic text-slate-300 border-l-2 border-indigo-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
-                <span class="flex-1 leading-relaxed">"${dlg}"</span>
-                <button onclick="app.deleteDialogue('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-2 px-1 transition" title="Hapus dialog ini">
+        // Map Catatan untuk List Tampilan
+        const notesHtml = (char.notes || []).map((note, index) => `
+            <li class="flex justify-between items-start text-xs text-slate-300 border-l-2 border-amber-500/50 pl-2 py-1 group/note bg-slate-800/30 rounded-r">
+                <span class="flex-1 leading-relaxed whitespace-pre-wrap">${note}</span>
+                <button onclick="app.deleteNote('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/note:opacity-100 ml-2 px-1 transition" title="Hapus catatan ini">
                     &times;
                 </button>
             </li>
         `).join('');
+
+        // Map Dialog (Sudah dimodifikasi cek tanda petik)
+        const dialoguesHtml = (char.dialogues || []).map((dlg, index) => {
+            const displayDlg = dlg.includes('"') || dlg.includes("'") ? dlg : `"${dlg}"`;
+            
+            return `
+                <li class="flex justify-between items-start text-xs italic text-slate-300 border-l-2 border-indigo-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
+                    <span class="flex-1 leading-relaxed">${displayDlg}</span>
+                    <button onclick="app.deleteDialogue('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-2 px-1 transition" title="Hapus dialog ini">
+                        &times;
+                    </button>
+                </li>
+            `;
+        }).join('');
 
         return `
         <div class="bg-slate-900 border border-slate-700 rounded-lg p-4 relative group flex flex-col md:flex-row gap-6 hover:border-indigo-500/50 transition-colors shadow-md">
@@ -585,6 +651,18 @@ export const UniverseCharacterModule = {
                 <div class="grid grid-cols-1 gap-2">
                     <div class="text-[13px] text-slate-300"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Latar Belakang:</span> <span class="leading-relaxed whitespace-pre-wrap">${char.background || '-'}</span></div>
                     <div class="text-[13px] text-slate-300 pt-1.5"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Rupa / Penampilan:</span> <span class="leading-relaxed whitespace-pre-wrap">${char.appearance || '-'}</span></div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-800/80">
+                    <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-2">Catatan Karakter:</span>
+                    <ul class="space-y-1 mb-2 max-h-32 overflow-y-auto pr-1">
+                        ${notesHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada catatan yang ditambahkan.</li>'}
+                    </ul>
+                    
+                    <div class="flex items-start space-x-1.5 pt-1">
+                        <textarea id="newNote_${char.id}" placeholder="Ketik catatan karakter baru... (Tekan Enter untuk menambah)" rows="3" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500 transition" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addNote('${this.currentView}', '${category}', '${char.id}'); }"></textarea>
+                        <button onclick="app.addNote('${this.currentView}', '${category}', '${char.id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-2 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
+                    </div>
                 </div>
 
                 <div class="mt-4 pt-3 border-t border-slate-800/80">
@@ -618,7 +696,7 @@ export const UniverseCharacterModule = {
         </div>
         `;
     }
-}
+};
 
 // Alias agar kompatibel
 export const CharacterBasicModule = UniverseCharacterModule;
