@@ -12,7 +12,7 @@ export const SkillModule = {
         const daftarSemesta = app.data?.universes || [];
 
         return `
-            <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-6 relative">
                 
                 <!-- BAGIAN MANAJEMEN TAG -->
                 <div>
@@ -27,11 +27,11 @@ export const SkillModule = {
                                 <button onclick="app.addSkillTag()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 rounded font-bold transition">+</button>
                             </div>
                             <div class="flex flex-wrap gap-2"> 
-                                <button onclick="app.autoloadTags()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-2 px-3 rounded flex justify-center items-center border border-slate-600 transition">
+                                <button onclick="app.autoloadSkillTags()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-2 px-3 rounded flex justify-center items-center border border-slate-600 transition">
                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                                     Autoload Tag dari Skill
                                 </button>
-                                <button onclick="app.cleanInvalidTags()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-2 px-3 rounded flex justify-center items-center border border-slate-600 transition">
+                                <button onclick="app.cleanInvalidSkillTags()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-2 px-3 rounded flex justify-center items-center border border-slate-600 transition">
                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     Bersihkan Tag Invalid
                                 </button>
@@ -45,10 +45,10 @@ export const SkillModule = {
                                 ${this.data.skillTags.map(t => `
                                     <span class="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded border border-slate-600 flex items-center group">
                                         ${t.name}
-                                        <button onclick="app.editTag('${t.id}')" class="ml-2 text-slate-400 hover:text-amber-400 hidden group-hover:block transition" title="Edit Tag">
+                                        <button onclick="app.editSkillTag('${t.id}')" class="ml-2 text-slate-400 hover:text-amber-400 hidden group-hover:block transition" title="Edit Tag">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                         </button>
-                                        <button onclick="app.deleteTag('${t.id}')" class="ml-1 text-slate-500 hover:text-rose-400 hidden group-hover:block transition" title="Hapus Tag">&times;</button>
+                                        <button onclick="app.deleteSkillTag('${t.id}')" class="ml-1 text-slate-500 hover:text-rose-400 hidden group-hover:block transition" title="Hapus Tag">&times;</button>
                                     </span>
                                 `).join('')}
                             </div>
@@ -59,10 +59,11 @@ export const SkillModule = {
                 <!-- BAGIAN MANAJEMEN SKILL -->
                 <div>
                     <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden shadow-lg">
-                        <div class="bg-slate-700/50 p-3 flex justify-between">
+                        <div class="bg-slate-700/50 p-3 flex justify-between items-center">
                             <h3 class="font-semibold text-slate-200">Daftar Skill <span class="text-xs bg-slate-600 px-2 py-0.5 rounded-full ml-1">${this.data.skills.length}</span></h3>
-                            <button onclick="event.stopPropagation(); app.openAddSkill()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded transition shadow-sm font-medium">
-                                + Tambah Skill
+                            <button onclick="event.stopPropagation(); app.openAddSkill()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded transition shadow-sm font-medium flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Tambah Skill
                             </button>
                         </div>
                         <div id="skillsPanel" class="p-4 ${this.getPanelClass('skillsPanel', '')}">
@@ -75,7 +76,7 @@ export const SkillModule = {
                             
                             <!-- FORM TAMBAH / EDIT SKILL (Hidden by default) -->
                             <div id="addSkillForm" class="${this.getPanelClass('addSkillForm')} bg-slate-900 border border-slate-600 p-4 rounded-lg mb-6 shadow-inner relative">
-                                <button onclick="app.togglePanel('addSkillForm')" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition">&times;</button>
+                                <button onclick="app.setPanelState('addSkillForm', false); app.editSkillId = null;" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition text-lg">&times;</button>
                                 <h4 id="skillFormTitle" class="text-sm font-bold text-indigo-400 mb-4 border-b border-slate-700 pb-2">Buat Skill Baru</h4>
                                 
                                 <div class="mb-4">
@@ -96,7 +97,7 @@ export const SkillModule = {
                                     </div>
                                 </div>
 
-                                <!-- Pengaturan Konteks AI (Volatile/Tidak disave) -->
+                                <!-- Pengaturan Konteks AI (Volatile) -->
                                 <div class="bg-indigo-900/10 border border-indigo-500/20 rounded p-3 mb-4">
                                     <h5 class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                                         <span>✨</span> Konteks AI Enchanter (Opsional)
@@ -113,7 +114,6 @@ export const SkillModule = {
                                     </div>
                                 </div>
                                 
-                                <!-- Textareas with AI Buttons -->
                                 <div class="mb-4">
                                     <div class="flex justify-between items-end mb-1">
                                         <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Latar Belakang / Asal Usul Skill</label>
@@ -140,21 +140,180 @@ export const SkillModule = {
                                 </div>
                             </div>
 
-                            <!-- DAFTAR SKILL (FULL WIDTH LIST & COLLAPSIBLE) -->
-                            <div id="skillGridContainer" class="flex flex-col gap-4">
-                                <!-- Rendered via renderSkillGrid() -->
-                            </div>
+                            <!-- DAFTAR SKILL (KARTU KECIL BERJAJAR DALAM GRID) -->
+                <div id="skillGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <!-- Rendered via renderSkillGrid() -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING DETAIL PANEL (MENGAMBANG SEPERTI WINDOWS) -->
+    <div id="floatingSkillDetail" class="hidden fixed bottom-6 right-6 w-96 max-w-[90vw] bg-slate-800 border-2 border-indigo-500/50 rounded-xl shadow-2xl z-50 flex flex-col transform transition-all duration-300 shadow-indigo-900/20">
+        <!-- Header Jendela (Area Handle Drag) -->
+        <div onmousedown="app.startDragSkill(event, 'floatingSkillDetail')" class="bg-gradient-to-r from-indigo-700 to-indigo-900 px-4 py-3 flex justify-between items-center rounded-t-xl cursor-move border-b border-indigo-500/30 select-none">
+            <span id="floatingSkillTitle" class="font-bold text-sm text-white truncate pr-4 pointer-events-none">Detail Skill</span>
+            <button onclick="event.stopPropagation(); app.closeSkillDetailFloating()" class="text-indigo-200 hover:text-white transition font-bold text-lg leading-none cursor-pointer" title="Tutup Jendela">&times;</button>
+        </div>
+        <!-- Konten Jendela -->
+        <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+            <div>
+                            <span class="font-semibold text-indigo-400 uppercase tracking-wider text-[10px] block mb-1.5">Tags Kategori:</span>
+                            <div id="floatingSkillTags" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-yellow-500 uppercase tracking-wider text-[10px] block mb-1.5">Latar Belakang / Asal Usul:</span>
+                            <div id="floatingSkillBg" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-emerald-400 uppercase tracking-wider text-[10px] block mb-1.5">Deskripsi / Efek:</span>
+                            <div id="floatingSkillDesc" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
                         </div>
                     </div>
                 </div>
+
             </div>
         `;
     },
 
     // ==========================================
+    // --- LOGIKA TAMPILAN FLOATING PANEL ---
+    // ==========================================
+    showSkillDetailFloating(id) {
+        const skill = this.data.skills.find(s => s.id === id);
+        if (!skill) return;
+
+        // Set judul dan deskripsi
+        document.getElementById('floatingSkillTitle').innerText = `✨ ${skill.name}`;
+        document.getElementById('floatingSkillBg').innerHTML = skill.background || '<span class="italic text-slate-500">Tidak ada informasi latar belakang.</span>';
+        document.getElementById('floatingSkillDesc').innerHTML = skill.description || '<span class="italic text-slate-500">Tidak ada deskripsi efek.</span>';
+
+        // Set Tag
+        const tagHtml = skill.tagIds.map(id => {
+            const tag = this.data.skillTags.find(t => t.id === id);
+            return tag ? `<span class="bg-indigo-900/60 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700/50">${tag.name}</span>` : '';
+        }).join('');
+        document.getElementById('floatingSkillTags').innerHTML = tagHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag</span>';
+
+        // Tampilkan panel
+        document.getElementById('floatingSkillDetail').classList.remove('hidden');
+    },
+
+    closeSkillDetailFloating() {
+        document.getElementById('floatingSkillDetail').classList.add('hidden');
+    },
+
+    // ==========================================
+    // --- LOGIKA DRAG & DROP FLOATING PANEL ---
+    // ==========================================
+    dragStateSkill: {
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+        el: null
+    },
+
+    startDragSkill(e, elementId) {
+        // Abaikan klik kanan
+        if (e.button !== 0) return; 
+        
+        e.preventDefault();
+        const el = document.getElementById(elementId);
+        if (!el) return;
+
+        this.dragStateSkill.isDragging = true;
+        this.dragStateSkill.el = el;
+        this.dragStateSkill.startX = e.clientX;
+        this.dragStateSkill.startY = e.clientY;
+
+        // Mengubah posisi dari fixed bottom-right menjadi koordinat absolut kiri-atas (X, Y)
+        // Ini memastikan jendela tidak melompat saat pertama kali digeser
+        const rect = el.getBoundingClientRect();
+        if (!el.style.left || !el.style.top) {
+            el.style.left = rect.left + 'px';
+            el.style.top = rect.top + 'px';
+            el.style.bottom = 'auto';
+            el.style.right = 'auto';
+            // Hapus class tailwind yang mengunci posisi
+            el.classList.remove('bottom-6', 'right-6'); 
+        }
+
+        // Matikan efek transisi (animasi) sementara agar jendela mengikuti mouse tanpa lag/delay
+        el.style.transition = 'none';
+
+        // Daftarkan event mouse ke seluruh dokumen
+        document.onmouseup = () => app.stopDragSkill();
+        document.onmousemove = (e) => app.dragSkill(e);
+    },
+
+    dragSkill(e) {
+        if (!this.dragStateSkill.isDragging || !this.dragStateSkill.el) return;
+        e.preventDefault();
+
+        const el = this.dragStateSkill.el;
+
+        // Hitung jarak pergeseran kursor dari frame sebelumnya
+        const dx = e.clientX - this.dragStateSkill.startX;
+        const dy = e.clientY - this.dragStateSkill.startY;
+
+        // Update titik awal untuk kalkulasi frame selanjutnya
+        this.dragStateSkill.startX = e.clientX;
+        this.dragStateSkill.startY = e.clientY;
+
+        // Hitung target posisi baru
+        let newLeft = el.offsetLeft + dx;
+        let newTop = el.offsetTop + dy;
+
+        // ==========================================
+        // --- PEMBATASAN AREA (VIEWPORT BOUNDARY) ---
+        // ==========================================
+        
+        // 1. Batas Kiri
+        if (newLeft < 0) {
+            newLeft = 0;
+        }
+
+        // 2. Batas Kanan (Lebar Jendela Layar dikurangi Lebar Panel)
+        const maxLeft = window.innerWidth - el.offsetWidth;
+        if (newLeft > maxLeft) {
+            newLeft = maxLeft;
+        }
+
+        // 3. Batas Atas (Jika ada Navbar, ubah 0 menjadi tinggi navbar, misal: 60)
+        const topOffset = 0; 
+        if (newTop < topOffset) {
+            newTop = topOffset;
+        }
+
+        // 4. Batas Bawah (Tinggi Jendela Layar dikurangi Tinggi Panel)
+        const maxTop = window.innerHeight - el.offsetHeight;
+        if (newTop > maxTop) {
+            newTop = maxTop;
+        }
+
+        // Terapkan posisi baru yang sudah aman (di dalam batas)
+        el.style.left = newLeft + "px";
+        el.style.top = newTop + "px";
+    },
+
+    stopDragSkill() {
+        if (this.dragStateSkill.el) {
+            // Nyalakan kembali transisi (meskipun kosong, ini menghapus override inline 'none')
+            this.dragStateSkill.el.style.transition = '';
+        }
+        this.dragStateSkill.isDragging = false;
+        this.dragStateSkill.el = null;
+        
+        // Bersihkan event listener dari dokumen
+        document.onmouseup = null;
+        document.onmousemove = null;
+    },
+
+    // ==========================================
     // --- LOGIKA TAG SKILL ---
     // ==========================================
-    
     addSkillTag() {
         const input = document.getElementById('newSkillTagName');
         const name = input.value.trim();
@@ -165,7 +324,7 @@ export const SkillModule = {
         }
     },
 
-    editTag(id) {
+    editSkillTag(id) {
         const tag = this.data.skillTags.find(t => t.id === id);
         if (!tag) return;
         const newName = prompt("Ubah nama tag:", tag.name);
@@ -176,7 +335,7 @@ export const SkillModule = {
         }
     },
 
-    deleteTag(id) {
+    deleteSkillTag(id) {
         if(confirm("Hapus tag ini? (Skill yang memakainya akan kehilangan referensi tag ini)")) {
             this.data.skillTags = this.data.skillTags.filter(t => t.id !== id);
             this.saveData();
@@ -184,7 +343,7 @@ export const SkillModule = {
         }
     },
 
-    autoloadTags() {
+    autoloadSkillTags() {
         const tagIds = this.data.skillTags.map(t => t.id);
         let addedCount = 0;
         
@@ -207,7 +366,7 @@ export const SkillModule = {
         }
     },
 
-    cleanInvalidTags() {
+    cleanInvalidSkillTags() {
         const validTagIds = this.data.skillTags.map(t => t.id);
         let cleanedCount = 0;
         
@@ -231,7 +390,6 @@ export const SkillModule = {
     // ==========================================
     // --- LOGIKA FORM SKILL (CRUD) ---
     // ==========================================
-
     openAddSkill() {
         this.editSkillId = null;
         document.getElementById('skillFormTitle').innerText = "Buat Skill Baru";
@@ -240,7 +398,6 @@ export const SkillModule = {
         document.getElementById('newSkillDesc').value = '';
         document.querySelectorAll('.tagCheck').forEach(cb => cb.checked = false);
         
-        // Reset pengaturan AI
         const aiUniverse = document.getElementById('aiSkillUniverse');
         if(aiUniverse) aiUniverse.value = '';
         const aiDeepLore = document.getElementById('aiSkillDeepLore');
@@ -248,7 +405,7 @@ export const SkillModule = {
 
         this.setPanelState('addSkillForm', true);
         document.getElementById('saveSkillBtn').innerText = "Simpan Skill";
-        document.getElementById('addSkillForm').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('addSkillForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     openEditSkill(id) {
@@ -265,7 +422,6 @@ export const SkillModule = {
             cb.checked = skill.tagIds.includes(cb.value);
         });
 
-        // Reset pengaturan AI
         const aiUniverse = document.getElementById('aiSkillUniverse');
         if(aiUniverse) aiUniverse.value = '';
         const aiDeepLore = document.getElementById('aiSkillDeepLore');
@@ -273,7 +429,7 @@ export const SkillModule = {
 
         this.setPanelState('addSkillForm', true);
         document.getElementById('saveSkillBtn').innerText = "Update Skill";
-        document.getElementById('addSkillForm').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('addSkillForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     saveSkill() {
@@ -313,6 +469,8 @@ export const SkillModule = {
         if(confirm("Yakin ingin menghapus skill ini? Tokoh di seluruh semesta yang menggunakannya akan mendapatkan peringatan hilang (Invalid).")) {
             this.data.skills = this.data.skills.filter(s => s.id !== id);
             this.saveData();
+            // Tutup floating panel jika skill yang dihapus sedang dibuka
+            this.closeSkillDetailFloating();
             this.switchView('skills');
         }
     },
@@ -334,7 +492,6 @@ export const SkillModule = {
         let targetEl, btnEl, btnId, originalBtnText;
         let aiFocusRule = "";
         
-        // Aturan AI: Sangat Ringkas, Kalimat Efektif, Tanpa Metafora/Puitis
         const aiLengthRule = "Hasilkan deskripsi secara SANGAT RINGKAS menggunakan kalimat efektif (maksimal 1 paragraf pendek). TANPA metafora, TANPA diksi puitis, dan TANPA majas. Gunakan bahasa yang langsung pada intinya (to-the-point).";
 
         const currentBg = document.getElementById('newSkillBg').value.trim();
@@ -355,7 +512,6 @@ export const SkillModule = {
 
         const draftText = targetEl.value.trim();
 
-        // Konstruksi Konteks Semesta (Volatile)
         const univId = document.getElementById('aiSkillUniverse')?.value;
         const useDeepLore = document.getElementById('aiSkillDeepLore')?.checked;
         let universeContext = "Semesta tidak ditentukan secara spesifik (General Fantasy/Sci-Fi).";
@@ -372,7 +528,6 @@ export const SkillModule = {
             }
         }
 
-        // Payload untuk AI
         const payload = {
             moduleName: `Skill-${targetField.toUpperCase()}`,
             targetData: {
@@ -388,7 +543,6 @@ export const SkillModule = {
             }
         };
 
-        // UI Loading
         btnEl = document.getElementById(btnId);
         btnEl.disabled = true;
         btnEl.classList.add('opacity-50', 'cursor-wait');
@@ -409,9 +563,8 @@ export const SkillModule = {
     },
 
     // ==========================================
-    // --- RENDER FULL-WIDTH CARD LIST ---
+    // --- RENDER GRID KARTU (TAMPILAN RINGKAS) ---
     // ==========================================
-
     renderSkillGrid() {
         const container = document.getElementById('skillGridContainer');
         if(!container) return;
@@ -441,66 +594,37 @@ export const SkillModule = {
     },
 
     renderSkillCard(skill) {
+        // Tag dibatasi dan dibuat sangat kecil (truncate)
         const skillTags = skill.tagIds.map(id => {
             const tag = this.data.skillTags.find(t => t.id === id);
-            return tag ? `<span class="bg-indigo-900/60 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700/50 font-medium">${tag.name}</span>` 
-                       : `<span class="bg-rose-900/60 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through" title="Tag sudah dihapus">Invalid</span>`;
-        }).join(' ');
-
-        // Panel ID dinamis per Skill untuk Collapsible/Toggle
-        const panelId = `skillDetails_${skill.id}`;
-        // Ambil status apakah disembunyikan atau tidak (Default: hidden)
-        const hiddenClass = (this.getPanelClass) ? this.getPanelClass(panelId) : 'hidden';
+            return tag ? `<span class="bg-indigo-900/60 text-indigo-300 text-[9px] px-1.5 py-0.5 rounded border border-indigo-700/50 truncate max-w-[75px] block" title="${tag.name}">${tag.name}</span>` 
+                       : `<span class="bg-rose-900/60 text-rose-300 text-[9px] px-1.5 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
+        }).join('');
 
         return `
-        <div class="bg-slate-900 border border-slate-700 rounded-lg relative group shadow-md transition-colors duration-300 hover:border-indigo-500/50 flex flex-col">
+        <div onclick="app.showSkillDetailFloating('${skill.id}')" class="bg-slate-900 border border-slate-700 rounded-lg p-3 relative group shadow-md transition-all duration-300 hover:border-indigo-500/70 hover:shadow-indigo-900/20 cursor-pointer flex flex-col justify-between min-h-[95px] overflow-hidden">
             
-            <!-- HEADER (Bisa Diklik untuk Menyembunyikan / Menampilkan Detail) -->
-            <div class="p-4 flex justify-between items-center cursor-pointer rounded-t-lg hover:bg-slate-800/50 transition" onclick="app.togglePanel('${panelId}')">
-                <h4 class="font-bold text-yellow-400 text-lg truncate pr-4">${skill.name}</h4>
-                
-                <div class="flex items-center space-x-3">
-                    <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition z-10">
-                        <button onclick="event.stopPropagation(); app.openEditSkill('${skill.id}')" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Skill">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-                        <button onclick="event.stopPropagation(); app.deleteSkill('${skill.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Skill">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </div>
-                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            <div class="z-10">
+                <h4 class="font-bold text-yellow-400 text-sm truncate mb-2 drop-shadow-md" title="${skill.name}">${skill.name}</h4>
+                <div class="flex flex-wrap gap-1 overflow-hidden max-h-[40px]">
+                    ${skillTags || '<span class="text-[9px] text-slate-600 italic bg-slate-800 px-1.5 py-0.5 rounded">No Tag</span>'}
                 </div>
             </div>
             
-            <!-- DETAIL KONTEN SKILL (Tersembunyi secara Default) -->
-            <div id="${panelId}" class="${hiddenClass}">
-                <div class="p-4 pt-0 border-t border-slate-700/50 flex flex-col md:flex-row gap-6 mt-2">
-                    
-                    <!-- Konten Utama (Kiri) -->
-                    <div class="flex-1 space-y-3 pr-0 md:pr-14">
-                        <div class="grid grid-cols-1 gap-3">
-                            <div class="text-[13px] text-slate-300">
-                                <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1">Latar Belakang / Asal Usul:</span> 
-                                <div class="leading-relaxed whitespace-pre-wrap">${skill.background || '<span class="italic text-slate-500">-</span>'}</div>
-                            </div>
-                            <div class="text-[13px] text-slate-300 pt-2 border-t border-slate-800">
-                                <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1">Deskripsi / Efek Skill:</span> 
-                                <div class="leading-relaxed whitespace-pre-wrap">${skill.description || '<span class="italic text-slate-500">-</span>'}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Panel Samping (Kanan) -->
-                    <div class="w-full md:w-1/4 flex flex-col gap-3 border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6">
-                        <div>
-                            <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Tag Kategori Skill:</span>
-                            <div class="flex flex-wrap gap-1">${skillTags || '<span class="text-[10px] text-slate-600 italic bg-slate-800 px-2 py-0.5 rounded">Tanpa Tag</span>'}</div>
-                        </div>
-                    </div>
-
-                </div>
+            <!-- Icon Indikator Klik -->
+            <div class="absolute bottom-2 right-2 opacity-10 group-hover:opacity-30 transition pointer-events-none">
+                <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
             </div>
-            
+
+            <!-- Tombol Aksi Melayang (Kecil di Pojok Kanan Atas) -->
+            <div class="absolute top-1.5 right-1.5 flex space-x-1 opacity-0 group-hover:opacity-100 transition z-20 bg-slate-900/80 p-0.5 rounded backdrop-blur-sm">
+                <button onclick="event.stopPropagation(); app.openEditSkill('${skill.id}')" class="text-slate-400 hover:text-amber-400 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Edit Skill">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </button>
+                <button onclick="event.stopPropagation(); app.deleteSkill('${skill.id}')" class="text-slate-400 hover:text-rose-500 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Skill">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
         </div>
         `;
     }

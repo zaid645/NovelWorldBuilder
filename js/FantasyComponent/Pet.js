@@ -3,6 +3,7 @@
  * Mengurus semua logika tampilan dan manipulasi data untuk Pet dan Tag-nya.
  * Terintegrasi penuh dengan AI Enchanter untuk Generate Penampilan, Deskripsi, dan Dialog.
  * Terintegrasi dengan WatakList untuk manajemen kepribadian.
+ * Dilengkapi dengan Floating Detail Panel bergaya grid.
  */
 export const PetModule = {
 
@@ -14,7 +15,7 @@ export const PetModule = {
         const daftarSemesta = app.data.universes || [];
 
         return `
-            <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-6 relative">
                 
                 <!-- BAGIAN MANAJEMEN TAG FAMILIAR -->
                 <div>
@@ -69,13 +70,14 @@ export const PetModule = {
                         <div id="familiarsPanel" class="p-4">
                             
                             <!-- Search Bar -->
-                            <div class="mb-4">
-                                <input type="text" id="searchFamiliarInput" placeholder="Cari nama familiar atau tag..." class="bg-slate-900 border border-slate-700 rounded p-2.5 text-sm w-full focus:border-fuchsia-500 focus:outline-none transition" oninput="app.renderFamiliarGrid()">
+                            <div class="mb-4 relative">
+                                <input type="text" id="searchFamiliarInput" placeholder="Cari nama familiar atau tag..." class="bg-slate-900 border border-slate-700 rounded p-2.5 pl-9 text-sm w-full focus:border-fuchsia-500 focus:outline-none transition" oninput="app.renderFamiliarGrid()">
+                                <svg class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </div>
                             
                             <!-- FORM TAMBAH/EDIT FAMILIAR -->
                             <div id="addFamiliarForm" class="hidden bg-slate-900 border border-slate-600 p-4 rounded-lg mb-6 shadow-inner relative">
-                                <button onclick="app.togglePanel('addFamiliarForm')" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition">&times;</button>
+                                <button onclick="app.togglePanel('addFamiliarForm')" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition text-lg">&times;</button>
                                 <h4 id="familiarFormTitle" class="text-sm font-bold text-fuchsia-400 mb-4 border-b border-slate-700 pb-2">Buat Familiar Baru</h4>
                                 
                                 <!-- Kebutuhan Dasar & Watak -->
@@ -152,7 +154,7 @@ export const PetModule = {
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                     <div>
                                         <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Skill Khusus:</label>
-                                        <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                                        <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
                                             ${this.data.skills.map(s => `
                                                 <label class="flex items-center space-x-2 cursor-pointer">
                                                     <input type="checkbox" value="${s.id}" class="famSkillCheck form-checkbox rounded text-indigo-500 bg-slate-700 border-slate-600">
@@ -163,7 +165,7 @@ export const PetModule = {
                                     </div>
                                     <div>
                                         <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Item Bawaan:</label>
-                                        <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                                        <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
                                             ${this.data.items.map(i => `
                                                 <label class="flex items-center space-x-2 cursor-pointer">
                                                     <input type="checkbox" value="${i.id}" class="famItemCheck form-checkbox rounded text-cyan-500 bg-slate-700 border-slate-600">
@@ -192,13 +194,211 @@ export const PetModule = {
                                 </div>
                             </div>
 
-                            <!-- DAFTAR FAMILIAR (FULL WIDTH LIST & COLLAPSIBLE) -->
-                            <div id="familiarGridContainer" class="flex flex-col gap-4 w-full"></div>
+                            <!-- DAFTAR FAMILIAR (KARTU KECIL BERJAJAR DALAM GRID) -->
+                            <div id="familiarGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full">
+                                <!-- Rendered via renderFamiliarGrid() -->
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- FLOATING DETAIL PANEL (MENGAMBANG SEPERTI WINDOWS) -->
+                <div id="floatingFamDetail" class="hidden fixed bottom-6 right-6 w-96 max-w-[90vw] bg-slate-800 border-2 border-fuchsia-500/50 rounded-xl shadow-2xl z-50 flex flex-col transform transition-all duration-300 shadow-fuchsia-900/20">
+                    <!-- Header Jendela (Area Handle Drag) -->
+                    <div onmousedown="app.startDragFam(event, 'floatingFamDetail')" class="bg-gradient-to-r from-fuchsia-700 to-fuchsia-900 px-4 py-3 flex justify-between items-center rounded-t-xl cursor-move border-b border-fuchsia-500/30 select-none">
+                        <span id="floatingFamTitle" class="font-bold text-sm text-white truncate pr-4 pointer-events-none">Detail Familiar</span>
+                        <button onclick="event.stopPropagation(); app.closeFamiliarDetailFloating()" class="text-fuchsia-200 hover:text-white transition font-bold text-lg leading-none cursor-pointer" title="Tutup Jendela">&times;</button>
+                    </div>
+                    <!-- Konten Jendela -->
+                    <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        <div>
+                            <span class="font-semibold text-fuchsia-400 uppercase tracking-wider text-[10px] block mb-1.5">Tags Kategori & Watak:</span>
+                            <div id="floatingFamTags" class="flex flex-wrap gap-1.5 mb-1.5"></div>
+                            <div id="floatingFamWataks" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div class="pt-2 border-t border-slate-700/60 flex flex-col gap-2">
+                            <div>
+                                <span class="font-semibold text-indigo-400 uppercase tracking-wider text-[10px] block mb-1.5">Skill Tambahan:</span>
+                                <div id="floatingFamSkills" class="flex flex-wrap gap-1.5"></div>
+                            </div>
+                            <div>
+                                <span class="font-semibold text-cyan-400 uppercase tracking-wider text-[10px] block mb-1.5">Item Bawaan:</span>
+                                <div id="floatingFamItems" class="flex flex-wrap gap-1.5"></div>
+                            </div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-1.5">Wujud / Penampilan:</span>
+                            <div id="floatingFamApp" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-emerald-400 uppercase tracking-wider text-[10px] block mb-1.5">Latar Belakang:</span>
+                            <div id="floatingFamDesc" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-yellow-400 uppercase tracking-wider text-[10px] block mb-1.5">Contoh Suara / Dialog:</span>
+                            <ul id="floatingFamDialogues" class="space-y-1 mb-2 max-h-32 overflow-y-auto pr-1"></ul>
+                            <div id="floatingFamDlgInputContainer"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         `;
+    },
+
+    // ==========================================
+    // --- LOGIKA TAMPILAN FLOATING PANEL ---
+    // ==========================================
+    activeFamId: null,
+
+    showFamiliarDetailFloating(id) {
+        const fam = this.data.familiars.find(f => f.id === id);
+        if (!fam) return;
+        this.activeFamId = id;
+
+        // Set judul dan deskripsi teks
+        document.getElementById('floatingFamTitle').innerText = `🐾 ${fam.name}`;
+        document.getElementById('floatingFamApp').innerHTML = fam.appearance || '<span class="italic text-slate-500">Tidak ada informasi penampilan.</span>';
+        document.getElementById('floatingFamDesc').innerHTML = fam.description || fam.background || '<span class="italic text-slate-500">Tidak ada deskripsi efek.</span>';
+
+        // Set Tag Kategori
+        const tagHtml = (fam.tagIds || []).map(tagId => {
+            const tag = this.data.familiarTags.find(t => t.id === tagId);
+            return tag ? `<span class="bg-fuchsia-900/60 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded border border-fuchsia-700/50">${tag.name}</span>` : '';
+        }).join('');
+        document.getElementById('floatingFamTags').innerHTML = tagHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag</span>';
+
+        // Set Watak
+        const masterWatakList = app.data.watakList || [];
+        let parsedWataks = [];
+        if (Array.isArray(fam.personality)) parsedWataks = fam.personality;
+        else if (typeof fam.personality === 'string' && fam.personality.trim() !== '') parsedWataks = fam.personality.split(',').map(s => s.trim());
+        
+        const watakHtml = parsedWataks.map(w => {
+            const isValid = masterWatakList.some(master => master.toLowerCase() === w.toLowerCase());
+            return isValid 
+                ? `<span class="bg-purple-900/60 text-purple-300 text-[10px] px-2 py-0.5 rounded border border-purple-700/50 font-medium">🎭 ${w}</span>`
+                : `<span class="bg-rose-900/60 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through">Invalid</span>`;
+        }).join('');
+        document.getElementById('floatingFamWataks').innerHTML = watakHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Watak</span>';
+
+        // Set Skills
+        const skillHtml = (fam.skillIds || []).map(sId => {
+            const skill = this.data.skills.find(s => s.id === sId);
+            return skill ? `<span class="bg-indigo-900/60 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700/50">✨ ${skill.name}</span>` : '';
+        }).join('');
+        document.getElementById('floatingFamSkills').innerHTML = skillHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded border border-slate-700/50">Tidak ada skill</span>';
+
+        // Set Items
+        const itemHtml = (fam.itemIds || []).map(iId => {
+            const item = this.data.items.find(i => i.id === iId);
+            return item ? `<span class="bg-cyan-900/60 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-700/50">🎒 ${item.name}</span>` : '';
+        }).join('');
+        document.getElementById('floatingFamItems').innerHTML = itemHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded border border-slate-700/50">Tidak ada item</span>';
+
+        // Set Dialogues
+        const dialoguesHtml = (fam.dialogues || []).map((dlg, index) => `
+            <li class="flex justify-between items-start text-[11px] italic text-slate-300 border-l-2 border-fuchsia-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r mb-1">
+                <span class="flex-1 leading-relaxed">"${dlg}"</span>
+                <button onclick="app.deleteFamiliarDialogue('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-1.5 transition px-1" title="Hapus baris ini">&times;</button>
+            </li>
+        `).join('');
+        document.getElementById('floatingFamDialogues').innerHTML = dialoguesHtml || '<li class="text-[10px] text-slate-500 italic">Belum ada dialog.</li>';
+        
+        // Render Input Box for Dialogue
+        document.getElementById('floatingFamDlgInputContainer').innerHTML = `
+            <div class="flex items-center space-x-1.5 pt-1">
+                <input type="text" id="newFamDlg_${fam.id}" placeholder="Ketik kalimat/suara..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-fuchsia-500 transition" onkeydown="if(event.key === 'Enter') app.addFamiliarDialogue('${fam.id}')">
+                <button onclick="app.addFamiliarDialogue('${fam.id}')" class="bg-fuchsia-600/80 hover:bg-fuchsia-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm">+</button>
+            </div>
+        `;
+
+        // Tampilkan panel
+        document.getElementById('floatingFamDetail').classList.remove('hidden');
+    },
+
+    closeFamiliarDetailFloating() {
+        document.getElementById('floatingFamDetail').classList.add('hidden');
+        this.activeFamId = null;
+    },
+
+    // ==========================================
+    // --- LOGIKA DRAG & DROP FLOATING PANEL ---
+    // ==========================================
+    dragStateFam: {
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+        el: null
+    },
+
+    startDragFam(e, elementId) {
+        if (e.button !== 0) return; // Abaikan klik kanan
+        
+        e.preventDefault();
+        const el = document.getElementById(elementId);
+        if (!el) return;
+
+        this.dragStateFam.isDragging = true;
+        this.dragStateFam.el = el;
+        this.dragStateFam.startX = e.clientX;
+        this.dragStateFam.startY = e.clientY;
+
+        const rect = el.getBoundingClientRect();
+        if (!el.style.left || !el.style.top) {
+            el.style.left = rect.left + 'px';
+            el.style.top = rect.top + 'px';
+            el.style.bottom = 'auto';
+            el.style.right = 'auto';
+            el.classList.remove('bottom-6', 'right-6'); 
+        }
+
+        el.style.transition = 'none';
+
+        document.onmouseup = () => app.stopDragFam();
+        document.onmousemove = (e) => app.dragFam(e);
+    },
+
+    dragFam(e) {
+        if (!this.dragStateFam.isDragging || !this.dragStateFam.el) return;
+        e.preventDefault();
+
+        const el = this.dragStateFam.el;
+
+        const dx = e.clientX - this.dragStateFam.startX;
+        const dy = e.clientY - this.dragStateFam.startY;
+
+        this.dragStateFam.startX = e.clientX;
+        this.dragStateFam.startY = e.clientY;
+
+        let newLeft = el.offsetLeft + dx;
+        let newTop = el.offsetTop + dy;
+
+        if (newLeft < 0) newLeft = 0;
+        const maxLeft = window.innerWidth - el.offsetWidth;
+        if (newLeft > maxLeft) newLeft = maxLeft;
+        
+        const topOffset = 0; 
+        if (newTop < topOffset) newTop = topOffset;
+        const maxTop = window.innerHeight - el.offsetHeight;
+        if (newTop > maxTop) newTop = maxTop;
+
+        el.style.left = newLeft + "px";
+        el.style.top = newTop + "px";
+    },
+
+    stopDragFam() {
+        if (this.dragStateFam.el) {
+            this.dragStateFam.el.style.transition = '';
+        }
+        this.dragStateFam.isDragging = false;
+        this.dragStateFam.el = null;
+        
+        document.onmouseup = null;
+        document.onmousemove = null;
     },
 
     // ==========================================
@@ -377,6 +577,7 @@ export const PetModule = {
             this.showAlert("Familiar baru disimpan", "success");
         }
 
+        this.closeFamiliarDetailFloating(); // Tutup agar update list bersih
         this.setPanelState('addFamiliarForm', false);
         this.saveData(true);
         this.switchView('familiars'); 
@@ -385,15 +586,16 @@ export const PetModule = {
     deleteFamiliar(id) {
         if(confirm("Yakin ingin menghapus familiar ini secara permanen?")) {
             this.data.familiars = this.data.familiars.filter(f => f.id !== id);
+            this.closeFamiliarDetailFloating();
             this.setPanelState('addFamiliarForm', false);
             this.saveData(); this.switchView('familiars');
         }
     },
 
-    // --- LOGIKA ARRAY DIALOG PET SECARA CEPAT DARI CARD ---
+    // --- LOGIKA ARRAY DIALOG PET SECARA CEPAT DARI CARD/FLOATING ---
     addFamiliarDialogue(famId) {
         const inputEl = document.getElementById(`newFamDlg_${famId}`);
-        const text = inputEl.value.trim();
+        const text = inputEl ? inputEl.value.trim() : "";
         
         if (text) {
             const fam = this.data.familiars.find(f => f.id === famId);
@@ -402,6 +604,11 @@ export const PetModule = {
             
             this.saveData(true);
             this.switchView('familiars'); 
+            
+            // Refresh jendela floating detail jika sedang terbuka
+            if(this.activeFamId === famId) {
+                this.showFamiliarDetailFloating(famId);
+            }
         }
     },
 
@@ -412,6 +619,11 @@ export const PetModule = {
                 fam.dialogues.splice(dlgIndex, 1);
                 this.saveData(true);
                 this.switchView('familiars');
+                
+                // Refresh jendela floating detail jika sedang terbuka
+                if(this.activeFamId === famId) {
+                    this.showFamiliarDetailFloating(famId);
+                }
             }
         }
     },
@@ -577,7 +789,7 @@ export const PetModule = {
     },
 
     renderFamiliarCard(fam) {
-        // Validasi Dinamis untuk Watak String Array (Cek terhadap Master Watak)
+        // Validasi Dinamis untuk Watak String Array
         const masterWatakList = app.data.watakList || [];
         let parsedWataks = [];
         
@@ -587,116 +799,63 @@ export const PetModule = {
             parsedWataks = fam.personality.split(',').map(s => s.trim());
         }
 
-        const famWataks = parsedWataks.map(w => {
-            // Pengecekan case-insensitive
+        // Tampilkan maks 2 watak dan 2 tag di Card kecil (truncate style)
+        const famWataks = parsedWataks.slice(0, 2).map(w => {
             const isValid = masterWatakList.some(master => master.toLowerCase() === w.toLowerCase());
             return isValid 
-                ? `<span class="bg-purple-900/40 text-purple-300 text-[10px] px-2 py-0.5 rounded border border-purple-700/60 font-medium">${w}</span>`
-                : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through" title="Watak dihapus dari Master">Invalid</span>`;
-        }).join(' ');
+                ? `<span class="bg-purple-900/60 text-purple-300 text-[9px] px-1.5 py-0.5 rounded border border-purple-700/60 truncate max-w-[65px] block" title="${w}">${w}</span>`
+                : `<span class="bg-rose-900/50 text-rose-300 text-[9px] px-1.5 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
+        }).join('');
 
-        // Relasi ID (Tag, Skill, Item)
-        const famTags = (fam.tagIds || []).map(id => {
+        const famTags = (fam.tagIds || []).slice(0, 2).map(id => {
             const tag = this.data.familiarTags.find(t => t.id === id);
-            return tag ? `<span class="bg-fuchsia-900/50 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded border border-fuchsia-700 font-medium">${tag.name}</span>` 
-                        : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through" title="Tag terhapus">Invalid</span>`;
-        }).join(' ');
+            return tag ? `<span class="bg-fuchsia-900/60 text-fuchsia-300 text-[9px] px-1.5 py-0.5 rounded border border-fuchsia-700/50 truncate max-w-[65px] block" title="${tag.name}">${tag.name}</span>` 
+                        : '';
+        }).join('');
 
-        const famSkills = (fam.skillIds || []).map(id => {
-            const skill = this.data.skills.find(s => s.id === id);
-            return skill ? `<span class="bg-indigo-900/50 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700 font-medium">${skill.name}</span>` 
-                            : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through" title="Skill terhapus">Invalid</span>`;
-        }).join(' ');
-
-        const famItems = (fam.itemIds || []).map(id => {
-            const item = this.data.items.find(i => i.id === id);
-            return item ? `<span class="bg-cyan-900/50 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-700 font-medium">${item.name}</span>` 
-                        : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through" title="Item terhapus">Invalid</span>`;
-        }).join(' ');
-
-        // Membangun daftar dialog dengan scrollable area
-        const dialoguesHtml = (fam.dialogues || []).map((dlg, index) => `
-            <li class="flex justify-between items-start text-[11px] italic text-slate-300 border-l-2 border-fuchsia-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
-                <span class="flex-1 leading-relaxed">"${dlg}"</span>
-                <button onclick="app.deleteFamiliarDialogue('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-1.5 transition px-1" title="Hapus baris ini">
-                    &times;
-                </button>
-            </li>
-        `).join('');
-
-        // Panel ID dinamis per Familiar untuk Collapsible/Toggle
-        const panelId = `familiarDetails_${fam.id}`;
-        const hiddenClass = (this.getPanelClass) ? this.getPanelClass(panelId) : 'hidden';
+        // Cek Indikator Ekstra
+        const extraWatakCount = Math.max(0, parsedWataks.length - 2);
+        const extraTagCount = Math.max(0, (fam.tagIds || []).length - 2);
+        const hasExtra = (extraWatakCount + extraTagCount) > 0;
+        
+        const hasSkills = fam.skillIds && fam.skillIds.length > 0;
+        const hasItems = fam.itemIds && fam.itemIds.length > 0;
+        const hasDialogues = fam.dialogues && fam.dialogues.length > 0;
 
         return `
-        <div class="bg-slate-900 border border-slate-700 rounded-lg relative group shadow-md transition-colors duration-300 hover:border-fuchsia-500/50 flex flex-col">
+        <div onclick="app.showFamiliarDetailFloating('${fam.id}')" class="bg-slate-900 border border-slate-700 rounded-lg p-3 relative group shadow-md transition-all duration-300 hover:border-fuchsia-500/70 hover:shadow-fuchsia-900/20 cursor-pointer flex flex-col justify-between min-h-[95px] overflow-hidden">
             
-            <!-- HEADER (Bisa Diklik untuk Menyembunyikan / Menampilkan Detail) -->
-            <div class="p-4 flex justify-between items-center cursor-pointer rounded-t-lg hover:bg-slate-800/50 transition" onclick="app.togglePanel('${panelId}')">
-                <div class="flex flex-col pr-4">
-                    <h4 class="font-bold text-fuchsia-400 text-lg truncate">${fam.name}</h4>
-                    <div class="flex flex-wrap gap-1 mt-1">${famWataks || '<span class="text-[10px] text-slate-500 italic bg-slate-800 px-2 py-0.5 rounded">Belum ada Watak</span>'}</div>
+            <div class="z-10">
+                <h4 class="font-bold text-fuchsia-400 text-sm truncate mb-1.5 drop-shadow-md" title="${fam.name}">${fam.name}</h4>
+                <div class="flex flex-wrap gap-1 overflow-hidden max-h-[40px]">
+                    ${famWataks || ''}
+                    ${famTags || ''}
+                    ${hasExtra ? `<span class="bg-slate-800 text-slate-400 text-[9px] px-1.5 py-0.5 rounded border border-slate-700/50 block">+${extraWatakCount + extraTagCount}</span>` : ''}
+                    ${(!famWataks && !famTags) ? '<span class="text-[9px] text-slate-600 italic bg-slate-800 px-1.5 py-0.5 rounded">Tanpa Label</span>' : ''}
                 </div>
                 
-                <div class="flex items-center space-x-3">
-                    <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition z-10">
-                        <button onclick="event.stopPropagation(); app.openEditFamiliar('${fam.id}')" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Familiar">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-                        <button onclick="event.stopPropagation(); app.deleteFamiliar('${fam.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Familiar">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </div>
-                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-            </div>
-
-            <!-- DETAIL KONTEN FAMILIAR (Tersembunyi secara Default) -->
-            <div id="${panelId}" class="${hiddenClass}">
-                <div class="p-4 pt-0 border-t border-slate-700/50 flex flex-col md:flex-row gap-6 mt-2">
-                    
-                    <!-- Konten Utama (Kiri) -->
-                    <div class="flex-1 space-y-3 pr-0 md:pr-14">
-                        <div class="grid grid-cols-1 gap-3">
-                            <div class="text-[13px] text-slate-300">
-                                <span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-1">Wujud Fisik / Penampilan:</span> 
-                                <div class="leading-relaxed whitespace-pre-wrap">${fam.appearance || '<span class="italic text-slate-500">-</span>'}</div>
-                            </div>
-                            <div class="text-[13px] text-slate-300 pt-2 border-t border-slate-800">
-                                <span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-1">Latar Belakang / Deskripsi:</span> 
-                                <div class="leading-relaxed whitespace-pre-wrap">${fam.description || fam.background || '<span class="italic text-slate-500">-</span>'}</div>
-                            </div>
-                            <div class="pt-2 border-t border-slate-800">
-                                <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Contoh Suara / Dialog:</span>
-                                <ul class="space-y-1 mb-2 max-h-32 overflow-y-auto pr-1">
-                                    ${dialoguesHtml || '<li class="text-[10px] text-slate-500 italic">Belum ada dialog.</li>'}
-                                </ul>
-                                <div class="flex items-center space-x-1.5 pt-1">
-                                    <input type="text" id="newFamDlg_${fam.id}" placeholder="Ketik kalimat/suara..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-fuchsia-500 transition" onkeydown="if(event.key === 'Enter') app.addFamiliarDialogue('${fam.id}')">
-                                    <button onclick="app.addFamiliarDialogue('${fam.id}')" class="bg-fuchsia-600/80 hover:bg-fuchsia-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm">+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Panel Samping (Kanan) -->
-                    <div class="w-full md:w-1/3 flex flex-col gap-3 border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6">
-                        <div>
-                            <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Tag Kategori:</span>
-                            <div class="flex flex-wrap gap-1">${famTags || '<span class="text-[10px] text-slate-600 italic bg-slate-800 px-2 py-0.5 rounded">Kosong</span>'}</div>
-                        </div>
-                        <div class="pt-2 border-t border-slate-800/50">
-                            <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Skill Tambahan:</span>
-                            <div class="flex flex-wrap gap-1">${famSkills || '<span class="text-[10px] text-slate-600 italic bg-slate-800 px-2 py-0.5 rounded">Kosong</span>'}</div>
-                        </div>
-                        <div class="pt-2 border-t border-slate-800/50">
-                            <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Item Bawaan:</span>
-                            <div class="flex flex-wrap gap-1">${famItems || '<span class="text-[10px] text-slate-600 italic bg-slate-800 px-2 py-0.5 rounded">Kosong</span>'}</div>
-                        </div>
-                    </div>
+                <!-- Indikator Ekstra -->
+                <div class="flex gap-1 mt-1">
+                    ${hasSkills ? '<span class="text-[9px] text-indigo-400" title="Memiliki Skill">✨</span>' : ''}
+                    ${hasItems ? '<span class="text-[9px] text-cyan-400" title="Memiliki Item">🎒</span>' : ''}
+                    ${hasDialogues ? '<span class="text-[9px] text-yellow-400" title="Memiliki Dialog">💬</span>' : ''}
                 </div>
             </div>
             
+            <!-- Icon Indikator Klik -->
+            <div class="absolute bottom-2 right-2 opacity-10 group-hover:opacity-30 transition pointer-events-none">
+                <svg class="w-8 h-8 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+            </div>
+
+            <!-- Tombol Aksi Melayang (Kecil di Pojok Kanan Atas) -->
+            <div class="absolute top-1.5 right-1.5 flex space-x-1 opacity-0 group-hover:opacity-100 transition z-20 bg-slate-900/80 p-0.5 rounded backdrop-blur-sm">
+                <button onclick="event.stopPropagation(); app.openEditFamiliar('${fam.id}')" class="text-slate-400 hover:text-amber-400 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Edit Familiar">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </button>
+                <button onclick="event.stopPropagation(); app.deleteFamiliar('${fam.id}')" class="text-slate-400 hover:text-rose-500 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Familiar">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
         </div>
         `;
     }

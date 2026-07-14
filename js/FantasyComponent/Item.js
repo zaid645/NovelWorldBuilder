@@ -2,6 +2,7 @@
  * ItemModule
  * Mengurus semua logika tampilan dan manipulasi data untuk Item dan Tag-nya.
  * Terintegrasi dengan AI Enchanter untuk Generate Penampilan dan Deskripsi Item.
+ * Dilengkapi dengan Floating Detail Panel bergaya grid.
  */
 
 export const ItemModule = {
@@ -18,7 +19,7 @@ export const ItemModule = {
         );
 
         return `
-            <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-6 relative">
                 
                 <!-- BAGIAN MANAJEMEN TAG ITEM -->
                 <div>
@@ -74,13 +75,14 @@ export const ItemModule = {
                         <div id="itemsPanel" class="p-4">
                             
                             <!-- Search Bar -->
-                            <div class="mb-4">
-                                <input type="text" id="searchItemInput" placeholder="Cari nama item atau tag..." class="bg-slate-900 border border-slate-700 rounded p-2.5 text-sm w-full focus:border-cyan-500 focus:outline-none transition" oninput="app.renderItemGrid()">
+                            <div class="mb-4 relative">
+                                <input type="text" id="searchItemInput" placeholder="Cari nama item atau tag..." class="bg-slate-900 border border-slate-700 rounded p-2.5 pl-9 text-sm w-full focus:border-cyan-500 focus:outline-none transition" oninput="app.renderItemGrid()">
+                                <svg class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </div>
                             
                             <!-- FORM TAMBAH/EDIT ITEM -->
                             <div id="addItemForm" class="hidden bg-slate-900 border border-slate-600 p-4 rounded-lg mb-6 shadow-inner relative">
-                                <button onclick="app.togglePanel('addItemForm')" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition">&times;</button>
+                                <button onclick="app.togglePanel('addItemForm')" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition text-lg">&times;</button>
                                 <h4 id="itemFormTitle" class="text-sm font-bold text-cyan-400 mb-4 border-b border-slate-700 pb-2">Buat Item Baru</h4>
                                 
                                 <div class="mb-4">
@@ -105,7 +107,6 @@ export const ItemModule = {
                                 <div class="mb-4">
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Skill Tertaut (Opsional):</label>
                                     <p class="text-[10px] text-slate-500 mb-2">Pilih skill yang akan diberikan atau dapat digunakan oleh pengguna item ini.</p>
-                                    <!-- Dibagi menjadi 4 kolom (grid-cols-4) dan lebar penuh (w-full) -->
                                     <div class="bg-slate-800 border border-slate-600 rounded p-3 max-h-32 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-sm w-full">
                                         ${sortedSkills.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-full">Belum ada skill yang tersedia. Buat di menu Skill terlebih dahulu.</span>' : ''}
                                         ${sortedSkills.map(s => `
@@ -161,13 +162,156 @@ export const ItemModule = {
                                 </div>
                             </div>
 
-                            <!-- DAFTAR ITEM (FULL WIDTH LIST & COLLAPSIBLE) -->
-                            <div id="itemGridContainer" class="flex flex-col gap-4"></div>
+                            <!-- DAFTAR ITEM (KARTU KECIL BERJAJAR DALAM GRID) -->
+                            <div id="itemGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                <!-- Rendered via renderItemGrid() -->
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- FLOATING DETAIL PANEL (MENGAMBANG SEPERTI WINDOWS) -->
+                <div id="floatingItemDetail" class="hidden fixed bottom-6 right-6 w-96 max-w-[90vw] bg-slate-800 border-2 border-cyan-500/50 rounded-xl shadow-2xl z-50 flex flex-col transform transition-all duration-300 shadow-cyan-900/20">
+                    <!-- Header Jendela (Area Handle Drag) -->
+                    <div onmousedown="app.startDragItem(event, 'floatingItemDetail')" class="bg-gradient-to-r from-cyan-700 to-cyan-900 px-4 py-3 flex justify-between items-center rounded-t-xl cursor-move border-b border-cyan-500/30 select-none">
+                        <span id="floatingItemTitle" class="font-bold text-sm text-white truncate pr-4 pointer-events-none">Detail Item</span>
+                        <button onclick="event.stopPropagation(); app.closeItemDetailFloating()" class="text-cyan-200 hover:text-white transition font-bold text-lg leading-none cursor-pointer" title="Tutup Jendela">&times;</button>
+                    </div>
+                    <!-- Konten Jendela -->
+                    <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        <div>
+                            <span class="font-semibold text-cyan-400 uppercase tracking-wider text-[10px] block mb-1.5">Tags Kategori:</span>
+                            <div id="floatingItemTags" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div class="pt-2 border-t border-slate-700/60">
+                            <span class="font-semibold text-yellow-400 uppercase tracking-wider text-[10px] block mb-1.5">Skill Tertaut:</span>
+                            <div id="floatingItemSkills" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-1.5">Rupa / Penampilan:</span>
+                            <div id="floatingItemApp" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-emerald-400 uppercase tracking-wider text-[10px] block mb-1.5">Efek / Deskripsi:</span>
+                            <div id="floatingItemDesc" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         `;
+    },
+
+    // ==========================================
+    // --- LOGIKA TAMPILAN FLOATING PANEL ---
+    // ==========================================
+    showItemDetailFloating(id) {
+        const item = this.data.items.find(i => i.id === id);
+        if (!item) return;
+
+        // Set judul dan deskripsi
+        document.getElementById('floatingItemTitle').innerText = `🎒 ${item.name}`;
+        document.getElementById('floatingItemApp').innerHTML = item.appearance || '<span class="italic text-slate-500">Tidak ada informasi penampilan.</span>';
+        document.getElementById('floatingItemDesc').innerHTML = item.description || '<span class="italic text-slate-500">Tidak ada deskripsi efek.</span>';
+
+        // Set Tag
+        const tagHtml = item.tagIds.map(id => {
+            const tag = this.data.itemTags.find(t => t.id === id);
+            return tag ? `<span class="bg-cyan-900/60 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-700/50">${tag.name}</span>` : '';
+        }).join('');
+        document.getElementById('floatingItemTags').innerHTML = tagHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag</span>';
+
+        // Set Skill
+        const skillHtml = (item.skillIds || []).map(id => {
+            const skill = this.data.skills.find(s => s.id === id);
+            return skill ? `<span class="bg-yellow-900/60 text-yellow-300 text-[10px] px-2 py-0.5 rounded border border-yellow-700/50">✨ ${skill.name}</span>` : '';
+        }).join('');
+        document.getElementById('floatingItemSkills').innerHTML = skillHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded border border-slate-700/50">Tidak ada skill tertaut</span>';
+
+        // Tampilkan panel
+        document.getElementById('floatingItemDetail').classList.remove('hidden');
+    },
+
+    closeItemDetailFloating() {
+        document.getElementById('floatingItemDetail').classList.add('hidden');
+    },
+
+    // ==========================================
+    // --- LOGIKA DRAG & DROP FLOATING PANEL ---
+    // ==========================================
+    dragStateItem: {
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+        el: null
+    },
+
+    startDragItem(e, elementId) {
+        if (e.button !== 0) return; // Abaikan klik kanan
+        
+        e.preventDefault();
+        const el = document.getElementById(elementId);
+        if (!el) return;
+
+        this.dragStateItem.isDragging = true;
+        this.dragStateItem.el = el;
+        this.dragStateItem.startX = e.clientX;
+        this.dragStateItem.startY = e.clientY;
+
+        const rect = el.getBoundingClientRect();
+        if (!el.style.left || !el.style.top) {
+            el.style.left = rect.left + 'px';
+            el.style.top = rect.top + 'px';
+            el.style.bottom = 'auto';
+            el.style.right = 'auto';
+            el.classList.remove('bottom-6', 'right-6'); 
+        }
+
+        el.style.transition = 'none';
+
+        document.onmouseup = () => app.stopDragItem();
+        document.onmousemove = (e) => app.dragItem(e);
+    },
+
+    dragItem(e) {
+        if (!this.dragStateItem.isDragging || !this.dragStateItem.el) return;
+        e.preventDefault();
+
+        const el = this.dragStateItem.el;
+
+        const dx = e.clientX - this.dragStateItem.startX;
+        const dy = e.clientY - this.dragStateItem.startY;
+
+        this.dragStateItem.startX = e.clientX;
+        this.dragStateItem.startY = e.clientY;
+
+        let newLeft = el.offsetLeft + dx;
+        let newTop = el.offsetTop + dy;
+
+        if (newLeft < 0) newLeft = 0;
+        const maxLeft = window.innerWidth - el.offsetWidth;
+        if (newLeft > maxLeft) newLeft = maxLeft;
+        
+        const topOffset = 0; 
+        if (newTop < topOffset) newTop = topOffset;
+        const maxTop = window.innerHeight - el.offsetHeight;
+        if (newTop > maxTop) newTop = maxTop;
+
+        el.style.left = newLeft + "px";
+        el.style.top = newTop + "px";
+    },
+
+    stopDragItem() {
+        if (this.dragStateItem.el) {
+            this.dragStateItem.el.style.transition = '';
+        }
+        this.dragStateItem.isDragging = false;
+        this.dragStateItem.el = null;
+        
+        document.onmouseup = null;
+        document.onmousemove = null;
     },
 
     // ==========================================
@@ -219,6 +363,10 @@ export const ItemModule = {
         if (cleaned > 0) { this.saveData(); this.switchView('items'); this.showAlert(`Tag invalid dihapus dari ${cleaned} item.`, "success"); }
     },
 
+    exportItems() {
+        this.downloadJSON("data_items.json", { itemTags: this.data.itemTags, items: this.data.items });
+    },
+
     // ==========================================
     // --- LOGIKA FORM ITEM (CRUD) ---
     // ==========================================
@@ -229,7 +377,7 @@ export const ItemModule = {
         document.getElementById('newItemApp').value = '';
         document.getElementById('newItemDesc').value = '';
         document.querySelectorAll('.itemTagCheck').forEach(cb => cb.checked = false);
-        document.querySelectorAll('.itemSkillCheck').forEach(cb => cb.checked = false); // Reset checkbox skill
+        document.querySelectorAll('.itemSkillCheck').forEach(cb => cb.checked = false); 
         
         // Reset pengaturan AI
         const aiUniverse = document.getElementById('aiItemUniverse');
@@ -254,7 +402,7 @@ export const ItemModule = {
         // Centang skill yang tertaut
         document.querySelectorAll('.itemSkillCheck').forEach(cb => cb.checked = (item.skillIds || []).includes(cb.value));
         
-        // Reset pengaturan AI setiap kali membuka form edit
+        // Reset pengaturan AI
         const aiUniverse = document.getElementById('aiItemUniverse');
         if(aiUniverse) aiUniverse.value = '';
         const aiDeepLore = document.getElementById('aiItemDeepLore');
@@ -280,7 +428,7 @@ export const ItemModule = {
                 item.appearance = appearance; 
                 item.description = description; 
                 item.tagIds = tagIds; 
-                item.skillIds = skillIds; // Update skill tertaut
+                item.skillIds = skillIds;
             }
             this.editItemId = null;
             this.showAlert("Item berhasil diupdate", "success");
@@ -288,7 +436,7 @@ export const ItemModule = {
             this.data.items.push({ 
                 id: this.generateId('i'), 
                 name, appearance, description, tagIds, 
-                skillIds // Simpan skill tertaut
+                skillIds 
             });
             this.showAlert("Item baru disimpan", "success");
         }
@@ -299,7 +447,8 @@ export const ItemModule = {
     deleteItem(id) {
         if(confirm("Yakin ingin menghapus item ini?")) {
             this.data.items = this.data.items.filter(i => i.id !== id);
-
+            
+            this.closeItemDetailFloating();
             this.setPanelState('addItemForm', false);
             this.saveData(); this.switchView('items');
         }
@@ -318,14 +467,11 @@ export const ItemModule = {
         let targetEl, btnEl, btnId, originalBtnText;
         let aiFocusRule = "";
         
-        // Perubahan Aturan AI: Sangat Ringkas, Kalimat Efektif, Tanpa Metafora/Puitis
         const aiLengthRule = "Hasilkan deskripsi secara SANGAT RINGKAS menggunakan kalimat efektif (maksimal 1 paragraf pendek). TANPA metafora, TANPA diksi puitis, dan TANPA majas. Gunakan bahasa yang langsung pada intinya (to-the-point).";
 
-        // Mengambil teks yang sudah ada untuk diberikan sebagai konteks silang
         const currentApp = document.getElementById('newItemApp').value.trim();
         const currentDesc = document.getElementById('newItemDesc').value.trim();
         
-        // Tambahan referensi jika ada skill tertaut untuk AI
         const linkedSkillNames = Array.from(document.querySelectorAll('.itemSkillCheck:checked')).map(cb => cb.nextElementSibling.innerText).join(', ');
         const skillContext = linkedSkillNames ? `\n[CATATAN: Item ini memungkinkan pengguna untuk mengeluarkan skill: ${linkedSkillNames}. Pertimbangkan ini dalam merancang fungsinya.]` : "";
 
@@ -345,9 +491,6 @@ export const ItemModule = {
 
         const draftText = targetEl.value.trim();
 
-        // ----------------------------------------
-        // Konstruksi Konteks Semesta (Volatile)
-        // ----------------------------------------
         const univId = document.getElementById('aiItemUniverse')?.value;
         const useDeepLore = document.getElementById('aiItemDeepLore')?.checked;
         let universeContext = "Semesta tidak ditentukan secara spesifik (General Fantasy/Sci-Fi).";
@@ -364,7 +507,6 @@ export const ItemModule = {
             }
         }
 
-        // Payload untuk AI
         const payload = {
             moduleName: `Item-${targetField.toUpperCase()}`,
             targetData: {
@@ -380,7 +522,6 @@ export const ItemModule = {
             }
         };
 
-        // UI Loading
         btnEl = document.getElementById(btnId);
         btnEl.disabled = true;
         btnEl.classList.add('opacity-50', 'cursor-wait');
@@ -401,7 +542,7 @@ export const ItemModule = {
     },
 
     // ==========================================
-    // --- RENDER FULL-WIDTH CARD LIST ---
+    // --- RENDER GRID KARTU (TAMPILAN RINGKAS) ---
     // ==========================================
     renderItemGrid() {
         const container = document.getElementById('itemGridContainer');
@@ -430,86 +571,50 @@ export const ItemModule = {
         filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
         if (filtered.length === 0) {
-            container.innerHTML = `<p class="col-span-full text-sm text-slate-500 italic text-center py-8 bg-slate-800/30 rounded border border-dashed border-slate-700">Tidak ada item ditemukan.</p>`; 
+            container.innerHTML = `<p class="col-span-full text-sm text-slate-500 italic text-center py-8 bg-slate-800/50 rounded border border-dashed border-slate-700">Tidak ada item ditemukan.</p>`; 
             return;
         }
+        
         container.innerHTML = filtered.map(i => this.renderItemCard(i)).join('');
     },
 
     renderItemCard(item) {
+        // Tag dibatasi dan dibuat sangat kecil (truncate) seperti di Skill.js
         const itemTags = item.tagIds.map(id => {
             const tag = this.data.itemTags.find(t => t.id === id);
-            return tag ? `<span class="bg-cyan-900/50 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-700/50">${tag.name}</span>` 
-                        : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
-        }).join(' ');
+            return tag ? `<span class="bg-cyan-900/60 text-cyan-300 text-[9px] px-1.5 py-0.5 rounded border border-cyan-700/50 truncate max-w-[75px] block" title="${tag.name}">${tag.name}</span>` 
+                       : `<span class="bg-rose-900/60 text-rose-300 text-[9px] px-1.5 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
+        }).join('');
 
-        // Render skill tertaut untuk UI
-        const itemSkills = (item.skillIds || []).map(id => {
-            const skill = this.data.skills.find(s => s.id === id);
-            return skill ? `<span class="bg-yellow-900/40 text-yellow-300 text-[10px] px-2 py-0.5 rounded border border-yellow-700/50 flex items-center gap-1">✨ ${skill.name}</span>`
-                         : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 line-through">Skill Invalid</span>`;
-        }).join(' ');
-
-        // Panel ID dinamis per Item
-        const panelId = `itemDetails_${item.id}`;
-        // Ambil status apakah dihide atau tidak (Default: hidden)
-        const hiddenClass = (this.getPanelClass) ? this.getPanelClass(panelId) : 'hidden';
+        // Tampilkan indikator jika item memiliki skill tertaut
+        const hasSkills = item.skillIds && item.skillIds.length > 0;
+        const skillIndicator = hasSkills ? `<span class="bg-yellow-900/60 text-yellow-300 text-[9px] px-1.5 py-0.5 rounded border border-yellow-700/50 block" title="Memiliki Skill Tertaut">✨</span>` : '';
 
         return `
-        <div class="bg-slate-900 border border-slate-700 rounded-lg relative group shadow-md transition-colors duration-300 hover:border-cyan-500/50 flex flex-col">
+        <div onclick="app.showItemDetailFloating('${item.id}')" class="bg-slate-900 border border-slate-700 rounded-lg p-3 relative group shadow-md transition-all duration-300 hover:border-cyan-500/70 hover:shadow-cyan-900/20 cursor-pointer flex flex-col justify-between min-h-[95px] overflow-hidden">
             
-            <!-- HEADER (Bisa Diklik untuk Menyembunyikan / Menampilkan Detail) -->
-            <div class="p-4 flex justify-between items-center cursor-pointer rounded-t-lg hover:bg-slate-800/50 transition" onclick="app.togglePanel('${panelId}')">
-                <h4 class="font-bold text-cyan-400 text-lg truncate pr-4">${item.name}</h4>
-                
-                <div class="flex items-center space-x-3">
-                    <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition z-10">
-                        <button onclick="event.stopPropagation(); app.openEditItem('${item.id}')" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Item">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-                        <button onclick="event.stopPropagation(); app.deleteItem('${item.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Item">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </div>
-                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            <div class="z-10">
+                <h4 class="font-bold text-cyan-400 text-sm truncate mb-2 drop-shadow-md" title="${item.name}">${item.name}</h4>
+                <div class="flex flex-wrap gap-1 overflow-hidden max-h-[40px]">
+                    ${itemTags || '<span class="text-[9px] text-slate-600 italic bg-slate-800 px-1.5 py-0.5 rounded">No Tag</span>'}
+                    ${skillIndicator}
                 </div>
             </div>
-
-            <!-- DETAIL KONTEN ITEM (Tersembunyi secara Default) -->
-            <div id="${panelId}" class="${hiddenClass}">
-                <div class="p-4 pt-0 border-t border-slate-700/50 flex flex-col md:flex-row gap-6 mt-2">
-                    
-                    <!-- Konten Utama (Kiri) -->
-                    <div class="flex-1 space-y-3 pr-0 md:pr-14">
-                        <div class="grid grid-cols-1 gap-3">
-                            <div class="text-[13px] text-slate-300">
-                                <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1">Rupa / Penampilan:</span> 
-                                <div class="leading-relaxed whitespace-pre-wrap">${item.appearance || '<span class="italic text-slate-500">-</span>'}</div>
-                            </div>
-                            <div class="text-[13px] text-slate-300 pt-2 border-t border-slate-800">
-                                <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1">Efek / Deskripsi:</span> 
-                                <div class="leading-relaxed whitespace-pre-wrap">${item.description || '<span class="italic text-slate-500">-</span>'}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Panel Samping (Kanan) -->
-                    <div class="w-full md:w-1/4 flex flex-col gap-3 border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6">
-                        <div>
-                            <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Tag Kategori Item:</span>
-                            <div class="flex flex-wrap gap-1">${itemTags || '<span class="text-[10px] text-slate-600 italic bg-slate-800 px-2 py-0.5 rounded">Tanpa Tag</span>'}</div>
-                        </div>
-                        
-                        <!-- Panel untuk Skill Tertaut -->
-                        <div class="pt-2 border-t border-slate-800/50">
-                            <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Skill Tertaut:</span>
-                            <div class="flex flex-wrap gap-1">${itemSkills || '<span class="text-[10px] text-slate-600 italic bg-slate-800 px-2 py-0.5 rounded border border-slate-700">Tidak ada skill</span>'}</div>
-                        </div>
-                    </div>
-
-                </div>
+            
+            <!-- Icon Indikator Klik -->
+            <div class="absolute bottom-2 right-2 opacity-10 group-hover:opacity-30 transition pointer-events-none">
+                <svg class="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
             </div>
 
+            <!-- Tombol Aksi Melayang (Kecil di Pojok Kanan Atas) -->
+            <div class="absolute top-1.5 right-1.5 flex space-x-1 opacity-0 group-hover:opacity-100 transition z-20 bg-slate-900/80 p-0.5 rounded backdrop-blur-sm">
+                <button onclick="event.stopPropagation(); app.openEditItem('${item.id}')" class="text-slate-400 hover:text-amber-400 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Edit Item">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </button>
+                <button onclick="event.stopPropagation(); app.deleteItem('${item.id}')" class="text-slate-400 hover:text-rose-500 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Item">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
         </div>
         `;
     }
