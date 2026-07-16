@@ -578,8 +578,11 @@ export const ItemModule = {
     },
 
     renderItemCard(item) {
-        // Tag dibatasi dan dibuat sangat kecil (truncate) seperti di Skill.js
-        const itemTags = item.tagIds.map(id => {
+        // Mengambil maksimal 2 tag teratas
+        const limitedTagIds = (item.tagIds || []).slice(0, 2);
+
+        // Render komponen HTML untuk 2 tag teratas
+        const itemTagsHtml = limitedTagIds.map(id => {
             const tag = this.data.itemTags.find(t => t.id === id);
             return tag ? `<span class="bg-cyan-900/60 text-cyan-300 text-[9px] px-1.5 py-0.5 rounded border border-cyan-700/50 truncate max-w-[75px] block" title="${tag.name}">${tag.name}</span>` 
                        : `<span class="bg-rose-900/60 text-rose-300 text-[9px] px-1.5 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
@@ -587,7 +590,7 @@ export const ItemModule = {
 
         // Tampilkan indikator jika item memiliki skill tertaut
         const hasSkills = item.skillIds && item.skillIds.length > 0;
-        const skillIndicator = hasSkills ? `<span class="bg-yellow-900/60 text-yellow-300 text-[9px] px-1.5 py-0.5 rounded border border-yellow-700/50 block" title="Memiliki Skill Tertaut">✨</span>` : '';
+        const skillIndicator = hasSkills ? `<span class="bg-yellow-900/60 text-yellow-300 text-[9px] px-1.5 py-0.5 rounded border border-yellow-700/50 block" title="Memiliki Skill Tertaut">✨ Skill</span>` : '';
 
         return `
         <div onclick="app.showItemDetailFloating('${item.id}')" class="bg-slate-900 border border-slate-700 rounded-lg p-3 relative group shadow-md transition-all duration-300 hover:border-cyan-500/70 hover:shadow-cyan-900/20 cursor-pointer flex flex-col justify-between min-h-[95px] overflow-hidden">
@@ -595,7 +598,7 @@ export const ItemModule = {
             <div class="z-10">
                 <h4 class="font-bold text-cyan-400 text-sm truncate mb-2 drop-shadow-md" title="${item.name}">${item.name}</h4>
                 <div class="flex flex-wrap gap-1 overflow-hidden max-h-[40px]">
-                    ${itemTags || '<span class="text-[9px] text-slate-600 italic bg-slate-800 px-1.5 py-0.5 rounded">No Tag</span>'}
+                    ${itemTagsHtml || '<span class="text-[9px] text-slate-600 italic bg-slate-800 px-1.5 py-0.5 rounded">No Tag</span>'}
                     ${skillIndicator}
                 </div>
             </div>

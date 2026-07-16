@@ -799,7 +799,7 @@ export const PetModule = {
             parsedWataks = fam.personality.split(',').map(s => s.trim());
         }
 
-        // Tampilkan maks 2 watak dan 2 tag di Card kecil (truncate style)
+        // Tampilkan maks 2 watak dan KINI MASKIMAL 3 tag di Card kecil
         const famWataks = parsedWataks.slice(0, 2).map(w => {
             const isValid = masterWatakList.some(master => master.toLowerCase() === w.toLowerCase());
             return isValid 
@@ -807,15 +807,15 @@ export const PetModule = {
                 : `<span class="bg-rose-900/50 text-rose-300 text-[9px] px-1.5 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
         }).join('');
 
-        const famTags = (fam.tagIds || []).slice(0, 2).map(id => {
+        const famTags = (fam.tagIds || []).slice(0, 3).map(id => { // Diubah dari .slice(0, 2) menjadi .slice(0, 3)
             const tag = this.data.familiarTags.find(t => t.id === id);
             return tag ? `<span class="bg-fuchsia-900/60 text-fuchsia-300 text-[9px] px-1.5 py-0.5 rounded border border-fuchsia-700/50 truncate max-w-[65px] block" title="${tag.name}">${tag.name}</span>` 
                         : '';
         }).join('');
 
-        // Cek Indikator Ekstra
+        // Cek Indikator Ekstra (Kalkulasi dikurangi 3 untuk tag)
         const extraWatakCount = Math.max(0, parsedWataks.length - 2);
-        const extraTagCount = Math.max(0, (fam.tagIds || []).length - 2);
+        const extraTagCount = Math.max(0, (fam.tagIds || []).length - 3); // Diubah dari - 2 menjadi - 3
         const hasExtra = (extraWatakCount + extraTagCount) > 0;
         
         const hasSkills = fam.skillIds && fam.skillIds.length > 0;

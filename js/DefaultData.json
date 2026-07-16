@@ -153,6 +153,10 @@
           "Bumi pasca-asteroid kehilangan 40% daratan aslinya.",
           "Energi magis pertama kali ditemukan oleh Dr. Xander pada tahun 2018."
       ],
+      "charactersCategoryDescriptions": {
+        "Main Character": "Karakter utama yang menjadi fokus cerita.",
+        "Villain": "Karakter antagonis yang menentang protagonis."
+      },
       "characters": {
         "Main Character": [
           {

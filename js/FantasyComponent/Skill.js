@@ -593,12 +593,23 @@ export const SkillModule = {
     },
 
     renderSkillCard(skill) {
-        // Tag dibatasi dan dibuat sangat kecil (truncate)
-        const skillTags = skill.tagIds.map(id => {
+        // Mengambil maks 2 tag teratas
+        const limitedTagIds = (skill.tagIds || []).slice(0, 2);
+        
+        // Menghitung jumlah tag yang tersembunyi/tidak ditampilkan
+        const extraTagCount = Math.max(0, (skill.tagIds || []).length - 2);
+
+        // Render komponen HTML untuk 2 tag teratas
+        const skillTagsHtml = limitedTagIds.map(id => {
             const tag = this.data.skillTags.find(t => t.id === id);
             return tag ? `<span class="bg-indigo-900/60 text-indigo-300 text-[9px] px-1.5 py-0.5 rounded border border-indigo-700/50 truncate max-w-[75px] block" title="${tag.name}">${tag.name}</span>` 
                        : `<span class="bg-rose-900/60 text-rose-300 text-[9px] px-1.5 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
         }).join('');
+
+        // Jika ada sisa tag, tambahkan lencana "+X" di akhir tag
+        const extraTagBadge = extraTagCount > 0 
+            ? `<span class="bg-slate-700 text-slate-400 text-[9px] px-1.5 py-0.5 rounded border border-slate-600 font-medium" title="Dan ${extraTagCount} tag lainnya...">+${extraTagCount}</span>` 
+            : '';
 
         return `
         <div onclick="app.showSkillDetailFloating('${skill.id}')" class="bg-slate-900 border border-slate-700 rounded-lg p-3 relative group shadow-md transition-all duration-300 hover:border-indigo-500/70 hover:shadow-indigo-900/20 cursor-pointer flex flex-col justify-between min-h-[95px] overflow-hidden">
@@ -606,7 +617,7 @@ export const SkillModule = {
             <div class="z-10">
                 <h4 class="font-bold text-yellow-400 text-sm truncate mb-2 drop-shadow-md" title="${skill.name}">${skill.name}</h4>
                 <div class="flex flex-wrap gap-1 overflow-hidden max-h-[40px]">
-                    ${skillTags || '<span class="text-[9px] text-slate-600 italic bg-slate-800 px-1.5 py-0.5 rounded">No Tag</span>'}
+                    ${skillTagsHtml ? (skillTagsHtml + extraTagBadge) : '<span class="text-[9px] text-slate-600 italic bg-slate-800 px-1.5 py-0.5 rounded">No Tag</span>'}
                 </div>
             </div>
             
