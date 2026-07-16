@@ -41,7 +41,7 @@ export const SkillModule = {
                             </div>
                             <div class="flex flex-wrap gap-2 pt-2">
                                 ${this.data.skillTags.length === 0 ? '<p class="text-xs text-slate-500 w-full text-center py-2">Belum ada tag.</p>' : ''}
-                                ${this.data.skillTags.map(t => `
+                                ${this.data.skillTags.slice().sort((a, b) => a.name.localeCompare(b.name)).map(t => `
                                     <span class="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded border border-slate-600 flex items-center group">
                                         ${t.name}
                                         <button onclick="app.editSkillTag('${t.id}')" class="ml-2 text-slate-400 hover:text-amber-400 hidden group-hover:block transition" title="Edit Tag">
@@ -87,7 +87,7 @@ export const SkillModule = {
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Tag Skill:</label>
                                     <div class="bg-slate-800 border border-slate-600 rounded p-3 max-h-32 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
                                         ${this.data.skillTags.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-full">Belum ada tag skill.</span>' : ''}
-                                        ${this.data.skillTags.map(t => `
+                                        ${this.data.skillTags.slice().sort((a, b) => a.name.localeCompare(b.name)).map(t => `
                                             <label class="flex items-center space-x-2 cursor-pointer">
                                                 <input type="checkbox" value="${t.id}" class="tagCheck rounded text-indigo-600 bg-slate-900 border-slate-600 focus:ring-indigo-500">
                                                 <span class="truncate text-slate-300 hover:text-white transition">${t.name}</span>
@@ -190,9 +190,14 @@ export const SkillModule = {
         document.getElementById('floatingSkillDesc').innerHTML = skill.description || '<span class="italic text-slate-500">Tidak ada deskripsi efek.</span>';
 
         // Set Tag
-        const tagHtml = skill.tagIds.map(id => {
-            const tag = this.data.skillTags.find(t => t.id === id);
-            return tag ? `<span class="bg-indigo-900/60 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700/50">${tag.name}</span>` : '';
+        const resolvedTags = skill.tagIds
+            .map(id => this.data.skillTags.find(t => t.id === id))
+            .filter(tag => tag !== undefined); // Saring tag yang valid saja
+
+        resolvedTags.sort((a, b) => a.name.localeCompare(b.name));
+
+        const tagHtml = resolvedTags.map(tag => {
+            return `<span class="bg-indigo-900/60 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700/50">${tag.name}</span>`;
         }).join('');
         document.getElementById('floatingSkillTags').innerHTML = tagHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag</span>';
 

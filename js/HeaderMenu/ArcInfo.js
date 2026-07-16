@@ -1,13 +1,44 @@
 /**
  * UniverseArcModule
- * Mengelola informasi lini cerita (Arc) dan sub-arc secara global 
- * di halaman tersendiri, setingkat dengan Skill, Item, dan Familiar.
- * Telah terintegrasi penuh dengan sistem AI Enchanter.
+ * Mengelola informasi lini cerita (Arc) secara global dengan penambahan dan 
+ * pengeditan sub-arc inline yang intuitif di bagian bawah, lengkap dengan integrasi AI Enchanter.
  */
 export const UniverseArcModule = {
     // State internal untuk manajemen penulisan/pengeditan data
     editArcId: null,
     editSubarcId: null,
+    
+    // State tambahan untuk konfirmasi hapus interaktif (menghindari confirm() bawaan)
+    deleteArcIdConfirm: null,
+    deleteSubarcIdConfirm: null,
+
+    // Helper untuk menampilkan notifikasi toast kustom yang elegan (menggantikan alert())
+    showNotification(message, type = 'error') {
+        if (typeof app !== 'undefined' && typeof app.showAlert === 'function') {
+            app.showAlert(message, type);
+        } else {
+            // Fallback UI Notification Toast jika app.showAlert belum siap
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 z-50 p-4 rounded-lg shadow-xl border text-sm font-medium transition-all duration-300 transform translate-y-10 opacity-0 ${
+                type === 'success' 
+                    ? 'bg-emerald-900/95 border-emerald-500/50 text-emerald-200' 
+                    : 'bg-rose-950/95 border-rose-500/50 text-rose-200'
+            }`;
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            
+            // Memicu animasi transisi masuk
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 50);
+            
+            // Auto dismiss setelah beberapa detik
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    },
 
     // =========================================
     // --- RENDER VIEW UTAMA (VIEW LAYOUT) ---
@@ -109,23 +140,65 @@ export const UniverseArcModule = {
                 : arc.subarcs.map((sub, sIndex) => {
                     const subarcPacing = `<span class="text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded ml-1 border border-slate-600">Sub-arc ${sIndex + 1}/${arc.targetSubarcCount || '?'}</span>`;
 
+                    // Jika sedang dalam mode edit sub-arc, langsung tampilkan Editor Inline di posisinya (di bawah)
+                    if (this.editSubarcId === sub.id) {
+                        return `
+                            <div class="bg-slate-900 border-l-2 border-amber-500 p-3 rounded space-y-3 shadow-inner my-2">
+                                <div class="flex justify-between items-center pb-1.5 border-b border-slate-800">
+                                    <h5 class="text-xs font-bold text-amber-400 flex items-center gap-1">
+                                        ✏️ Edit Sub-arc #${sIndex + 1}
+                                    </h5>
+                                    <button id="btnEnchantSubarc_inline_${arc.id}_${sub.id}" onclick="app.enchantSubarcFormInline('${arc.id}', '${sub.id}')" 
+                                        class="text-[9px] bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 px-2 py-0.5 rounded transition font-medium flex items-center gap-1 shadow-sm">
+                                        ✨ Enchant / Tulis AI
+                                    </button>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <input type="text" id="editSubarcName_${arc.id}_${sub.id}" value="${sub.name}" placeholder="Judul Sub-arc" 
+                                        class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full text-slate-200 focus:outline-none focus:border-amber-500">
+                                    
+                                    <textarea id="editSubarcDesc_${arc.id}_${sub.id}" placeholder="Ketik rincian alur kejadian secara manual atau gunakan fitur AI di atas..." 
+                                        class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full text-slate-200 focus:outline-none focus:border-amber-500" rows="20">${sub.description || ''}</textarea>
+                                </div>
+                                
+                                <div class="flex justify-end space-x-1.5 pt-1">
+                                    <button onclick="app.cancelEditSubarc()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 transition">Batal</button>
+                                    <button onclick="app.saveSubarcInline('${arc.id}', '${sub.id}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] transition font-medium">Simpan Perubahan</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Tampilan default untuk item sub-arc dengan konfirmasi hapus kustom
                     return `
-                    <div class="bg-slate-900 border-l-2 border-amber-500 p-2.5 pl-3 relative group/sub rounded">
-                        <div class="absolute top-2.5 right-2 flex space-x-1 opacity-0 group-hover/sub:opacity-100 transition">
-                            <button onclick="app.openEditSubarc('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400" title="Edit Sub-arc">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                            </button>
-                            <button onclick="app.deleteSubarc('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-rose-500 text-sm font-bold leading-none px-1" title="Hapus Sub-arc">
-                                &times;
-                            </button>
+                        <div class="bg-slate-900 border-l-2 border-amber-500 p-2.5 pl-3 relative group/sub rounded">
+                            <div class="absolute top-2.5 right-2 flex space-x-1 opacity-0 group-hover/sub:opacity-100 transition items-center">
+                                ${this.deleteSubarcIdConfirm === sub.id ? `
+                                    <span class="text-[9px] text-rose-400 font-semibold mr-1">Hapus?</span>
+                                    <button onclick="app.deleteSubarc('${arc.id}', '${sub.id}', true)" class="bg-rose-600 hover:bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded transition">
+                                        Ya
+                                    </button>
+                                    <button onclick="app.cancelDeleteSubarc()" class="text-slate-400 hover:text-slate-200 text-[10px] px-1">
+                                        Batal
+                                    </button>
+                                ` : `
+                                    <button onclick="app.openEditSubarc('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400" title="Edit Sub-arc">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                    <button onclick="app.deleteSubarc('${arc.id}', '${sub.id}', false)" class="text-slate-400 hover:text-rose-500 text-sm font-bold leading-none px-1" title="Hapus Sub-arc">
+                                        &times;
+                                    </button>
+                                `}
+                            </div>
+                            <h5 class="text-xs font-bold text-amber-400 mb-1 flex items-center flex-wrap gap-1">
+                                ${sIndex + 1}. ${sub.name}
+                                ${subarcPacing}
+                            </h5>
+                            <p class="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">${sub.description || '-'}</p>
                         </div>
-                        <h5 class="text-xs font-bold text-amber-400 mb-1 flex items-center flex-wrap gap-1">
-                            ${sIndex + 1}. ${sub.name}
-                            ${subarcPacing}
-                        </h5>
-                        <p class="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">${sub.description || '-'}</p>
-                    </div>
-                `}).join('');
+                    `;
+                }).join('');
 
             const univBadge = arc.universeId ? `<span class="hidden sm:inline-block text-[10px] bg-indigo-900/50 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-700/50 ml-2 font-normal">🌌 ${this.getUniverseName(arc.universeId)}</span>` : '';
 
@@ -146,9 +219,22 @@ export const UniverseArcModule = {
                             <button onclick="app.openEditArc('${arc.id}')" class="text-slate-400 hover:text-indigo-400 transition" title="Edit Pengaturan Arc">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
-                            <button onclick="app.deleteArc('${arc.id}')" class="text-slate-400 hover:text-rose-500 transition" title="Hapus Keseluruhan Arc">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
+                            
+                            ${this.deleteArcIdConfirm === arc.id ? `
+                                <div class="flex items-center gap-1.5">
+                                    <button onclick="app.deleteArc('${arc.id}', true)" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded font-medium transition">
+                                        Ya, Hapus
+                                    </button>
+                                    <button onclick="app.cancelDeleteArc()" class="text-slate-300 hover:text-white text-[10px] px-1 font-medium">
+                                        Batal
+                                    </button>
+                                </div>
+                            ` : `
+                                <button onclick="app.deleteArc('${arc.id}', false)" class="text-slate-400 hover:text-rose-500 transition" title="Hapus Keseluruhan Arc">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            `}
+
                             <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="app.togglePanel('arcContent_${arc.id}')">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
@@ -164,16 +250,23 @@ export const UniverseArcModule = {
                         <div class="border-t border-slate-700/60 pt-3">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Daftar Plot Detail (${arc.subarcs ? arc.subarcs.length : 0} / ${arc.targetSubarcCount || '?'}):</span>
-                                <button onclick="app.openAddSubarc('${arc.id}')" class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-1 rounded text-[10px] font-medium transition flex items-center gap-1 shadow">
-                                    + Tambah Sub-arc
-                                </button>
                             </div>
 
-                            <!-- FORM EDIT/TAMBAH SUBARC -->
-                            <div id="subarcForm_${arc.id}" class="hidden bg-slate-900 p-3 rounded border border-slate-700 mb-3 space-y-3 shadow-inner">
+                            <!-- DAFTAR SUB-ARC DI ATAS -->
+                            <div class="space-y-2 mb-3">
+                                ${subarcsHTML}
+                            </div>
+
+                            <!-- TOMBOL TAMBAH SUB-ARC LEBAR PENUH -->
+                            <button onclick="app.openAddSubarc('${arc.id}')" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-2 rounded text-xs font-semibold transition mt-2 mb-3 flex items-center justify-center gap-1 shadow border border-amber-700/50">
+                                + Tambah Sub-arc
+                            </button>
+
+                            <!-- FORM EDIT/TAMBAH SUBARC (Kini dipindahkan di bagian BAWAH daftar plot) -->
+                            <div id="subarcForm_${arc.id}" class="hidden bg-slate-900 p-3 rounded border border-slate-700 mt-2 space-y-3 shadow-inner">
                                 <h5 id="subarcFormTitle_${arc.id}" class="text-xs font-bold text-slate-300 border-b border-slate-700/50 pb-1.5 mb-2">Tambah Sub-arc</h5>
                                 
-                                <input type="text" id="newSubarcName_${arc.id}" placeholder="Judul Sub-arc (cth: 'Pertemuan di Kuil')" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:outline-none focus:border-amber-500">
+                                <input type="text" id="newSubarcName_${arc.id}" placeholder="Judul Sub-arc (cth: 'Pertemuan di Kuil')" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full text-slate-200 focus:outline-none focus:border-amber-500">
                                 
                                 <div class="flex justify-between items-end pb-1 border-b border-slate-700/40 mt-1">
                                     <span class="text-[10px] text-slate-500">Rincian Narasi/Kejadian:</span>
@@ -182,17 +275,14 @@ export const UniverseArcModule = {
                                     </button>
                                 </div>
 
-                                <textarea id="newSubarcDesc_${arc.id}" placeholder="Ketik rincian alur runtutan kejadian secara manual atau gunakan fitur AI di atas..." class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:outline-none focus:border-amber-500" rows="12"></textarea>
+                                <textarea id="newSubarcDesc_${arc.id}" placeholder="Ketik rincian alur runtutan kejadian secara manual atau gunakan fitur AI di atas..." class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full text-slate-200 focus:outline-none focus:border-amber-500" rows="20"></textarea>
                                 
                                 <div class="flex justify-end space-x-1.5">
-                                    <button onclick="app.setPanelState('subarcForm_${arc.id}', false)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] transition">Batal</button>
+                                    <button onclick="app.setPanelState('subarcForm_${arc.id}', false)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] text-slate-300 transition">Batal</button>
                                     <button id="saveSubarcBtn_${arc.id}" onclick="app.saveSubarc('${arc.id}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] transition font-medium">Simpan Data Sub-arc</button>
                                 </div>
                             </div>
 
-                            <div class="space-y-2">
-                                ${subarcsHTML}
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -219,7 +309,7 @@ export const UniverseArcModule = {
         const btn = document.getElementById('btnEnchantArc');
 
         if (!titleEl.value.trim()) {
-            return alert("Isi 'Judul Arc' terlebih dahulu agar AI dapat memahami ide pokok narasi yang ingin dibuat.");
+            return this.showNotification("Isi 'Nama Arc' terlebih dahulu agar AI dapat memahami ide pokok narasi yang ingin dibuat.", "error");
         }
 
         const payload = {
@@ -242,33 +332,33 @@ export const UniverseArcModule = {
         try {
             const result = await app.requestEnchant(payload);
             synEl.value = result;
-            app.showAlert("Sinopsis Arc berhasil dibuat oleh AI!", "success");
+            this.showNotification("Sinopsis Arc berhasil dibuat oleh AI!", "success");
         } catch (error) {
-            alert("Gagal memanggil AI: " + error.message);
+            this.showNotification("Gagal memanggil AI: " + error.message, "error");
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
         }
     },
 
-    // B. Enchant Untuk Isi Narasi Sub-arc
+    // B. Enchant Untuk Isi Narasi Sub-arc (Form Tambah Bawah)
     async enchantSubarcForm(arcId) {
         const arc = this.data.arcs.find(a => a.id === arcId);
         
         // Validasi Ketersediaan Konteks Arc
         if (!arc || !arc.name || !arc.synopsis) {
-            return alert("GAGAL: Judul dan Deskripsi Arc harus sudah diisi dan 'disimpan' terlebih dahulu agar AI memahami konteks cerita utamanya.");
+            return this.showNotification("GAGAL: Judul dan Deskripsi Arc harus sudah diisi dan 'disimpan' terlebih dahulu agar AI memahami konteks cerita utamanya.", "error");
         }
 
         // Validasi Aturan Semesta (Universe)
         const universeId = arc.universeId;
         if (!universeId) {
-            return alert("GAGAL: Arc ini belum memiliki Latar Semesta. Silakan klik tombol 'Edit' pada Arc ini dan pilih Semesta terlebih dahulu.");
+            return this.showNotification("GAGAL: Arc ini belum memiliki Latar Semesta. Silakan klik tombol 'Edit' pada Arc ini dan pilih Semesta terlebih dahulu.", "error");
         }
         
         const universe = this.data.universes.find(u => u.id === universeId);
         if (!universe) {
-            return alert("GAGAL: ID Semesta pada Arc ini tidak valid atau telah dihapus. Silakan edit Arc dan pilih semesta yang tersedia.");
+            return this.showNotification("GAGAL: ID Semesta pada Arc ini tidak valid atau telah dihapus. Silakan edit Arc dan pilih semesta yang tersedia.", "error");
         }
 
         // Ambil Target
@@ -281,13 +371,7 @@ export const UniverseArcModule = {
         const btn = document.getElementById(`btnEnchantSubarc_${arcId}`);
 
         // Menentukan urutan Sub-arc secara dinamis
-        let currentIndex = 1;
-        if (this.editSubarcId) {
-            const index = arc.subarcs.findIndex(s => s.id === this.editSubarcId);
-            currentIndex = index !== -1 ? index + 1 : 1;
-        } else {
-            currentIndex = (arc.subarcs ? arc.subarcs.length : 0) + 1;
-        }
+        let currentIndex = (arc.subarcs ? arc.subarcs.length : 0) + 1;
 
         // Penyesuaian Instruksi Pacing
         let pacingFocus = `Sub-arc ini adalah urutan ke-${currentIndex} dari rencana total ${targetCount} sub-arc dalam Arc ini.`;
@@ -304,17 +388,13 @@ export const UniverseArcModule = {
                 subarcCurrentSequence: currentIndex,
                 targetTotalSubarcs: targetCount,
                 subarcTitle: subarcName || "Sub-arc Baru (Tanpa Judul)",
-                // Draft description yang ditulis user akan ditangkap dan dikirim melalui baris ini:
                 draftDescription: subarcDesc || "Belum ada rincian. Buatkan ide masalah/kejadian spesifik dari awal berdasarkan urutan sub-arc ini.",
                 historyPreviousSubarcs: arc.subarcs || [],
                 universeLore: universe 
             },
             additional_instruction: {
-                // FOKUS BARU: Menegaskan konsep sub-arc sebagai teknis konflik/plot.
                 focus: `Jabarkan kerangka plot (outline) atau kejadian spesifik untuk sub-arc ini (contoh: munculnya konflik kecil, tokoh ditipu/tersesat, rintangan, atau penemuan penting). Ini adalah dokumen teknis untuk panduan penulis, BUKAN cerita pendek! Langsung tunjukkan apa masalah atau tindakan yang terjadi di sub-arc ini yang selaras dengan tujuan Arc utama. ${pacingFocus} PENTING: Gunakan informasi world-building, tokoh, dan tempat dari 'universeLore'.`,
-                // TONE BARU: Tegas melarang bahasa puitis dan harus ringkas.
                 tone: "Teknis, ringkas, efektif, to-the-point pada konflik, TANPA bahasa puitis/berbunga-bunga layaknya novel",
-                // LENGTH BARU: Dibatasi maksimal 2 paragraf padat.
                 length: "Sangat singkat, 1 hingga 2 paragraf padat"
             }
         };
@@ -328,9 +408,77 @@ export const UniverseArcModule = {
         try {
             const result = await app.requestEnchant(payload);
             subarcDescEl.value = result;
-            app.showAlert("Kerangka Sub-arc berhasil diperluas/ditulis oleh AI!", "success");
+            this.showNotification("Kerangka Sub-arc berhasil diperluas/ditulis oleh AI!", "success");
         } catch (error) {
-            alert("Gagal menggunakan AI: " + error.message);
+            this.showNotification("Gagal menggunakan AI: " + error.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            btn.innerHTML = originalText;
+        }
+    },
+
+    // C. Enchant Untuk Isi Narasi Sub-arc (Form Edit Inline)
+    async enchantSubarcFormInline(arcId, subarcId) {
+        const arc = this.data.arcs.find(a => a.id === arcId);
+        
+        if (!arc || !arc.name || !arc.synopsis) {
+            return this.showNotification("GAGAL: Judul dan Deskripsi Arc harus sudah diisi dan disimpan agar AI memahami konteks cerita utamanya.", "error");
+        }
+
+        const universeId = arc.universeId;
+        if (!universeId) {
+            return this.showNotification("GAGAL: Arc ini belum memiliki Latar Semesta. Edit Arc dan tentukan Semestanya terlebih dahulu.", "error");
+        }
+        
+        const universe = this.data.universes.find(u => u.id === universeId);
+        if (!universe) {
+            return this.showNotification("GAGAL: Referensi Semesta tidak valid.", "error");
+        }
+
+        const targetCount = arc.targetSubarcCount || 10;
+        
+        const subarcName = document.getElementById(`editSubarcName_${arcId}_${subarcId}`).value.trim();
+        const subarcDescEl = document.getElementById(`editSubarcDesc_${arcId}_${subarcId}`);
+        const subarcDesc = subarcDescEl.value.trim();
+        const btn = document.getElementById(`btnEnchantSubarc_inline_${arcId}_${subarcId}`);
+
+        // Cari urutan berdasarkan letak indexnya
+        const index = arc.subarcs.findIndex(s => s.id === subarcId);
+        const currentIndex = index !== -1 ? index + 1 : 1;
+
+        let pacingFocus = `Sub-arc ini adalah urutan ke-${currentIndex} dari rencana total ${targetCount} sub-arc dalam Arc ini.`;
+
+        const payload = {
+            moduleName: "Sub-arc (Episode Arc)",
+            targetData: {
+                arcTitle: arc.name,
+                arcSynopsis: arc.synopsis,
+                subarcCurrentSequence: currentIndex,
+                targetTotalSubarcs: targetCount,
+                subarcTitle: subarcName || "Sub-arc",
+                draftDescription: subarcDesc || "Kembangkan plot sub-arc spesifik di posisi ini.",
+                historyPreviousSubarcs: arc.subarcs || [],
+                universeLore: universe 
+            },
+            additional_instruction: {
+                focus: `Sempurnakan kerangka alur plot untuk sub-arc ini selaras dengan posisi runtutan ke-${currentIndex}. Fokuskan pada kejadian penting, pergerakan karakter, rintangan, atau penemuan strategis. Ini adalah dokumentasi struktur plot (BUKAN fiksi pendek/prosa). ${pacingFocus}`,
+                tone: "Teknis, taktis, detail konflik yang tegas, tanpa bunga bahasa novel",
+                length: "Singkat dan padat, 1 hingga 2 paragraf deskriptif"
+            }
+        };
+
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "✨ Menulis...";
+        
+        try {
+            const result = await app.requestEnchant(payload);
+            subarcDescEl.value = result;
+            this.showNotification("Kerangka Sub-arc berhasil disempurnakan oleh AI!", "success");
+        } catch (error) {
+            this.showNotification("Gagal memanggil AI: " + error.message, "error");
         } finally {
             btn.disabled = false;
             btn.classList.remove('opacity-50');
@@ -378,7 +526,7 @@ export const UniverseArcModule = {
         if (!this.data.arcs) this.data.arcs = [];
         
         const name = document.getElementById('newArcName').value.trim();
-        if (!name) return alert("Nama Arc tidak boleh dibiarkan kosong.");
+        if (!name) return this.showNotification("Nama Arc tidak boleh dibiarkan kosong.", "error");
         
         const synopsis = document.getElementById('newArcSyn').value.trim();
         const universeId = document.getElementById('newArcUniverse').value;
@@ -394,6 +542,7 @@ export const UniverseArcModule = {
                 subarcs: []
             };
             this.data.arcs.push(newArc);
+            this.showNotification("Arc berhasil ditambahkan!", "success");
         } else {
             const arc = this.data.arcs.find(a => a.id === this.editArcId);
             if (arc) {
@@ -401,6 +550,7 @@ export const UniverseArcModule = {
                 arc.synopsis = synopsis;
                 arc.universeId = universeId;
                 arc.targetSubarcCount = targetCount;
+                this.showNotification("Pengaturan Arc berhasil diperbarui!", "success");
             }
         }
 
@@ -409,10 +559,22 @@ export const UniverseArcModule = {
         this.refreshArcList();
     },
 
-    deleteArc(arcId) {
-        if (!confirm("Apakah Anda yakin ingin menghapus Arc ini beserta seluruh sub-arc di dalamnya?")) return;
+    deleteArc(arcId, confirmed = false) {
+        if (!confirmed) {
+            this.deleteArcIdConfirm = arcId;
+            this.refreshArcList();
+            return;
+        }
+        
         this.data.arcs = this.data.arcs.filter(a => a.id !== arcId);
+        this.deleteArcIdConfirm = null;
         this.saveData();
+        this.refreshArcList();
+        this.showNotification("Arc cerita beserta seluruh sub-arc di dalamnya telah dihapus.", "success");
+    },
+
+    cancelDeleteArc() {
+        this.deleteArcIdConfirm = null;
         this.refreshArcList();
     },
 
@@ -420,27 +582,57 @@ export const UniverseArcModule = {
     // --- MANAJEMEN SUB-ARC ---
     // =========================================
     openAddSubarc(arcId) {
-        this.editSubarcId = null;
+        this.editSubarcId = null; // Menutup editor inline jika ada yang sedang aktif
+        this.refreshArcList();
+
+        // Munculkan Form Tambah di bagian bawah (di bawah subarcs list)
         this.setPanelState(`subarcForm_${arcId}`, true);
+        
         document.getElementById(`subarcFormTitle_${arcId}`).innerText = "Tambah Sub-arc";
         document.getElementById(`saveSubarcBtn_${arcId}`).innerText = "Simpan Data Sub-arc";
         document.getElementById(`newSubarcName_${arcId}`).value = '';
         document.getElementById(`newSubarcDesc_${arcId}`).value = '';
+
+        // Otomatis scroll halus mengarah ke Form Tambah yang berada di bagian bawah list
+        setTimeout(() => {
+            const targetForm = document.getElementById(`subarcForm_${arcId}`);
+            if (targetForm) {
+                targetForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 100);
     },
 
     openEditSubarc(arcId, subarcId) {
+        // Matikan Form tambah sub-arc agar fokus berpindah ke form inline di bawah
+        this.setPanelState(`subarcForm_${arcId}`, false);
+        
+        this.editSubarcId = subarcId;
+        this.refreshArcList();
+    },
+
+    cancelEditSubarc() {
+        this.editSubarcId = null;
+        this.refreshArcList();
+    },
+
+    saveSubarcInline(arcId, subarcId) {
         const arc = this.data.arcs.find(a => a.id === arcId);
         if (!arc || !arc.subarcs) return;
         const sub = arc.subarcs.find(s => s.id === subarcId);
         if (!sub) return;
 
-        this.editSubarcId = subarcId;
-        this.setPanelState(`subarcForm_${arcId}`, true);
-        document.getElementById(`subarcFormTitle_${arcId}`).innerText = "Edit Sub-arc";
-        document.getElementById(`saveSubarcBtn_${arcId}`).innerText = "Update Data Sub-arc";
-        
-        document.getElementById(`newSubarcName_${arcId}`).value = sub.name;
-        document.getElementById(`newSubarcDesc_${arcId}`).value = sub.description || '';
+        const name = document.getElementById(`editSubarcName_${arcId}_${subarcId}`).value.trim();
+        const description = document.getElementById(`editSubarcDesc_${arcId}_${subarcId}`).value.trim();
+
+        if (!name) return this.showNotification("Judul sub-arc wajib diisi.", "error");
+
+        sub.name = name;
+        sub.description = description;
+
+        this.saveData();
+        this.editSubarcId = null;
+        this.refreshArcList();
+        this.showNotification("Perubahan sub-arc berhasil disimpan langsung!", "success");
     },
 
     saveSubarc(arcId) {
@@ -451,36 +643,44 @@ export const UniverseArcModule = {
         const name = document.getElementById(`newSubarcName_${arcId}`).value.trim();
         const description = document.getElementById(`newSubarcDesc_${arcId}`).value.trim();
 
-        if (!name) return alert("Judul sub-arc wajib diisi.");
+        if (!name) return this.showNotification("Judul sub-arc wajib diisi.", "error");
 
-        if (this.editSubarcId === null) {
-            const newSub = {
-                id: this.generateId('sub'),
-                name: name,
-                description: description
-            };
-            arc.subarcs.push(newSub);
-        } else {
-            const sub = arc.subarcs.find(s => s.id === this.editSubarcId);
-            if (sub) {
-                sub.name = name;
-                sub.description = description;
-            }
-        }
+        const newSub = {
+            id: this.generateId('sub'),
+            name: name,
+            description: description
+        };
+        arc.subarcs.push(newSub);
 
         this.saveData();
         this.setPanelState(`subarcForm_${arcId}`, false);
         this.refreshArcList();
+        this.showNotification("Sub-arc baru berhasil ditambahkan!", "success");
     },
 
-    deleteSubarc(arcId, subarcId) {
-        if (!confirm("Hapus sub-arc ini?")) return;
+    deleteSubarc(arcId, subarcId, confirmed = false) {
+        if (!confirmed) {
+            this.deleteSubarcIdConfirm = subarcId;
+            this.refreshArcList();
+            return;
+        }
+
         const arc = this.data.arcs.find(a => a.id === arcId);
         if (arc && arc.subarcs) {
             arc.subarcs = arc.subarcs.filter(s => s.id !== subarcId);
+            if (this.editSubarcId === subarcId) {
+                this.editSubarcId = null;
+            }
+            this.deleteSubarcIdConfirm = null;
             this.saveData();
             this.refreshArcList();
+            this.showNotification("Sub-arc berhasil dihapus.", "success");
         }
+    },
+
+    cancelDeleteSubarc() {
+        this.deleteSubarcIdConfirm = null;
+        this.refreshArcList();
     },
 
     // SINKRONISASI DINAMIS SISI KLIEN
@@ -495,7 +695,7 @@ export const UniverseArcModule = {
 
     exportArcsData() {
         if (!this.data.arcs || this.data.arcs.length === 0) {
-            return alert("Tidak ada data arc cerita yang dapat diexport.");
+            return this.showNotification("Tidak ada data arc cerita yang dapat diexport.", "error");
         }
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.data.arcs, null, 2));
         const downloadAnchor = document.createElement('a');
@@ -511,7 +711,7 @@ export const UniverseArcModule = {
         
         const arc = this.data.arcs.find(a => a.id === arcId);
         if (!arc) {
-            return alert("Data arc tidak ditemukan.");
+            return this.showNotification("Data arc tidak ditemukan.", "error");
         }
 
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(arc, null, 2));

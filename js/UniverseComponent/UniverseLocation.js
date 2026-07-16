@@ -8,6 +8,97 @@ export const UniverseLocationModule = {
     // Menyimpan ID tempat yang sedang dalam proses penyuntingan
     editLocationId: null,
 
+    // Helper untuk menampilkan dialog konfirmasi kustom yang elegan (menggantikan confirm() bawaan)
+    showCustomModal(options) {
+        const modalId = 'customModal_' + Date.now();
+        const modalHtml = `
+        <div id="${modalId}" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+            <div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-6 transform scale-95 transition-transform duration-300">
+                <h3 class="text-lg font-bold text-slate-100 mb-2">${options.title}</h3>
+                <div class="mb-5 text-sm text-slate-300">${options.content}</div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button id="${modalId}_cancel" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-sm transition text-white">Batal</button>
+                    <button id="${modalId}_confirm" class="px-4 py-2 ${options.confirmColor || 'bg-emerald-600 hover:bg-emerald-500'} text-white font-medium rounded text-sm transition shadow-lg">${options.confirmText || 'Simpan'}</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const modalEl = document.getElementById(modalId);
+        const btnCancel = document.getElementById(`${modalId}_cancel`);
+        const btnConfirm = document.getElementById(`${modalId}_confirm`);
+
+        // Animasi masuk
+        setTimeout(() => {
+            modalEl.classList.remove('opacity-0');
+            modalEl.children[0].classList.remove('scale-95');
+        }, 10);
+
+        const close = () => {
+            modalEl.classList.add('opacity-0');
+            modalEl.children[0].classList.add('scale-95');
+            setTimeout(() => modalEl.remove(), 300);
+        };
+
+        btnCancel.onclick = () => { close(); if (options.onCancel) options.onCancel(); };
+        btnConfirm.onclick = () => {
+            if (options.onConfirm) {
+                const shouldClose = options.onConfirm();
+                if (shouldClose !== false) close();
+            } else {
+                close();
+            }
+        };
+    },
+
+    // Helper untuk menampilkan notifikasi toast kustom yang elegan (menggantikan alert() bawaan)
+    showAlert(message, type = 'error') {
+        if (
+            typeof app !== 'undefined' && 
+            typeof app.showAlert === 'function' && 
+            app.showAlert !== this.showAlert && 
+            app.showAlert !== UniverseLocationModule.showAlert
+        ) {
+            app.showAlert(message, type);
+        } else {
+            // 1. Bersihkan toast fallback lama yang masih aktif agar tidak bertumpuk berantakan
+            const existingToast = document.querySelector('.custom-fallback-toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            // 2. Buat elemen toast baru
+            const toast = document.createElement('div');
+            
+            // Tentukan kelas warna berdasarkan tipe pesan (Success, Warning, Info, atau Error)
+            let colorClasses = '';
+            if (type === 'success') {
+                colorClasses = 'bg-emerald-900/95 border-emerald-500/50 text-emerald-200';
+            } else if (type === 'warning') {
+                colorClasses = 'bg-amber-900/95 border-amber-500/50 text-amber-200';
+            } else if (type === 'info') {
+                colorClasses = 'bg-slate-900/95 border-slate-500/50 text-slate-200'; // Biru/Abu Netral untuk Info
+            } else {
+                colorClasses = 'bg-rose-950/95 border-rose-500/50 text-rose-200'; // Default Merah untuk Error
+            }
+
+            toast.className = `custom-fallback-toast fixed bottom-4 right-4 z-50 p-4 rounded-lg shadow-xl border text-sm font-medium transition-all duration-300 transform translate-y-10 opacity-0 ${colorClasses}`;
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            
+            // Memicu animasi transisi masuk
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 50);
+            
+            // Auto dismiss setelah beberapa detik
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    },
+
     // =========================================
     // --- FUNGSI UTAMA MANAJEMEN LOKASI ---
     // =========================================
@@ -214,22 +305,63 @@ export const UniverseLocationModule = {
     },
 
     deleteLocation(univId, locId) {
-        if (confirm("Yakin ingin menghapus tempat ini beserta semua sub-tempat di dalamnya?")) {
-            const universe = this.data.universes.find(u => u.id === univId);
-            
-            const removeLoc = (locations) => {
-                for (let i = 0; i < locations.length; i++) {
-                    if (locations[i].id === locId) {
-                        locations.splice(i, 1);
-                        return true;
+        this.showCustomModal({
+            title: "Hapus Tempat",
+            content: "Yakin ingin menghapus tempat ini beserta semua sub-tempat di dalamnya? Tindakan ini tidak dapat dibatalkan.",
+            confirmText: "Hapus Tempat",
+            confirmColor: "bg-rose-600 hover:bg-rose-500",
+            onConfirm: () => {
+                const universe = this.data.universes.find(u => u.id === univId);
+                
+                const removeLoc = (locations) => {
+                    for (let i = 0; i < locations.length; i++) {
+                        if (locations[i].id === locId) {
+                            locations.splice(i, 1);
+                            return true;
+                        }
+                        if (locations[i].children && removeLoc(locations[i].children)) return true;
                     }
-                    if (locations[i].children && removeLoc(locations[i].children)) return true;
-                }
-                return false;
-            };
+                    return false;
+                };
 
-            removeLoc(universe.locations);
-            this.saveData();
+                removeLoc(universe.locations);
+                this.saveData();
+                this.switchView(univId);
+                this.showAlert("Tempat berhasil dihapus.", "warning");
+            }
+        });
+    },
+
+    // Helper untuk mencari parent array dari suatu ID tempat (bisa root maupun child mendalam)
+    findParentArray(locations, targetId) {
+        if (locations.some(loc => loc.id === targetId)) {
+            return locations;
+        }
+        for (let loc of locations) {
+            if (loc.children) {
+                const found = this.findParentArray(loc.children, targetId);
+                if (found) return found;
+            }
+        }
+        return null;
+    },
+
+    // Memindahkan urutan tempat ke atas (geser naik) dalam array asalnya
+    moveLocationUp(univId, locId) {
+        const universe = this.data.universes.find(u => u.id === univId);
+        if (!universe) return;
+
+        const parentArray = this.findParentArray(universe.locations, locId);
+        if (!parentArray) return;
+
+        const index = parentArray.findIndex(loc => loc.id === locId);
+        if (index > 0) {
+            // Tukar posisi dengan elemen di atasnya
+            const temp = parentArray[index - 1];
+            parentArray[index - 1] = parentArray[index];
+            parentArray[index] = temp;
+
+            this.saveData(true);
             this.switchView(univId);
         }
     },
@@ -276,7 +408,7 @@ export const UniverseLocationModule = {
     async generateLocationAI(univId, formId, isRoot, targetField) {
         const nameInput = document.getElementById(`newLocName_${formId}`).value.trim();
         if (!nameInput) {
-            return alert("GAGAL: 'Nama Tempat' wajib diisi terlebih dahulu agar AI memiliki panduan subjek lokasi.");
+            return this.showAlert("GAGAL: 'Nama Tempat' wajib diisi terlebih dahulu agar AI memiliki panduan subjek lokasi.", "error");
         }
 
         let targetEl, btnId, originalBtnText;
@@ -338,7 +470,7 @@ export const UniverseLocationModule = {
             targetEl.value = resultText;
             app.showAlert(`Berhasil men-generate AI untuk ${targetField === 'description' ? 'Deskripsi' : 'Visual'}!`, "success");
         } catch (error) {
-            alert("Gagal memanggil AI: " + error.message);
+            this.showAlert("Gagal memanggil AI: " + error.message, "error");
         } finally {
             if (btnEl) {
                 btnEl.disabled = false;
@@ -370,7 +502,7 @@ export const UniverseLocationModule = {
                 informasiSemesta: contextStr,
             },
             additional_instruction: {
-                focus: "Buat HANYA 1 (satu) sub-lokasi / tempat spesifik baru yang logis berada di dalam 'Lokasi Induk' (contoh: jika induk 'Kota', buat 'Toko Senjata' atau 'Kuil'). Hasilkan Nama, Deskripsi (fokus sejarah/kegunaan), dan Visual (fokus penampilan).",
+                focus: "Buat HANYA 1 (satu) sub-lokasi / tempat spesifik baru yang logis berada di dalam 'Lokasi Induk' (contoh: jika induk 'Kota', buat 'Toko Senjata' atau 'Kuil'). Hasikan Nama, Deskripsi (fokus sejarah/kegunaan), dan Visual (fokus penampilan).",
                 tone: "Faktual, deskriptif logis",
                 length: "WAJIB KEMBALIKAN HANYA FORMAT INI TANPA TEKS LAIN:\nNama: [Nama Tempat]\nDeskripsi: [Tepat 1 kalimat ringkas to-the-point]\nVisual: [Tepat 1 kalimat ringkas to-the-point]"
             }
@@ -410,7 +542,7 @@ export const UniverseLocationModule = {
             app.showAlert(`Sub-tempat "${name}" berhasil ditambahkan AI!`, "success");
 
         } catch (err) {
-            alert("Gagal Auto-Child: " + err.message);
+            this.showAlert("Gagal Auto-Child: " + err.message, "error");
         } finally {
             if (document.getElementById(btnId)) {
                 const resetBtn = document.getElementById(btnId);
@@ -481,19 +613,20 @@ export const UniverseLocationModule = {
         if (!locations || locations.length === 0) return '';
         const indentClass = depth > 0 ? 'ml-4 sm:ml-6 pl-4 border-l-2 border-slate-700 mt-2' : '';
         
-        return `<div class="${indentClass} space-y-3">` + locations.map(loc => {
+        return `<div class="${indentClass} space-y-3">` + locations.map((loc, index) => {
             const hasChildren = loc.children && loc.children.length > 0;
             
             const panelId = `children-${loc.id}`;
             const panelClass = this.getPanelClass(panelId, 'hidden');
             const isHidden = panelClass.includes('hidden');
             
+            // Tombol SVG sebagai hiasan interaktif, transisi rotasi didasarkan pada collapse state
             const toggleBtn = hasChildren 
-                ? `<button onclick="app.toggleLocationChildren('${loc.id}')" class="mr-2 text-slate-400 hover:text-emerald-400 transition-transform focus:outline-none">
+                ? `<span class="mr-2 text-slate-400 group-hover/header:text-emerald-400 transition-transform flex items-center justify-center">
                         <svg id="toggle-icon-${loc.id}" class="w-4 h-4 transform transition-transform duration-200 ${isHidden ? '-rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
-                    </button>`
+                    </span>`
                 : `<span class="w-6 inline-block"></span>`;
             
             let childrenHTML = '';
@@ -507,23 +640,35 @@ export const UniverseLocationModule = {
 
             return `
             <div class="bg-slate-900 border border-slate-700 rounded p-3 relative group shadow-sm hover:border-emerald-500/40 transition-colors">
+                <!-- PANEL AKSI MELAYANG DI SIKU KANAN ATAS -->
                 <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition z-10 bg-slate-900 pl-2 rounded">
-                    <button onclick="app.openEditLocation('${univId}', '${loc.id}', ${parentId ? `'${parentId}'` : 'null'})" class="text-slate-400 hover:text-amber-400 p-1 bg-slate-800 rounded transition" title="Edit Lokasi">
+                    <!-- Tombol Geser Naik Berdasarkan Abjad / Urutan Indeks Posisi -->
+                    ${index > 0 ? `
+                    <button onclick="event.stopPropagation(); app.moveLocationUp('${univId}', '${loc.id}')" class="text-slate-400 hover:text-emerald-400 p-1 bg-slate-800 rounded transition border border-slate-700" title="Naikkan Urutan Tempat">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                        </svg>
+                    </button>
+                    ` : ''}
+                    <button onclick="event.stopPropagation(); app.openEditLocation('${univId}', '${loc.id}', ${parentId ? `'${parentId}'` : 'null'})" class="text-slate-400 hover:text-amber-400 p-1 bg-slate-800 rounded transition border border-slate-700" title="Edit Lokasi">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     </button>
-                    <button onclick="app.deleteLocation('${univId}', '${loc.id}')" class="text-slate-400 hover:text-rose-500 p-1 bg-slate-800 rounded transition" title="Hapus Lokasi">
+                    <button onclick="event.stopPropagation(); app.deleteLocation('${univId}', '${loc.id}')" class="text-slate-400 hover:text-rose-500 p-1 bg-slate-800 rounded transition border border-slate-700" title="Hapus Lokasi">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>
                 
-                <div class="flex items-center mb-2 pb-1 border-b border-slate-800">
+                <!-- HEADER BARIS JUDUL SEKARANG CLIKABLE PENUH (LEBAR PENUH) -->
+                <div class="flex items-center mb-2 pb-1 border-b border-slate-800 ${hasChildren ? 'cursor-pointer select-none group/header' : ''}"
+                     ${hasChildren ? `onclick="app.toggleLocationChildren('${loc.id}')"` : ''}>
                     ${toggleBtn}
-                    <h4 class="font-bold text-emerald-400 text-sm md:text-base flex-1 line-clamp-1 group-hover:line-clamp-none transition-all">
+                    <h4 class="font-bold text-emerald-400 text-sm md:text-base flex-1 line-clamp-1 group-hover/header:text-emerald-300 transition-all">
                         ${loc.name} 
                         ${hasChildren ? `<span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 font-normal ml-2 border border-slate-700">${loc.children.length} sub-tempat</span>` : ''}
                     </h4>
                 </div>
                 
+                <!-- DETAIL PANEL INFORMASI DAN DESKRIPSI -->
                 <div class="pl-6 space-y-1.5">
                     <div class="text-xs text-slate-300"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[9px] block mb-0.5">Deskripsi (Sejarah/Fungsi):</span> <span class="leading-relaxed">${loc.description || '-'}</span></div>
                     <div class="text-xs text-slate-300 mb-2"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[9px] block mb-0.5">Visual (Penggambaran):</span> <span class="leading-relaxed">${loc.visuals || '-'}</span></div>

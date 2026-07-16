@@ -342,6 +342,25 @@ export const UniverseCharacterModule = {
         });
     },
 
+    moveCharacterUp(univId, category, charId) {
+        const universe = this.data.universes.find(u => u.id === univId);
+        if (!universe || !universe.characters[category]) return;
+
+        const charArray = universe.characters[category];
+        const index = charArray.findIndex(c => c.id === charId);
+
+        // Hanya jalankan jika karakter ditemukan dan posisinya bukan yang paling atas (index > 0)
+        if (index > 0) {
+            // Tukar posisi dengan elemen di atasnya
+            const temp = charArray[index - 1];
+            charArray[index - 1] = charArray[index];
+            charArray[index] = temp;
+
+            this.saveData(true); 
+            this.switchView(univId);
+        }
+    },
+
     // --- FUNGSI ARRAY DIALOG ---
     addDialogue(univId, category, charId) {
         const inputEl = document.getElementById(`newDlg_${charId}`);
@@ -646,7 +665,7 @@ export const UniverseCharacterModule = {
                                     <span>Watak / Kepribadian</span>
                                     <span class="text-[10px] font-normal text-slate-500 normal-case">(Pilih min 1 untuk AI Dialog)</span>
                                 </label>
-                                <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                     ${daftarWatak.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-full">Belum ada watak di Master Watak.</span>' : ''}
                                     ${daftarWatak.map(w => `
                                         <label class="flex items-center space-x-2 cursor-pointer">
@@ -677,7 +696,7 @@ export const UniverseCharacterModule = {
                                 <!-- Skill Khusus -->
                                 <div>
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Skill Khusus</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                         ${[...this.data.skills].sort((a, b) => a.name.localeCompare(b.name)).map(s => `
                                             <label class="flex items-center space-x-2 cursor-pointer">
                                                 <input type="checkbox" value="${s.id}" class="skillCheck_${safeCat} form-checkbox rounded text-indigo-500 bg-slate-800 border-slate-600 focus:ring-indigo-500">
@@ -690,7 +709,7 @@ export const UniverseCharacterModule = {
                                 <!-- Item Bawaan -->
                                 <div>
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Item Bawaan</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                         ${[...this.data.items].sort((a, b) => a.name.localeCompare(b.name)).map(i => `
                                             <label class="flex items-center space-x-2 cursor-pointer">
                                                 <input type="checkbox" value="${i.id}" class="itemCheck_${safeCat} form-checkbox rounded text-cyan-500 bg-slate-800 border-slate-600 focus:ring-cyan-500">
@@ -703,7 +722,7 @@ export const UniverseCharacterModule = {
                                 <!-- Familiar / Pet -->
                                 <div>
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Familiar / Pet</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                         ${[...this.data.familiars].sort((a, b) => a.name.localeCompare(b.name)).map(f => `
                                             <label class="flex items-center space-x-2 cursor-pointer">
                                                 <input type="checkbox" value="${f.id}" class="familiarCheck_${safeCat} form-checkbox rounded text-fuchsia-500 bg-slate-800 border-slate-600 focus:ring-fuchsia-500">
@@ -722,7 +741,7 @@ export const UniverseCharacterModule = {
 
                         <div class="flex flex-col gap-4">
                             ${universe.characters[category].length === 0 ? '<p class="text-sm text-slate-500 italic col-span-full text-center py-4 bg-slate-800/40 rounded border border-dashed border-slate-700">Belum ada tokoh.</p>' : ''}
-                            ${universe.characters[category].map(c => this.renderCharacterCard(c, category)).join('')}
+                            ${universe.characters[category].map((c, index) => this.renderCharacterCard(c, category, index)).join('')}
                         </div>
                     </div>
                 </div>`;
@@ -739,7 +758,7 @@ export const UniverseCharacterModule = {
         return html;
     },
 
-    renderCharacterCard(char, category) {
+    renderCharacterCard(char, category, index) {
         // Cek Status Collapse Global
         app.collapsedCharCards = app.collapsedCharCards || {};
         if (app.collapsedCharCards[char.id] === undefined) {
@@ -805,8 +824,15 @@ export const UniverseCharacterModule = {
         return `
         <div id="charCard_${char.id}" class="bg-slate-900 border border-slate-700 rounded-lg p-4 relative group flex flex-col hover:border-indigo-500/50 transition-colors shadow-md">
             
-            <div class="absolute top-3 right-3 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm z-10">
-                <button onclick="app.toggleCharCard('${char.id}')" class="text-slate-400 hover:text-white p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Toggle Tampilan">
+                <div class="absolute top-3 right-3 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm z-10">
+                    ${index > 0 ? `
+                    <button onclick="app.moveCharacterUp('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan Urutan">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                        </svg>
+                    </button>
+                    ` : ''}
+                    <button onclick="app.toggleCharCard('${char.id}')" class="text-slate-400 hover:text-white p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Toggle Tampilan">
                     <svg id="charToggleIcon_${char.id}" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         ${isCollapsed ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>'}
                     </svg>
@@ -835,7 +861,7 @@ export const UniverseCharacterModule = {
 
                     <div class="mt-4 pt-3 border-t border-slate-800/80">
                         <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-2">Catatan Karakter:</span>
-                        <ul class="space-y-1 mb-2 max-h-32 overflow-y-auto pr-1">
+                        <ul class="space-y-1 mb-2">
                             ${notesHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada catatan.</li>'}
                         </ul>
                         
@@ -850,7 +876,7 @@ export const UniverseCharacterModule = {
                             <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block">Contoh Dialog / Kutipan:</span>
                             <button id="btnAiDlgCard_${char.id}" onclick="app.generateCharDialogueAI('${this.currentView}', '${category}', '${char.id}')" class="text-[10px] bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 px-2 py-1 rounded transition font-medium flex items-center gap-1">✨ AI Dialog</button>
                         </div>
-                        <ul class="space-y-1 mb-2 max-h-32 overflow-y-auto pr-1">
+                        <ul class="space-y-1 mb-2">
                             ${dialoguesHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada dialog.</li>'}
                         </ul>
                         

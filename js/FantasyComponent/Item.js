@@ -48,8 +48,7 @@ export const ItemModule = {
                             </div>
                             <div class="flex flex-wrap gap-2 pt-2">
                                 ${this.data.itemTags.length === 0 ? '<p class="text-xs text-slate-500 w-full text-center py-2">Belum ada tag item.</p>' : ''}
-                                ${this.data.itemTags.map(t => `
-                                    <span class="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded border border-slate-600 flex items-center group">
+                                ${this.data.itemTags.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t => `                                    <span class="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded border border-slate-600 flex items-center group">
                                         ${t.name}
                                         <button onclick="app.editItemTag('${t.id}')" class="ml-2 text-slate-400 hover:text-amber-400 hidden group-hover:block transition" title="Edit Tag">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -93,7 +92,7 @@ export const ItemModule = {
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Tag Item:</label>
                                     <div class="bg-slate-800 border border-slate-600 rounded p-2 max-h-24 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                         ${this.data.itemTags.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-full">Belum ada tag item.</span>' : ''}
-                                        ${this.data.itemTags.map(t => `
+                                        ${this.data.itemTags.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t => `
                                             <label class="flex items-center space-x-2 cursor-pointer">
                                                 <input type="checkbox" value="${t.id}" class="itemTagCheck form-checkbox rounded text-cyan-500 bg-slate-700 border-slate-600 focus:ring-cyan-500">
                                                 <span class="truncate text-slate-300 hover:text-white transition">${t.name}</span>
@@ -216,9 +215,14 @@ export const ItemModule = {
         document.getElementById('floatingItemDesc').innerHTML = item.description || '<span class="italic text-slate-500">Tidak ada deskripsi efek.</span>';
 
         // Set Tag
-        const tagHtml = item.tagIds.map(id => {
-            const tag = this.data.itemTags.find(t => t.id === id);
-            return tag ? `<span class="bg-cyan-900/60 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-700/50">${tag.name}</span>` : '';
+        const resolvedTags = (item.tagIds || [])
+            .map(id => this.data.itemTags.find(t => t.id === id))
+            .filter(tag => tag !== undefined);
+
+        resolvedTags.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        const tagHtml = resolvedTags.map(tag => {
+            return `<span class="bg-cyan-900/60 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-700/50">${tag.name}</span>`;
         }).join('');
         document.getElementById('floatingItemTags').innerHTML = tagHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag</span>';
 

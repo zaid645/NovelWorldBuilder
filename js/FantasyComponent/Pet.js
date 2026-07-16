@@ -44,7 +44,7 @@ export const PetModule = {
                             </div>
                             <div class="flex flex-wrap gap-2 pt-2">
                                 ${this.data.familiarTags.length === 0 ? '<p class="text-xs text-slate-500 w-full text-center py-2">Belum ada tag familiar.</p>' : ''}
-                                ${this.data.familiarTags.map(t => `
+                                ${this.data.familiarTags.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t => `
                                     <span class="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded border border-slate-600 flex items-center group">
                                         ${t.name}
                                         <button onclick="app.editFamiliarTag('${t.id}')" class="ml-2 text-slate-400 hover:text-amber-400 hidden group-hover:block" title="Edit Tag">
@@ -179,7 +179,7 @@ export const PetModule = {
                                 <div class="mb-4">
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Tag Familiar:</label>
                                     <div class="bg-slate-800 border border-slate-600 rounded p-2 max-h-24 overflow-y-auto flex flex-wrap gap-2 text-sm">
-                                        ${this.data.familiarTags.map(t => `
+                                        ${this.data.familiarTags.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t => `
                                             <label class="flex items-center space-x-1.5 bg-slate-900 px-2 py-1 rounded border border-slate-700 cursor-pointer">
                                                 <input type="checkbox" value="${t.id}" class="familiarTagCheck form-checkbox rounded text-fuchsia-500 bg-slate-700 border-slate-600">
                                                 <span class="truncate text-slate-300 text-xs">${t.name}</span>
@@ -265,12 +265,18 @@ export const PetModule = {
         document.getElementById('floatingFamDesc').innerHTML = fam.description || fam.background || '<span class="italic text-slate-500">Tidak ada deskripsi efek.</span>';
 
         // Set Tag Kategori
-        const tagHtml = (fam.tagIds || []).map(tagId => {
-            const tag = this.data.familiarTags.find(t => t.id === tagId);
-            return tag ? `<span class="bg-fuchsia-900/60 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded border border-fuchsia-700/50">${tag.name}</span>` : '';
-        }).join('');
-        document.getElementById('floatingFamTags').innerHTML = tagHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag</span>';
+        const resolvedTags = (fam.tagIds || [])
+            .map(tagId => this.data.familiarTags.find(t => t.id === tagId))
+            .filter(tag => tag !== undefined);
 
+        resolvedTags.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        const tagHtml = resolvedTags.map(tag => {
+            return `<span class="bg-fuchsia-900/60 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded border border-fuchsia-700/50">${tag.name}</span>`;
+        }).join('');
+
+        document.getElementById('floatingFamTags').innerHTML = tagHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag</span>';
+        
         // Set Watak
         const masterWatakList = app.data.watakList || [];
         let parsedWataks = [];
