@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Novel Lore Manager</title>
+    <link rel="icon" href="favicon.ico" sizes="32x32">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -77,6 +79,12 @@
                 <span>Terakhir Disimpan:</span>
                 <span id="lastSavedText" class="text-slate-300 font-medium">-</span>
             </div>
+            <button 
+                id="btnCheckUpdate" 
+                class="w-full flex items-center justify-center gap-2 mt-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 hover:text-white rounded transition font-medium text-xs border border-slate-600 shadow-sm"
+            >
+                Cek Pembaruan Sistem
+            </button>
         </div>
     </aside>
 
@@ -148,5 +156,6 @@
 
     <!-- MEMANGGIL MODUL UTAMA (ES MODULE) -->
     <script type="module" src="./js/MainScript.js"></script>
+    <script type="module" src="./caching.js"></script>
 </body>
 </html>

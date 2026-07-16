@@ -1,24 +1,27 @@
-/**
- * UniverseLoreModule
- * Mengelola informasi tambahan (Lore) berupa catatan panjang untuk suatu Semesta.
- * Disimpan dalam array string sederhana: ["Catatan 1", "Catatan 2"]
- */
+/*
+UniverseLoreModule
+Mengelola informasi tambahan (Lore) berupa catatan panjang untuk suatu Semesta.
+Disimpan dalam array string sederhana: ["Catatan 1", "Catatan 2"]
+*/
+
 export const UniverseLoreModule = {
-    
     // =========================================
     // --- FUNGSI CRUD LORE ---
     // =========================================
 
+    // Membuka kotak input untuk menambahkan lore baru
     openAddLoreBox(univId) {
         document.getElementById(`addLoreBox_${univId}`).classList.remove('hidden');
         document.getElementById(`newLoreInput_${univId}`).focus();
     },
 
+    // Menutup kotak input tambah lore dan meriset nilainya
     closeAddLoreBox(univId) {
         document.getElementById(`addLoreBox_${univId}`).classList.add('hidden');
         document.getElementById(`newLoreInput_${univId}`).value = '';
     },
 
+    // Menyimpan catatan lore baru ke dalam data universe
     saveNewUniverseLore(univId) {
         const inputEl = document.getElementById(`newLoreInput_${univId}`);
         const text = inputEl.value.trim();
@@ -26,7 +29,7 @@ export const UniverseLoreModule = {
         if (text) {
             const universe = this.data.universes.find(u => u.id === univId);
             if (!universe.lores) universe.lores = [];
-            
+
             universe.lores.push(text);
             this.saveData();
             this.switchView(univId);
@@ -36,24 +39,52 @@ export const UniverseLoreModule = {
         }
     },
 
+    // Mengaktifkan mode edit inline di panel lore
     editUniverseLore(univId, index) {
+        const displayEl = document.getElementById(`loreDisplay_${univId}_${index}`);
+        const editBoxEl = document.getElementById(`loreEditBox_${univId}_${index}`);
+        const inputEl = document.getElementById(`loreEditInput_${univId}_${index}`);
+        
+        if (displayEl && editBoxEl && inputEl) {
+            displayEl.classList.add('hidden');
+            editBoxEl.classList.remove('hidden');
+            inputEl.focus();
+
+            // Mengarahkan kursor teks ke bagian paling akhir agar nyaman diedit
+            const length = inputEl.value.length;
+            inputEl.setSelectionRange(length, length);
+        }
+    },
+
+    // Membatalkan mode edit inline dan kembali ke tampilan normal
+    cancelEditUniverseLore(univId, index) {
+        const displayEl = document.getElementById(`loreDisplay_${univId}_${index}`);
+        const editBoxEl = document.getElementById(`loreEditBox_${univId}_${index}`);
+        if (displayEl && editBoxEl) {
+            displayEl.classList.remove('hidden');
+            editBoxEl.classList.add('hidden');
+        }
+    },
+
+    // Menyimpan hasil edit inline yang dilakukan pengguna
+    saveEditedUniverseLore(univId, index) {
         const universe = this.data.universes.find(u => u.id === univId);
         if (!universe || !universe.lores || universe.lores.length <= index) return;
         
-        const currentText = universe.lores[index];
-        // Menggunakan prompt bawaan browser untuk kemudahan edit cepat
-        const newText = prompt("Ubah catatan lore:", currentText);
-        
-        if (newText !== null && newText.trim() !== "") {
-            universe.lores[index] = newText.trim();
+        const inputEl = document.getElementById(`loreEditInput_${univId}_${index}`);
+        const newText = inputEl.value.trim();
+
+        if (newText !== "") {
+            universe.lores[index] = newText;
             this.saveData();
             this.switchView(univId);
             this.showAlert("Catatan Lore berhasil diperbarui.", "success");
-        } else if (newText !== null && newText.trim() === "") {
+        } else {
             this.showAlert("Catatan tidak boleh kosong. Gunakan tombol hapus jika ingin menghilangkan lore.", "warning");
         }
     },
 
+    // Menghapus catatan lore setelah konfirmasi pengguna
     deleteUniverseLore(univId, index) {
         if (confirm("Yakin ingin menghapus catatan lore ini?")) {
             const universe = this.data.universes.find(u => u.id === univId);
@@ -66,6 +97,7 @@ export const UniverseLoreModule = {
         }
     },
 
+    // Menaikkan urutan catatan lore
     moveUniverseLoreUp(univId, index) {
         if (index <= 0) return;
         const universe = this.data.universes.find(u => u.id === univId);
@@ -78,6 +110,7 @@ export const UniverseLoreModule = {
         }
     },
 
+    // Menurunkan urutan catatan lore
     moveUniverseLoreDown(univId, index) {
         const universe = this.data.universes.find(u => u.id === univId);
         if (universe && universe.lores && index < universe.lores.length - 1) {
@@ -93,9 +126,9 @@ export const UniverseLoreModule = {
     // --- FUNGSI RENDER VIEW ---
     // =========================================
 
+    // Merender tampilan area catatan lore (HTML)
     renderLoreArea(universe) {
         const lores = universe.lores || [];
-
         let html = `
         <div class="mb-4 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden mt-6 shadow-sm">
             <div class="bg-slate-700/50 p-3 flex justify-between items-center cursor-pointer border-b border-slate-700" onclick="app.togglePanel('lorePanel_${universe.id}')">
@@ -104,7 +137,7 @@ export const UniverseLoreModule = {
                     Catatan Lore Semesta <span class="ml-2 bg-slate-600 text-xs px-2 py-0.5 rounded-full text-white">${lores.length} Catatan</span>
                 </h3>
             </div>
-            
+
             <div id="lorePanel_${universe.id}" class="p-3 space-y-3 ${this.getPanelClass('lorePanel_' + universe.id)}">
         `;
 
@@ -115,14 +148,28 @@ export const UniverseLoreModule = {
             lores.forEach((lore, index) => {
                 html += `
                 <div class="bg-slate-900 border border-slate-700 rounded p-4 relative group hover:border-amber-500/50 transition">
-                    <div class="absolute top-2 right-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm">
-                        <button onclick="app.moveUniverseLoreUp('${universe.id}', ${index})" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg></button>
-                        <button onclick="app.moveUniverseLoreDown('${universe.id}', ${index})" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Turunkan"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
-                        <button onclick="app.editUniverseLore('${universe.id}', ${index})" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Lore"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-                        <button onclick="app.deleteUniverseLore('${universe.id}', ${index})" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Lore"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+
+                    <!-- DISPLAY MODE -->
+                    <div id="loreDisplay_${universe.id}_${index}" class="block">
+                        <div class="absolute top-2 right-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm">
+                            <button onclick="app.moveUniverseLoreUp('${universe.id}', ${index})" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg></button>
+                            <button onclick="app.moveUniverseLoreDown('${universe.id}', ${index})" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Turunkan"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+                            <button onclick="app.editUniverseLore('${universe.id}', ${index})" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Lore"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                            <button onclick="app.deleteUniverseLore('${universe.id}', ${index})" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Lore"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        </div>
+                        <!-- Teks Lore -->
+                        <div class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed pr-24 border-l-2 border-amber-500/50 pl-3">${lore}</div>
                     </div>
-                    <!-- Teks Lore -->
-                    <div class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed pr-24 border-l-2 border-amber-500/50 pl-3">${lore}</div>
+
+                    <!-- EDIT MODE (Inline Form) -->
+                    <div id="loreEditBox_${universe.id}_${index}" class="hidden space-y-2">
+                        <textarea id="loreEditInput_${universe.id}_${index}" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm text-slate-200 focus:border-amber-500 focus:outline-none mb-2" rows="4" placeholder="Edit catatan lore...">${lore}</textarea>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="app.cancelEditUniverseLore('${universe.id}', ${index})" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs transition border border-slate-600">Batal</button>
+                            <button onclick="app.saveEditedUniverseLore('${universe.id}', ${index})" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs transition shadow font-medium">Perbarui</button>
+                        </div>
+                    </div>
+
                 </div>`;
             });
             html += `</div>`;
@@ -138,7 +185,7 @@ export const UniverseLoreModule = {
                             <button onclick="app.saveNewUniverseLore('${universe.id}')" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs transition shadow font-medium">Simpan Catatan</button>
                         </div>
                     </div>
-                    
+
                     <button onclick="app.openAddLoreBox('${universe.id}')" class="w-full py-2.5 border-2 border-dashed border-slate-700 hover:border-amber-500 hover:text-amber-400 hover:bg-amber-500/5 rounded-lg text-slate-400 text-sm font-medium transition flex justify-center items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Tambah Catatan Lore Baru

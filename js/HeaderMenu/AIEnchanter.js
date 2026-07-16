@@ -218,7 +218,7 @@ export const AIEnchanterModule = {
                 </div>
 
                 <!-- Sandbox Pengujian Pengguna -->
-                <div class="bg-slate-800 p-5 rounded-lg border border-slate-700 shadow-md">
+                <div class="hidden bg-slate-800 p-5 rounded-lg border border-slate-700 shadow-md">
                     <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
                         <span>🧪</span> Sandbox Pengujian Mandiri
                     </h3>

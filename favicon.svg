@@ -1,0 +1,44 @@
+
+                        <!-- Custom vector grimoire designed with rich gradient & magic symbol -->
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" id="grimoireSvg">
+                            <defs>
+                                <linearGradient id="bookGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#1e1b4b;stop-opacity:1" id="gradStop1"></stop>
+                                    <stop offset="100%" style="stop-color:#0f051d;stop-opacity:1" id="gradStop2"></stop>
+                                </linearGradient>
+                                <linearGradient id="magicGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#818cf8;stop-opacity:1" id="glowStop1"></stop>
+                                    <stop offset="100%" style="stop-color:#6366f1;stop-opacity:1" id="glowStop2"></stop>
+                                </linearGradient>
+                            </defs>
+                            <!-- Spellbook Body (Outer Shadow & Cover) -->
+                            <rect x="96" y="48" width="320" height="416" rx="28" fill="url(#bookGrad)" stroke="#1e293b" stroke-width="8"></rect>
+                            
+                            <!-- Book Spine Highlight -->
+                            <rect x="96" y="48" width="48" height="416" rx="4" fill="#0f172a" opacity="0.6"></rect>
+                            <line x1="144" y1="48" x2="144" y2="464" stroke="#1e293b" stroke-width="4"></line>
+                            
+                            <!-- Golden/Metallic Corner Ornaments -->
+                            <path d="M144 80 L180 80 L144 116 Z" fill="url(#magicGlow)" opacity="0.8"></path>
+                            <path d="M384 80 L348 80 L384 116 Z" fill="url(#magicGlow)" opacity="0.8"></path>
+                            <path d="M384 432 L348 432 L384 396 Z" fill="url(#magicGlow)" opacity="0.8"></path>
+                            
+                            <!-- Spine Ribs (Ancient book binding) -->
+                            <rect x="96" y="112" width="48" height="12" rx="2" fill="url(#magicGlow)" opacity="0.4"></rect>
+                            <rect x="96" y="250" width="48" height="12" rx="2" fill="url(#magicGlow)" opacity="0.4"></rect>
+                            <rect x="96" y="388" width="48" height="12" rx="2" fill="url(#magicGlow)" opacity="0.4"></rect>
+
+                            <!-- Magic Emblem Circle (Center) -->
+                            <circle cx="272" cy="256" r="84" fill="none" stroke="url(#magicGlow)" stroke-width="4" stroke-dasharray="10 6"></circle>
+                            <circle cx="272" cy="256" r="68" fill="none" stroke="url(#magicGlow)" stroke-width="1.5" opacity="0.5"></circle>
+                            
+                            <!-- Star of Arcane Magic inside the Grimoire -->
+                            <polygon points="272,196 288,240 332,240 296,268 312,312 272,284 232,312 248,268 212,240 256,240" fill="url(#magicGlow)"></polygon>
+                            
+                            <!-- Sparkles / Runes details -->
+                            <circle cx="210" cy="170" r="4" fill="#fff"></circle>
+                            <circle cx="334" cy="170" r="4" fill="#fff"></circle>
+                            <circle cx="210" cy="342" r="4" fill="#fff"></circle>
+                            <circle cx="334" cy="342" r="4" fill="#fff"></circle>
+                        </svg>
+                    

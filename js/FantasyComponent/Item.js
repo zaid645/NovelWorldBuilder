@@ -26,7 +26,6 @@ export const ItemModule = {
                     <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
                         <div class="bg-slate-700/50 p-3 flex justify-between items-center">
                             <h3 class="font-semibold text-slate-200">Daftar Tag Item <span class="text-xs bg-slate-600 px-2 py-0.5 rounded-full ml-1">${this.data.itemTags.length}</span></h3>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                         <div id="itemTagsPanel" class="p-4 space-y-4">
                             <div class="flex space-x-2 max-w-md">
