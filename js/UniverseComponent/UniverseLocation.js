@@ -346,6 +346,18 @@ export const UniverseLocationModule = {
         return null;
     },
 
+    // Helper baru untuk menghitung kedalaman tingkat (depth) suatu lokasi dari root
+    getLocationDepth(locations, targetId, currentDepth = 1) {
+        for (let loc of locations) {
+            if (loc.id === targetId) return currentDepth;
+            if (loc.children && loc.children.length > 0) {
+                const foundDepth = this.getLocationDepth(loc.children, targetId, currentDepth + 1);
+                if (foundDepth !== 0) return foundDepth;
+            }
+        }
+        return 0;
+    },
+
     // Memindahkan urutan tempat ke atas (geser naik) dalam array asalnya
     moveLocationUp(univId, locId) {
         const universe = this.data.universes.find(u => u.id === univId);
@@ -613,6 +625,10 @@ export const UniverseLocationModule = {
         if (!locations || locations.length === 0) return '';
         const indentClass = depth > 0 ? 'ml-4 sm:ml-6 pl-4 border-l-2 border-slate-700 mt-2' : '';
         
+        // Dapatkan data semesta utuh untuk hitung depth dari root
+        const universe = this.data.universes.find(u => u.id === univId);
+        const rootLocations = universe ? universe.locations : [];
+
         return `<div class="${indentClass} space-y-3">` + locations.map((loc, index) => {
             const hasChildren = loc.children && loc.children.length > 0;
             
@@ -620,7 +636,11 @@ export const UniverseLocationModule = {
             const panelClass = this.getPanelClass(panelId, 'hidden');
             const isHidden = panelClass.includes('hidden');
             
-            // Tombol SVG sebagai hiasan interaktif, transisi rotasi didasarkan pada collapse state
+            // Hitung level kedalaman lokasi saat ini secara absolut dari root semesta
+            const absoluteDepth = this.getLocationDepth(rootLocations, loc.id);
+            const reachMaxDepth = absoluteDepth >= 10; // Cek batasan jalur parent ke-10
+
+            // Tombol SVG sebagai hiasan interaktif
             const toggleBtn = hasChildren 
                 ? `<span class="mr-2 text-slate-400 group-hover/header:text-emerald-400 transition-transform flex items-center justify-center">
                         <svg id="toggle-icon-${loc.id}" class="w-4 h-4 transform transition-transform duration-200 ${isHidden ? '-rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -642,7 +662,6 @@ export const UniverseLocationModule = {
             <div class="bg-slate-900 border border-slate-700 rounded p-3 relative group shadow-sm hover:border-emerald-500/40 transition-colors">
                 <!-- PANEL AKSI MELAYANG DI SIKU KANAN ATAS -->
                 <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition z-10 bg-slate-900 pl-2 rounded">
-                    <!-- Tombol Geser Naik Berdasarkan Abjad / Urutan Indeks Posisi -->
                     ${index > 0 ? `
                     <button onclick="event.stopPropagation(); app.moveLocationUp('${univId}', '${loc.id}')" class="text-slate-400 hover:text-emerald-400 p-1 bg-slate-800 rounded transition border border-slate-700" title="Naikkan Urutan Tempat">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -658,13 +677,14 @@ export const UniverseLocationModule = {
                     </button>
                 </div>
                 
-                <!-- HEADER BARIS JUDUL SEKARANG CLIKABLE PENUH (LEBAR PENUH) -->
+                <!-- HEADER BARIS JUDUL -->
                 <div class="flex items-center mb-2 pb-1 border-b border-slate-800 ${hasChildren ? 'cursor-pointer select-none group/header' : ''}"
                      ${hasChildren ? `onclick="app.toggleLocationChildren('${loc.id}')"` : ''}>
                     ${toggleBtn}
                     <h4 class="font-bold text-emerald-400 text-sm md:text-base flex-1 line-clamp-1 group-hover/header:text-emerald-300 transition-all">
                         ${loc.name} 
                         ${hasChildren ? `<span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 font-normal ml-2 border border-slate-700">${loc.children.length} sub-tempat</span>` : ''}
+                        <span class="text-[9px] text-slate-500 font-normal ml-1">Lvl ${absoluteDepth}</span>
                     </h4>
                 </div>
                 
@@ -673,6 +693,8 @@ export const UniverseLocationModule = {
                     <div class="text-xs text-slate-300"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[9px] block mb-0.5">Deskripsi (Sejarah/Fungsi):</span> <span class="leading-relaxed">${loc.description || '-'}</span></div>
                     <div class="text-xs text-slate-300 mb-2"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[9px] block mb-0.5">Visual (Penggambaran):</span> <span class="leading-relaxed">${loc.visuals || '-'}</span></div>
                     
+                    <!-- KONDISIONAL: HANYA MUNCUL JIKA BELUM MENCAPAI TINGKAT 10 -->
+                    ${!reachMaxDepth ? `
                     <div class="flex items-center space-x-2 mt-3 mb-2 pt-2 border-t border-slate-800/80">
                         <button onclick="app.openAddChildLocation('${loc.id}')" class="text-xs text-slate-400 hover:text-emerald-400 flex items-center bg-slate-800 px-2 py-1 rounded transition border border-slate-700">
                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Sub-Tempat
@@ -681,6 +703,7 @@ export const UniverseLocationModule = {
                             ✨ AI Auto-Child
                         </button>
                     </div>
+                    ` : `<div class="text-[10px] text-amber-500/70 italic mt-2 pt-2 border-t border-slate-800/80">⚠️ Kedalaman struktur tempat mencapai batas maksimum (Maks. 10 tingkat parent).</div>`}
 
                     <!-- CHILD LOCATION FORM -->
                     <div id="addChildLoc_${loc.id}" class="${this.getPanelClass('addChildLoc_' + loc.id)} bg-slate-800 border border-slate-700 p-3 rounded mt-2 mb-3 shadow-inner transition-all duration-300">

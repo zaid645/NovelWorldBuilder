@@ -364,13 +364,19 @@ export const UniverseCharacterModule = {
     // --- FUNGSI ARRAY DIALOG ---
     addDialogue(univId, category, charId) {
         const inputEl = document.getElementById(`newDlg_${charId}`);
-        const text = inputEl.value.trim();
+        let text = inputEl.value.trim();
         
         if (text) {
             const universe = this.data.universes.find(u => u.id === univId);
             const char = universe.characters[category].find(c => c.id === charId);
             
             if (!char.dialogues) char.dialogues = [];
+
+            // Jika belum ada karakter petik dua sama sekali, barulah otomatis dibungkus
+            if (!text.includes('"')) {
+                text = `"${text}"`;
+            }
+            
             char.dialogues.push(text);
             
             this.saveData(true); 
@@ -564,7 +570,9 @@ export const UniverseCharacterModule = {
             const resultText = await app.requestEnchant(payload);
             const cleanedDialogues = resultText.split('\n')
                 .map(line => line.replace(/^[\d\.\-\*\"\' ]+/, '').trim()) 
-                .filter(line => line.length > 0);
+                .filter(line => line.length > 0)
+                // TAMBAHKAN MAP INI: Memastikan hasil AI terbungkus petik dua
+                .map(line => `"${line}"`);
             
             if (!char.dialogues) char.dialogues = [];
             char.dialogues.push(...cleanedDialogues);
@@ -809,17 +817,14 @@ export const UniverseCharacterModule = {
         `).join('');
 
         // Map Dialog
-        const dialoguesHtml = (char.dialogues || []).map((dlg, index) => {
-            const displayDlg = dlg.includes('"') || dlg.includes("'") ? dlg : `"${dlg}"`;
-            return `
-                <li class="flex justify-between items-start text-xs italic text-slate-300 border-l-2 border-indigo-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
-                    <span class="flex-1 leading-relaxed">${displayDlg}</span>
-                    <button onclick="app.deleteDialogue('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-2 px-1 transition" title="Hapus dialog ini">
-                        &times;
-                    </button>
-                </li>
-            `;
-        }).join('');
+        const dialoguesHtml = (char.dialogues || []).map((dlg, index) => `
+            <li class="flex justify-between items-start text-xs italic text-slate-300 border-l-2 border-indigo-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
+                <span class="flex-1 leading-relaxed">${dlg}</span>
+                <button onclick="app.deleteDialogue('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-2 px-1 transition" title="Hapus dialog ini">
+                    &times;
+                </button>
+            </li>
+        `).join('');
 
         return `
         <div id="charCard_${char.id}" class="bg-slate-900 border border-slate-700 rounded-lg p-4 relative group flex flex-col hover:border-indigo-500/50 transition-colors shadow-md">

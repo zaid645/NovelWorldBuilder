@@ -140,16 +140,6 @@ export const PetModule = {
                                     <textarea id="newFamBackground" placeholder="Dari mana ia berasal? Kenapa ia ikut dengan masternya? Tulis draf untuk referensi AI..." class="bg-slate-800 border border-slate-600 rounded p-2.5 text-sm w-full outline-none focus:border-fuchsia-500" rows="3"></textarea>
                                 </div>
                                 
-                                <div class="mb-4">
-                                    <div class="flex justify-between items-end mb-1">
-                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Contoh Dialog / Suara</label>
-                                        <button id="btnAiDlg" onclick="app.generateFamAI('dialogues')" class="text-[10px] bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 px-2 py-1 rounded transition font-medium flex items-center gap-1 shadow-sm">
-                                            ✨ AI Auto-Dialog
-                                        </button>
-                                    </div>
-                                    <textarea id="newFamDialogues" placeholder="Pisahkan tiap dialog/suara dengan Enter (Baris Baru). Kosongkan area ini jika ingin AI yang mengisi sepenuhnya." class="bg-slate-800 border border-slate-600 rounded p-2.5 text-sm w-full outline-none focus:border-fuchsia-500" rows="4"></textarea>
-                                </div>
-                                
                                 <!-- Integrasi Komponen Lain -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                     <div>
@@ -239,8 +229,14 @@ export const PetModule = {
                         <hr class="border-slate-700/60">
                         <div>
                             <span class="font-semibold text-yellow-400 uppercase tracking-wider text-[10px] block mb-1.5">Contoh Suara / Dialog:</span>
-                            <ul id="floatingFamDialogues" class="space-y-1 mb-2 max-h-32 overflow-y-auto pr-1"></ul>
+                            <ul id="floatingFamDialogues" class="space-y-1 mb-2"></ul>
                             <div id="floatingFamDlgInputContainer"></div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-amber-400 uppercase tracking-wider text-[10px] block mb-1.5">Catatan Khusus Pet:</span>
+                            <ul id="floatingFamNotes" class="space-y-1 mb-2"></ul>
+                            <div id="floatingFamNoteInputContainer"></div>
                         </div>
                     </div>
                 </div>
@@ -308,7 +304,7 @@ export const PetModule = {
         // Set Dialogues
         const dialoguesHtml = (fam.dialogues || []).map((dlg, index) => `
             <li class="flex justify-between items-start text-[11px] italic text-slate-300 border-l-2 border-fuchsia-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r mb-1">
-                <span class="flex-1 leading-relaxed">"${dlg}"</span>
+                <span class="flex-1 leading-relaxed">${dlg}</span>
                 <button onclick="app.deleteFamiliarDialogue('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-1.5 transition px-1" title="Hapus baris ini">&times;</button>
             </li>
         `).join('');
@@ -322,8 +318,36 @@ export const PetModule = {
             </div>
         `;
 
+        // --- Set Catatan / Notes ---
+        const notesHtml = (fam.notes || []).map((note, index) => `
+            <li class="flex justify-between items-start text-[11px] text-slate-300 border-l-2 border-amber-500/50 pl-2 py-1 group/note bg-slate-800/30 rounded-r mb-1">
+                <span class="flex-1 leading-relaxed whitespace-pre-wrap">${note}</span>
+                <div class="opacity-0 group-hover/note:opacity-100 flex items-center space-x-1 ml-1.5 transition">
+                    <button onclick="app.editFamiliarNote('${fam.id}', ${index})" class="text-amber-500 hover:text-amber-400 text-[10px] px-1" title="Edit Catatan">✎</button>
+                    <button onclick="app.deleteFamiliarNote('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs px-1" title="Hapus Catatan">&times;</button>
+                </div>
+            </li>
+        `).join('');
+        document.getElementById('floatingFamNotes').innerHTML = notesHtml || '<li class="text-[10px] text-slate-500 italic">Belum ada catatan.</li>';
+
+        // --- Render Input Box untuk Catatan Baru ---
+        document.getElementById('floatingFamNoteInputContainer').innerHTML = `
+            <div class="flex items-center space-x-1.5 pt-1">
+                <input type="text" id="newFamNote_${fam.id}" placeholder="Ketik catatan baru..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500 transition" onkeydown="if(event.key === 'Enter') app.addFamiliarNote('${fam.id}')">
+                <button onclick="app.addFamiliarNote('${fam.id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm">+</button>
+            </div>
+        `;
+
         // Tampilkan panel
         document.getElementById('floatingFamDetail').classList.remove('hidden');
+        const inputEl = document.getElementById(`newFamDlg_${id}`);
+        if (inputEl) {
+            inputEl.focus();
+            const scrollContainer = document.getElementById('floatingFamDetail').querySelector('.overflow-y-auto');
+            if (scrollContainer) {
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }
+        }
     },
 
     closeFamiliarDetailFloating() {
@@ -466,10 +490,7 @@ export const PetModule = {
         document.getElementById('newFamiliarName').value = '';
         document.getElementById('newFamiliarApp').value = '';
         document.getElementById('newFamBackground').value = ''; 
-        
-        const dlgInput = document.getElementById('newFamDialogues');
-        if(dlgInput) dlgInput.value = '';
-        
+                
         // Uncheck all Checkboxes
         document.querySelectorAll('.famWatakCheck').forEach(cb => cb.checked = false);
         document.querySelectorAll('.familiarTagCheck').forEach(cb => cb.checked = false);
@@ -496,12 +517,7 @@ export const PetModule = {
         document.getElementById('newFamiliarName').value = fam.name;
         document.getElementById('newFamiliarApp').value = fam.appearance || '';
         document.getElementById('newFamBackground').value = fam.description || ''; 
-        
-        const dlgInput = document.getElementById('newFamDialogues');
-        if(dlgInput) {
-            dlgInput.value = (fam.dialogues || []).join('\n');
-        }
-        
+                
         // Migrasi & Centang Data Watak
         let watakArray = [];
         if (Array.isArray(fam.personality)) {
@@ -541,13 +557,6 @@ export const PetModule = {
         
         if (!name) return this.showAlert("Nama familiar wajib diisi", "error");
 
-        let dialogues = [];
-        const dlgInput = document.getElementById('newFamDialogues');
-        if (dlgInput) {
-            // Filter baris kosong agar array bersih
-            dialogues = dlgInput.value.split('\n').map(d => d.trim()).filter(d => d !== '');
-        }
-        
         // Ambil data string murni untuk watak, array ID untuk sisanya
         const personality = Array.from(document.querySelectorAll('.famWatakCheck:checked')).map(cb => cb.value);
         const tagIds = Array.from(document.querySelectorAll('.familiarTagCheck:checked')).map(cb => cb.value);
@@ -560,8 +569,7 @@ export const PetModule = {
                 fam.name = name;
                 fam.personality = personality; // Array of strings
                 fam.appearance = appearance;
-                fam.description = description; 
-                fam.dialogues = dialogues;
+                fam.description = description;
                 fam.tagIds = tagIds;
                 fam.skillIds = skillIds;
                 fam.itemIds = itemIds; 
@@ -575,7 +583,8 @@ export const PetModule = {
                 personality, // Array of strings
                 appearance,
                 description,
-                dialogues,
+                dialogues: [],
+                notes: [],
                 tagIds,
                 skillIds,
                 itemIds
@@ -601,15 +610,21 @@ export const PetModule = {
     // --- LOGIKA ARRAY DIALOG PET SECARA CEPAT DARI CARD/FLOATING ---
     addFamiliarDialogue(famId) {
         const inputEl = document.getElementById(`newFamDlg_${famId}`);
-        const text = inputEl ? inputEl.value.trim() : "";
+        let text = inputEl ? inputEl.value.trim() : "";
         
         if (text) {
             const fam = this.data.familiars.find(f => f.id === famId);
             if (!fam.dialogues) fam.dialogues = [];
+            
+            // Otomatis bungkus dengan petik dua jika belum ada di awal & akhir
+            if (!text.includes('"')) {
+                text = `"${text}"`;
+            }
+            
             fam.dialogues.push(text);
             
             this.saveData(true);
-            this.switchView('familiars'); 
+            this.renderFamiliarGrid();
             
             // Refresh jendela floating detail jika sedang terbuka
             if(this.activeFamId === famId) {
@@ -624,7 +639,7 @@ export const PetModule = {
             if (fam && fam.dialogues) {
                 fam.dialogues.splice(dlgIndex, 1);
                 this.saveData(true);
-                this.switchView('familiars');
+                this.renderFamiliarGrid();
                 
                 // Refresh jendela floating detail jika sedang terbuka
                 if(this.activeFamId === famId) {
@@ -634,6 +649,63 @@ export const PetModule = {
         }
     },
 
+    addFamiliarNote(famId) {
+        const inputEl = document.getElementById(`newFamNote_${famId}`);
+        let text = inputEl ? inputEl.value.trim() : "";
+        
+        if (text) {
+            const fam = this.data.familiars.find(f => f.id === famId);
+            if (!fam.notes) fam.notes = [];
+            
+            fam.notes.push(text);
+            
+            this.saveData(true);
+            this.renderFamiliarGrid();
+            
+            // Refresh panel mengambang agar catatan baru langsung muncul
+            if (this.activeFamId === famId) {
+                this.showFamiliarDetailFloating(famId);
+            }
+        }
+    },
+
+    editFamiliarNote(famId, noteIndex) {
+        const fam = this.data.familiars.find(f => f.id === famId);
+        if (!fam || !fam.notes || fam.notes[noteIndex] === undefined) return;
+        
+        const currentNote = fam.notes[noteIndex];
+        // Menggunakan dialog popup prompt agar edit hanya terjadi di lapisan panel dialog
+        const newNote = prompt("Ubah catatan familiar:", currentNote);
+        
+        if (newNote !== null && newNote.trim() !== "") {
+            fam.notes[noteIndex] = newNote.trim();
+            
+            this.saveData(true);
+            this.renderFamiliarGrid();
+            
+            if (this.activeFamId === famId) {
+                this.showFamiliarDetailFloating(famId);
+            }
+        }
+    },
+
+    deleteFamiliarNote(famId, noteIndex) {
+        if (confirm("Hapus catatan ini?")) {
+            const fam = this.data.familiars.find(f => f.id === famId);
+            if (fam && fam.notes) {
+                fam.notes.splice(noteIndex, 1);
+                
+                this.saveData(true);
+                this.renderFamiliarGrid();
+                
+                if (this.activeFamId === famId) {
+                    this.showFamiliarDetailFloating(famId);
+                }
+            }
+        }
+    },
+
+    
     exportFamiliarsOnly() {
         if (this.data.familiars.length === 0) {
             return this.showAlert("Tidak ada data familiar untuk diexport.", "error");
@@ -739,11 +811,12 @@ export const PetModule = {
         try {
             const resultText = await app.requestEnchant(payload);
             
-            // Pembersihan ekstra khusus dialog untuk menghilangkan angka jika AI masih ngeyel
+            // Pembersihan ekstra khusus dialog untuk menghilangkan angka dan membungkus petik dua
             if (targetField === 'dialogues') {
                 const cleanedDialogues = resultText.split('\n')
                     .map(line => line.replace(/^[\d\.\-\*\"\' ]+/, '').trim()) // Menghapus nomor/bullet point di awal
                     .filter(line => line.length > 0)
+                    .map(line => `"${line}"`) // Memastikan terbungkus tanda petik dua
                     .join('\n');
                 targetEl.value = cleanedDialogues;
             } else {
@@ -827,6 +900,7 @@ export const PetModule = {
         const hasSkills = fam.skillIds && fam.skillIds.length > 0;
         const hasItems = fam.itemIds && fam.itemIds.length > 0;
         const hasDialogues = fam.dialogues && fam.dialogues.length > 0;
+        const hasNotes = fam.notes && fam.notes.length > 0;
 
         return `
         <div onclick="app.showFamiliarDetailFloating('${fam.id}')" class="bg-slate-900 border border-slate-700 rounded-lg p-3 relative group shadow-md transition-all duration-300 hover:border-fuchsia-500/70 hover:shadow-fuchsia-900/20 cursor-pointer flex flex-col justify-between min-h-[95px] overflow-hidden">
@@ -845,6 +919,7 @@ export const PetModule = {
                     ${hasSkills ? '<span class="text-[9px] text-indigo-400" title="Memiliki Skill">✨</span>' : ''}
                     ${hasItems ? '<span class="text-[9px] text-cyan-400" title="Memiliki Item">🎒</span>' : ''}
                     ${hasDialogues ? '<span class="text-[9px] text-yellow-400" title="Memiliki Dialog">💬</span>' : ''}
+                    ${hasNotes ? '<span class="text-[9px] text-amber-400" title="Memiliki Catatan">📝</span>' : ''}
                 </div>
             </div>
             

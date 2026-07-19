@@ -39,6 +39,7 @@ export const UniverseBasicModule = {
         name: name.trim(),
         description: "",
         characters: { "Main Character": [], "Villain": [] },
+        monsters: {},
         locations: [],
         storylines: []
       });
@@ -95,32 +96,31 @@ export const UniverseBasicModule = {
   Mengubah array referensi ID (Skill, Item, Familiar) menjadi objek data master utuh.
   */
   populateUniverse(universe) {
-    // Kloning data karakter agar modifikasi tidak mengubah state aplikasi utama
+    // Kloning data karakter dan monster agar modifikasi tidak mengubah state aplikasi utama
     const populatedCharacters = JSON.parse(JSON.stringify(universe.characters || {}));
+    const populatedMonsters = JSON.parse(JSON.stringify(universe.monsters || {})); // <-- TAMBAHKAN INI
     
-    // Mengubah array ID menjadi objek utuh untuk Skill, Item, dan Familiar
+    // =========================================================
+    // 1. POPULATE DATA KARAKTER (Bawaan)
+    // =========================================================
     for (let category in populatedCharacters) {
       if (Array.isArray(populatedCharacters[category])) {
         populatedCharacters[category].forEach(char => {
-          // Populate Skills (mencari dari skillIds)
+          // Populate Skills
           if (char.skillIds && Array.isArray(char.skillIds) && this.data.skills) {
             char.skills = char.skillIds.map(skillId => {
               const fullSkill = this.data.skills.find(s => s.id === skillId);
               return fullSkill ? fullSkill : { id: skillId, note: "Skill tidak ditemukan di data master" };
             });
-            delete char.skillIds; // Hapus array ID agar rapi
+            delete char.skillIds;
           }
           
-          // Populate Items milik Karakter + Skill di dalamnya
+          // Populate Items
           if (char.itemIds && Array.isArray(char.itemIds) && this.data.items) {
             char.items = char.itemIds.map(itemId => {
               const masterItem = this.data.items.find(i => i.id === itemId);
-
               if (masterItem) {
-                // Clone item agar data master tidak ikut termodifikasi
                 const fullItem = JSON.parse(JSON.stringify(masterItem));
-
-                // Populate Skill milik Item tersebut
                 if (fullItem.skillIds && Array.isArray(fullItem.skillIds) && this.data.skills) {
                   fullItem.skills = fullItem.skillIds.map(skillId => {
                     const fullSkill = this.data.skills.find(s => s.id === skillId);
@@ -135,16 +135,12 @@ export const UniverseBasicModule = {
             delete char.itemIds;
           }
 
-          // Populate Familiars (mencari dari familiarIds)
+          // Populate Familiars
           if (char.familiarIds && Array.isArray(char.familiarIds) && this.data.familiars) {
             char.familiars = char.familiarIds.map(famId => {
               const masterFamiliar = this.data.familiars.find(f => f.id === famId);
-
               if (masterFamiliar) {
-                // Clone (duplikat) familiar agar data utama master tidak ikut termodifikasi!
                 const fullFamiliar = JSON.parse(JSON.stringify(masterFamiliar));
-
-                // Populate Skill milik Familiar
                 if (fullFamiliar.skillIds && Array.isArray(fullFamiliar.skillIds) && this.data.skills) {
                   fullFamiliar.skills = fullFamiliar.skillIds.map(skillId => {
                     const fullSkill = this.data.skills.find(s => s.id === skillId);
@@ -152,16 +148,11 @@ export const UniverseBasicModule = {
                   });
                   delete fullFamiliar.skillIds;
                 }
-
-                // Populate Item milik Familiar + Skill di dalamnya
                 if (fullFamiliar.itemIds && Array.isArray(fullFamiliar.itemIds) && this.data.items) {
                   fullFamiliar.items = fullFamiliar.itemIds.map(itemId => {
                     const masterItem = this.data.items.find(i => i.id === itemId);
-
                     if (masterItem) {
                       const fullItem = JSON.parse(JSON.stringify(masterItem));
-
-                      // Populate Skill di dalam Item milik Familiar
                       if (fullItem.skillIds && Array.isArray(fullItem.skillIds) && this.data.skills) {
                         fullItem.skills = fullItem.skillIds.map(skillId => {
                           const fullSkill = this.data.skills.find(s => s.id === skillId);
@@ -175,10 +166,8 @@ export const UniverseBasicModule = {
                   });
                   delete fullFamiliar.itemIds;
                 }
-
                 return fullFamiliar;
               }
-
               return { id: famId, note: "Familiar tidak ditemukan di data master" };
             });
             delete char.familiarIds;
@@ -186,12 +175,77 @@ export const UniverseBasicModule = {
         });
       }
     }
+
+    // =========================================================
+    // 2. POPULATE DATA MONSTER (TAMBAHKAN BLOK BARU INI)
+    // =========================================================
+    for (let category in populatedMonsters) {
+      if (Array.isArray(populatedMonsters[category])) {
+        populatedMonsters[category].forEach(monster => {
+          // Populate Skills milik Monster
+          if (monster.skillIds && Array.isArray(monster.skillIds) && this.data.skills) {
+            monster.skills = monster.skillIds.map(skillId => {
+              const fullSkill = this.data.skills.find(s => s.id === skillId);
+              return fullSkill ? fullSkill : { id: skillId, note: "Skill tidak ditemukan di data master" };
+            });
+            delete monster.skillIds;
+          }
+          
+          // Populate Items milik Monster
+          if (monster.itemIds && Array.isArray(monster.itemIds) && this.data.items) {
+            monster.items = monster.itemIds.map(itemId => {
+              const masterItem = this.data.items.find(i => i.id === itemId);
+              if (masterItem) {
+                const fullItem = JSON.parse(JSON.stringify(masterItem));
+                if (fullItem.skillIds && Array.isArray(fullItem.skillIds) && this.data.skills) {
+                  fullItem.skills = fullItem.skillIds.map(skillId => {
+                    const fullSkill = this.data.skills.find(s => s.id === skillId);
+                    return fullSkill ? fullSkill : { id: skillId, note: "Skill tidak ditemukan di data master" };
+                  });
+                  delete fullItem.skillIds;
+                }
+                return fullItem;
+              }
+              return { id: itemId, note: "Item tidak ditemukan di data master" };
+            });
+            delete monster.itemIds;
+          }
+
+          // Populate Familiars milik Monster
+          if (monster.familiarIds && Array.isArray(monster.familiarIds) && this.data.familiars) {
+            monster.familiars = monster.familiarIds.map(famId => {
+              const masterFamiliar = this.data.familiars.find(f => f.id === famId);
+              if (masterFamiliar) {
+                const fullFamiliar = JSON.parse(JSON.stringify(masterFamiliar));
+                if (fullFamiliar.skillIds && Array.isArray(fullFamiliar.skillIds) && this.data.skills) {
+                  fullFamiliar.skills = fullFamiliar.skillIds.map(skillId => {
+                    const fullSkill = this.data.skills.find(s => s.id === skillId);
+                    return fullSkill ? fullSkill : { id: skillId, note: "Skill tidak ditemukan di data master" };
+                  });
+                  delete fullFamiliar.skillIds;
+                }
+                return fullFamiliar;
+              }
+              return { id: famId, note: "Familiar tidak ditemukan di data master" };
+            });
+            delete monster.familiarIds;
+          }
+        });
+      }
+    }
+
+    // =========================================================
+    // 3. RETURN DATA DENGAN MENYERTAKAN MONSTER
+    // =========================================================
     return {
       id: universe.id,
       name: universe.name,
       description: universe.description,
       lores: universe.lores || [],
+      charactersCategoryDescriptions: universe.charactersCategoryDescriptions || {},
       characters: populatedCharacters,
+      monstersCategoryDescriptions: universe.monstersCategoryDescriptions || {}, // <-- TAMBAHKAN INI
+      monsters: populatedMonsters,                                             // <-- TAMBAHKAN INI
       locations: universe.locations || []
     };
   },
@@ -457,6 +511,10 @@ export const UniverseBasicModule = {
       ? this.renderCharactersArea(univ)
       : `<div class="p-4 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 text-sm italic">Modul Karakter belum terhubung...</div>`;
       
+    const monstersAreaHTML = typeof this.renderMonstersArea === 'function'
+      ? this.renderMonstersArea(univ)
+      : `<div class="p-4 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 text-sm italic">Modul Monster belum terhubung...</div>`;
+
     const locationsAreaHTML = typeof this.renderLocationsArea === 'function'
       ? this.renderLocationsArea(univ)
       : `<div class="p-4 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 text-sm italic">Modul Lokasi belum terhubung...</div>`;
@@ -511,6 +569,9 @@ export const UniverseBasicModule = {
 
       <!-- AREA MODUL KARAKTER -->
       ${charactersAreaHTML}
+
+      <!-- AREA MODUL MONSTER -->
+      ${monstersAreaHTML}
 
       <!-- AREA MODUL LOKASI -->
       ${locationsAreaHTML}

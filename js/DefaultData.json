@@ -135,6 +135,7 @@
         "MMMEEEKKK! (raungan marah yang mengejutkan, meledak dari keheningan yang menyesatkan)*",
         "Meekkk... (mendengus penuh kepuasan, membayangkan kekuasaan yang terbentang luas)*"
       ],
+      "notes": [],
       "tagIds": [
         "ft_20wviuze1",
         "ft_e59q2kmd0",
@@ -176,6 +177,27 @@
           }
         ],
         "Villain": []
+      },
+      "monsters": {
+        "Boss": [
+          {
+            "id": "monster1",
+            "name": "Goblin Lord",
+            "personality": [],
+            "background": "Goblin yang menjadi raja",
+            "appearance": "Nampak sebagai goblin raksasa",
+            "skillIds": [],
+            "itemIds": [],
+            "familiarIds": [],
+            "notes": [
+              "Ia bisa memakan musuhnya hidup-hidup."
+            ],
+            "dialogues": []
+          }
+        ]
+      },
+      "monstersCategoryDescriptions": {
+        "Boss": "Monster berbahaya"
       },
       "locations": [
         {

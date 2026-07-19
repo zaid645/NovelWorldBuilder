@@ -4,6 +4,7 @@
 
 import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo.js';
 import { UniverseArcModule } from './HeaderMenu/ArcInfo.js';
+import { DataSharingModule } from './HeaderMenu/DataSharing.js';
 import { AIEnchanterModule } from './HeaderMenu/AIEnchanter.js';
 import { WatakListModule } from './HeaderMenu/WatakList.js';
 import { SkillModule } from './FantasyComponent/Skill.js';
@@ -12,6 +13,7 @@ import { PetModule } from './FantasyComponent/Pet.js';
 import { UniverseBasicModule } from './UniverseComponent/BasicUniverse.js';
 import { UniverseLoreModule } from './UniverseComponent/UniverseLore.js';
 import { UniverseCharacterModule } from './UniverseComponent/UniverseCharacter.js';
+import { UniverseMonsterModule } from './UniverseComponent/UniverseMonster.js';
 import { UniverseLocationModule } from './UniverseComponent/UniverseLocation.js';
 
 // ==========================================
@@ -359,7 +361,12 @@ const coreApp = {
             if (typeof this.renderWatakView === 'function') {
                 contentArea.innerHTML = this.renderWatakView();
             }
-        } 
+        } else if (viewId === 'sharing') {
+            titleEl.innerText = "Kirim / Terima Data Lokal P2P";
+            if (typeof this.renderSharingView === 'function') {
+                contentArea.innerHTML = this.renderSharingView();
+            }
+        }
         else { 
             const univ = this.data.universes.find(u => u.id === viewId);
             if (univ) {
@@ -460,6 +467,9 @@ const coreApp = {
                 </svg>
                 AI Novel Enchanter
             </button>
+            <button onclick="app.switchView('sharing')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center ${this.currentView === 'sharing' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
+                <span>📡</span>&nbsp;&nbsp;Kirim / Terima Data
+            </button>
             <button onclick="app.switchView('watak')" id="menu-watak" class="w-full flex items-center gap-3 px-4 py-3 rounded text-sm text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition">
                 <span>🎭</span> Master Watak
             </button>
@@ -509,6 +519,7 @@ window.app = Object.assign(
     UniverseArcModule,
     AIEnchanterModule,
     WatakListModule,
+    DataSharingModule,
     
     SkillModule,
     ItemModule,
@@ -516,6 +527,7 @@ window.app = Object.assign(
     UniverseBasicModule,
     UniverseLoreModule,
     UniverseCharacterModule,
+    UniverseMonsterModule,
     UniverseLocationModule
 );
 
