@@ -115,84 +115,103 @@ export const NovelBasicInfoModule = {
     exportStoryInfo() {
         const info = this.data.storyInfo;
         
+        // Helper fungsi untuk populate Skills pada suatu objek (Karakter, Item, atau Familiar)
+        const populateSkills = (skillIds) => {
+            if (!Array.isArray(skillIds)) return [];
+            return skillIds.map(skillId => {
+                const skillMatch = this.data.skills?.find(s => s.id === skillId);
+                return skillMatch ? { ...skillMatch } : { id: skillId, note: "Skill tidak ditemukan di data master" };
+            });
+        };
+
+        // Helper fungsi untuk populate Items (termasuk nested skills di dalam item)
+        const populateItems = (itemIds) => {
+            if (!Array.isArray(itemIds)) return [];
+            return itemIds.map(itemId => {
+                const itemMatch = this.data.items?.find(i => i.id === itemId);
+                if (itemMatch) {
+                    const fullItem = JSON.parse(JSON.stringify(itemMatch));
+                    if (fullItem.skillIds && Array.isArray(fullItem.skillIds)) {
+                        fullItem.skills = populateSkills(fullItem.skillIds);
+                        delete fullItem.skillIds;
+                    }
+                    return fullItem;
+                }
+                return { id: itemId, note: "Item tidak ditemukan di data master" };
+            });
+        };
+
+        // Helper fungsi untuk populate Familiars (termasuk nested skills & items)
+        const populateFamiliars = (familiarIds) => {
+            if (!Array.isArray(familiarIds)) return [];
+            return familiarIds.map(famId => {
+                const familiarMatch = this.data.familiars?.find(f => f.id === famId);
+                if (familiarMatch) {
+                    const detailedFamiliar = JSON.parse(JSON.stringify(familiarMatch));
+                    
+                    detailedFamiliar.personality = familiarMatch.personality || '';
+                    detailedFamiliar.dialogues = familiarMatch.dialogues || [];
+                    
+                    // Populate Skills milik Familiar
+                    if (detailedFamiliar.skillIds) {
+                        detailedFamiliar.skills = populateSkills(detailedFamiliar.skillIds);
+                        delete detailedFamiliar.skillIds;
+                    }
+                    
+                    // Populate Items milik Familiar
+                    if (detailedFamiliar.itemIds) {
+                        detailedFamiliar.items = populateItems(detailedFamiliar.itemIds);
+                        delete detailedFamiliar.itemIds;
+                    }
+
+                    // Populate Tags milik Familiar
+                    if (detailedFamiliar.tagIds) {
+                        detailedFamiliar.tags = (detailedFamiliar.tagIds || []).map(tagId => {
+                            const tag = this.data.familiarTags?.find(t => t.id === tagId);
+                            return tag ? { ...tag } : { id: tagId, note: "Tag tidak ditemukan di data master" };
+                        });
+                        delete detailedFamiliar.tagIds;
+                    }
+                    
+                    return detailedFamiliar;
+                }
+                return { id: famId, note: "Familiar tidak ditemukan di data master" };
+            });
+        };
+
         // 1. Petakan array ID karakter menjadi objek informasi yang sangat lengkap
         const detailedCharacters = (info.mainCharacters || []).map(charId => {
             let foundChar = null;
             
             // Cari data karakter di setiap semesta dan setiap kategori
-            for (let univ of this.data.universes) {
+            for (let univ of (this.data.universes || [])) {
                 for (let category in univ.characters) {
                     const match = univ.characters[category].find(c => c.id === charId);
                     if (match) {
+                        // Deep copy data karakter agar aman dari mutasi
+                        const charCopy = JSON.parse(JSON.stringify(match));
+
                         foundChar = { 
-                            id: match.id,
-                            name: match.name,
-                            personality: match.personality,
-                            background: match.background,
-                            appearance: match.appearance,
-                            dialogues: match.dialogues || [],
+                            id: charCopy.id,
+                            name: charCopy.name,
+                            personality: charCopy.personality || '',
+                            background: charCopy.background || '',
+                            appearance: charCopy.appearance || '',
+                            notes: charCopy.notes || '',
+                            dialogues: charCopy.dialogues || [],
                             category: category, 
-                            universeName: univ.name 
+                            universeName: univ.name,
+                            skills: populateSkills(charCopy.skillIds),
+                            items: populateItems(charCopy.itemIds),
+                            familiars: populateFamiliars(charCopy.familiarIds)
                         };
-                        
-                        // Populate Skills
-                        foundChar.skills = (match.skillIds || []).map(skillId => {
-                            const skillMatch = this.data.skills.find(s => s.id === skillId);
-                            return skillMatch ? { ...skillMatch } : { id: skillId, name: "Skill tidak valid" };
-                        });
 
-                        // Populate Items
-                        foundChar.items = (match.itemIds || []).map(itemId => {
-                            const itemMatch = this.data.items.find(i => i.id === itemId);
-                            return itemMatch ? { ...itemMatch } : { id: itemId, name: "Item tidak valid" };
-                        });
-
-                        // Populate Familiars beserta nested skills & items-nya
-                        foundChar.familiars = (match.familiarIds || []).map(familiarId => {
-                        const familiarMatch = this.data.familiars.find(f => f.id === familiarId);
-                        
-                        if (familiarMatch) {
-                            const detailedFamiliar = { ...familiarMatch };
-                            
-                            // ============================================================
-                            // PERUBAHAN DI SINI: Proteksi data watak & dialog familiar
-                            // ============================================================
-                            detailedFamiliar.personality = familiarMatch.personality || '';
-                            detailedFamiliar.dialogues = familiarMatch.dialogues || [];
-                            // ============================================================
-                            
-                            // Populate Nested Skills untuk Familiar
-                            detailedFamiliar.skills = (familiarMatch.skillIds || []).map(skillId => {
-                                const skill = this.data.skills.find(s => s.id === skillId);
-                                return skill ? { ...skill } : { id: skillId, name: "Skill tidak valid" };
-                            });
-                            delete detailedFamiliar.skillIds; 
-                            
-                            // Populate Nested Items untuk Familiar
-                            detailedFamiliar.items = (familiarMatch.itemIds || []).map(itemId => {
-                                const item = this.data.items.find(i => i.id === itemId);
-                                return item ? { ...item } : { id: itemId, name: "Item tidak valid" };
-                            });
-                            delete detailedFamiliar.itemIds; 
-
-                            // Populate Tags untuk Familiar
-                            detailedFamiliar.tags = (familiarMatch.tagIds || []).map(tagId => {
-                                const tag = this.data.familiarTags.find(t => t.id === tagId);
-                                return tag ? { ...tag } : { id: tagId, name: "Tag tidak valid" };
-                            });
-                            delete detailedFamiliar.tagIds; 
-                            
-                            return detailedFamiliar;
-                        } else {
-                            return { id: angularId, name: "Familiar tidak valid" };
-                        }
-                    });
-                    break;
+                        break;
                     }
                 }
-            if (foundChar) break;
+                if (foundChar) break;
             }
-            return foundChar || { id: charId, name: "Karakter telah dihapus dari semesta" };
+            return foundChar || { id: charId, note: "Karakter telah dihapus dari semesta" };
         });
 
         // 2. Buat struktur payload JSON
@@ -203,8 +222,7 @@ export const NovelBasicInfoModule = {
             mainCharacters: detailedCharacters
         };
 
-        // 3. Download (Pastikan app utama Anda memiliki fungsi downloadJSON)
-        // Memanggil app.downloadJSON karena asumsinya file ini akan di-merge/dijadikan mixin ke dalam object 'app'
+        // 3. Download berkas JSON
         app.downloadJSON("novel_information_detailed.json", exportPayload);
     }
 };
