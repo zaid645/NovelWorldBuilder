@@ -870,6 +870,7 @@ export const PetModule = {
         this.renderFamSkillCheckboxes();
     },
 
+    // --- SKILL FILTER ---
     renderFamSkillCheckboxes(isInitial = false) {
         const container = document.getElementById('famSkillList');
         if (!container) return;
@@ -886,10 +887,20 @@ export const PetModule = {
 
         const filterQuery = (app.currentSkillFilter || '').toLowerCase();
         const allSkills = this.data.skills || [];
+        const skillMasterTags = this.data.skillTags || []; // Ambil master tag skill
 
-        const filteredSkills = allSkills.filter(s => 
-            !filterQuery || (s.name && s.name.toLowerCase().includes(filterQuery))
-        );
+        // Filter berdasarkan nama skill ATAU nama tag
+        const filteredSkills = allSkills.filter(s => {
+            if (!filterQuery) return true;
+
+            const matchName = (s.name || '').toLowerCase().includes(filterQuery);
+            const matchTag = (s.tagIds || []).some(tagId => {
+                const tagObj = skillMasterTags.find(t => t.id === tagId);
+                return tagObj && (tagObj.name || '').toLowerCase().includes(filterQuery);
+            });
+
+            return matchName || matchTag;
+        });
 
         const skillMap = new Map();
         filteredSkills.forEach(s => skillMap.set(s.id, s));
@@ -924,6 +935,7 @@ export const PetModule = {
         this.renderFamItemCheckboxes();
     },
 
+    // --- ITEM FILTER ---
     renderFamItemCheckboxes(isInitial = false) {
         const container = document.getElementById('famItemList');
         if (!container) return;
@@ -940,10 +952,20 @@ export const PetModule = {
 
         const filterQuery = (app.currentItemFilter || '').toLowerCase();
         const allItems = this.data.items || [];
+        const itemMasterTags = this.data.itemTags || []; // Ambil master tag item
 
-        const filteredItems = allItems.filter(i => 
-            !filterQuery || (i.name && i.name.toLowerCase().includes(filterQuery))
-        );
+        // Filter berdasarkan nama item ATAU nama tag
+        const filteredItems = allItems.filter(i => {
+            if (!filterQuery) return true;
+
+            const matchName = (i.name || '').toLowerCase().includes(filterQuery);
+            const matchTag = (i.tagIds || []).some(tagId => {
+                const tagObj = itemMasterTags.find(t => t.id === tagId);
+                return tagObj && (tagObj.name || '').toLowerCase().includes(filterQuery);
+            });
+
+            return matchName || matchTag;
+        });
 
         const itemMap = new Map();
         filteredItems.forEach(i => itemMap.set(i.id, i));

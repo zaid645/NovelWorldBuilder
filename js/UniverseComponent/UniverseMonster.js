@@ -382,6 +382,7 @@ export const UniverseMonsterModule = {
         app.renderMonsterSkillCheckboxes(univId, category); 
     },
 
+    // --- FUNGSI BANTUAN SKILL MONSTER ---
     renderMonsterSkillCheckboxes(univId, category, isInitial = false) {
         const safeCat = category.replace(/\s/g, '');
         const container = document.getElementById(`monsterSkillList_${safeCat}`);
@@ -398,19 +399,36 @@ export const UniverseMonsterModule = {
             allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
         }
 
-        const filteredSkills = app.getFilteredSkills ? app.getFilteredSkills() : this.data.skills;
-        
+        const filterQuery = (app.currentSkillFilter || '').toLowerCase();
+        const allSkills = this.data.skills || [];
+        const skillMasterTags = this.data.skillTags || [];
+
+        // Filter berdasarkan nama skill ATAU nama tag
+        const filteredSkills = allSkills.filter(s => {
+            if (!filterQuery) return true;
+
+            const matchName = (s.name || '').toLowerCase().includes(filterQuery);
+            const matchTag = (s.tagIds || []).some(tagId => {
+                const tagObj = skillMasterTags.find(t => t.id === tagId);
+                return tagObj && (tagObj.name || '').toLowerCase().includes(filterQuery);
+            });
+            const matchDirectTag = (s.tags || []).some(t => (typeof t === 'string' ? t : t.name || '').toLowerCase().includes(filterQuery));
+
+            return matchName || matchTag || matchDirectTag;
+        });
+
         const skillMap = new Map();
         filteredSkills.forEach(s => skillMap.set(s.id, s));
-        
+
+        // Pertahankan skill yang tercentang agar tidak hilang saat di-filter
         allCheckedIds.forEach(id => {
             if (!skillMap.has(id)) {
-                const originalSkill = this.data.skills.find(s => s.id === id);
+                const originalSkill = allSkills.find(s => s.id === id);
                 if (originalSkill) skillMap.set(originalSkill.id, originalSkill);
             }
         });
 
-        const displaySkills = Array.from(skillMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        const displaySkills = Array.from(skillMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
         if (displaySkills.length === 0) {
             container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada skill yang ditemukan.</span>';
@@ -431,6 +449,7 @@ export const UniverseMonsterModule = {
         app.renderMonsterItemCheckboxes(univId, category);
     },
 
+    // --- FUNGSI BANTUAN ITEM MONSTER ---
     renderMonsterItemCheckboxes(univId, category, isInitial = false) {
         const safeCat = category.replace(/\s/g, '');
         const container = document.getElementById(`monsterItemList_${safeCat}`);
@@ -448,24 +467,35 @@ export const UniverseMonsterModule = {
         }
 
         const filterQuery = (app.currentItemFilter || '').toLowerCase();
-        const allItems = app.getFilteredItems ? app.getFilteredItems() : this.data.items;
-        const filteredItems = allItems.filter(i => 
-            !filterQuery || 
-            i.name.toLowerCase().includes(filterQuery) || 
-            (i.tags && i.tags.some(t => t.toLowerCase().includes(filterQuery)))
-        );
-        
+        const allItems = this.data.items || [];
+        const itemMasterTags = this.data.itemTags || [];
+
+        // Filter berdasarkan nama item ATAU nama tag
+        const filteredItems = allItems.filter(i => {
+            if (!filterQuery) return true;
+
+            const matchName = (i.name || '').toLowerCase().includes(filterQuery);
+            const matchTag = (i.tagIds || []).some(tagId => {
+                const tagObj = itemMasterTags.find(t => t.id === tagId);
+                return tagObj && (tagObj.name || '').toLowerCase().includes(filterQuery);
+            });
+            const matchDirectTag = (i.tags || []).some(t => (typeof t === 'string' ? t : t.name || '').toLowerCase().includes(filterQuery));
+
+            return matchName || matchTag || matchDirectTag;
+        });
+
         const itemMap = new Map();
         filteredItems.forEach(i => itemMap.set(i.id, i));
-        
+
+        // Pertahankan item yang tercentang agar tidak hilang saat di-filter
         allCheckedIds.forEach(id => {
             if (!itemMap.has(id)) {
-                const originalItem = this.data.items.find(i => i.id === id);
+                const originalItem = allItems.find(i => i.id === id);
                 if (originalItem) itemMap.set(originalItem.id, originalItem);
             }
         });
 
-        const displayItems = Array.from(itemMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        const displayItems = Array.from(itemMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
         if (displayItems.length === 0) {
             container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada item yang ditemukan.</span>';
@@ -486,6 +516,7 @@ export const UniverseMonsterModule = {
         app.renderMonsterFamiliarCheckboxes(univId, category);
     },
 
+    // --- FUNGSI BANTUAN FAMILIAR / PET MONSTER ---
     renderMonsterFamiliarCheckboxes(univId, category, isInitial = false) {
         const safeCat = category.replace(/\s/g, '');
         const container = document.getElementById(`monsterFamiliarList_${safeCat}`);
@@ -503,24 +534,35 @@ export const UniverseMonsterModule = {
         }
 
         const filterQuery = (app.currentFamiliarFilter || '').toLowerCase();
-        const allFamiliars = app.getFilteredFamiliars ? app.getFilteredFamiliars() : this.data.familiars;
-        const filteredFamiliars = allFamiliars.filter(f => 
-            !filterQuery || 
-            f.name.toLowerCase().includes(filterQuery) || 
-            (f.tags && f.tags.some(t => t.toLowerCase().includes(filterQuery)))
-        );
-        
+        const allFamiliars = this.data.familiars || [];
+        const familiarMasterTags = this.data.familiarTags || this.data.petTags || [];
+
+        // Filter berdasarkan nama familiar ATAU nama tag
+        const filteredFamiliars = allFamiliars.filter(f => {
+            if (!filterQuery) return true;
+
+            const matchName = (f.name || '').toLowerCase().includes(filterQuery);
+            const matchTag = (f.tagIds || []).some(tagId => {
+                const tagObj = familiarMasterTags.find(t => t.id === tagId);
+                return tagObj && (tagObj.name || '').toLowerCase().includes(filterQuery);
+            });
+            const matchDirectTag = (f.tags || []).some(t => (typeof t === 'string' ? t : t.name || '').toLowerCase().includes(filterQuery));
+
+            return matchName || matchTag || matchDirectTag;
+        });
+
         const familiarMap = new Map();
         filteredFamiliars.forEach(f => familiarMap.set(f.id, f));
-        
+
+        // Pertahankan familiar yang tercentang agar tidak hilang saat di-filter
         allCheckedIds.forEach(id => {
             if (!familiarMap.has(id)) {
-                const originalFam = this.data.familiars.find(f => f.id === id);
+                const originalFam = allFamiliars.find(f => f.id === id);
                 if (originalFam) familiarMap.set(originalFam.id, originalFam);
             }
         });
 
-        const displayFamiliars = Array.from(familiarMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        const displayFamiliars = Array.from(familiarMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
         if (displayFamiliars.length === 0) {
             container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada familiar/pet yang ditemukan.</span>';

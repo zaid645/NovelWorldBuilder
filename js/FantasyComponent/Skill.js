@@ -570,22 +570,32 @@ export const SkillModule = {
     // --- RENDER GRID KARTU (TAMPILAN RINGKAS) ---
     // ==========================================
     onSearchSkillInput(event) {
-            const keyword = event.target.value;
-            app.currentSkillFilter = keyword; // Simpan di MainScript
-            app.renderSkillGrid(); 
-        },
+        const keyword = event.target.value;
+        app.currentSkillFilter = keyword; // Simpan di MainScript
+        app.renderSkillGrid(); 
+    },
 
-        // 2. Logika Pembantu: Mengembalikan daftar skill yang sudah difilter
-        getFilteredSkills() {
-            const keyword = (app.currentSkillFilter || '').toLowerCase();
-            const allSkills = app.data.skills || []; 
+    // 2. Logika Pembantu: Mengembalikan daftar skill yang sudah difilter
+    getFilteredSkills() {
+        const keyword = (app.currentSkillFilter || '').toLowerCase().trim();
+        const allSkills = app.data?.skills || []; 
+        const allTags = this.data?.skillTags || app.data?.skillTags || [];
 
-            if (!keyword) return allSkills; 
+        if (!keyword) return allSkills; 
 
-            return allSkills.filter(skill => {
-                return skill.name.toLowerCase().includes(keyword);
+        return allSkills.filter(skill => {
+            // 1. Cek kecocokan pada Nama Skill
+            const matchesName = skill.name.toLowerCase().includes(keyword);
+
+            // 2. Cek kecocokan pada Tag yang dimiliki Skill
+            const matchesTag = (skill.tagIds || []).some(tagId => {
+                const tag = allTags.find(t => t.id === tagId);
+                return tag && tag.name.toLowerCase().includes(keyword);
             });
-        },
+
+            return matchesName || matchesTag;
+        });
+    },
 
     renderSkillGrid() {
         const container = document.getElementById('skillGridContainer');

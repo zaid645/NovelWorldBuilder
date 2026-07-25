@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'novel-lore-cache-v3'; // Naikkan versi jika perlu membersihkan cache lama
+const CACHE_NAME = 'novel-lore-cache-v3';
 
 const LOCAL_ASSETS = [
   './',
@@ -69,19 +69,26 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Strategi Fetching cerdas
+// STRATEGI: Network First, Fallback to Cache
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  // SOLUSI: Jika request mengandung query timestamp (?t=), langsung ambil dari Jaringan Server!
-  if (url.searchParams.has('t')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+  // Hanya proses request bertipe GET
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request);
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Jika koneksi sukses, perbarui cache secara otomatis
+        if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // Jika jaringan gagal (offline), ambil dari cache
+        return caches.match(event.request, { ignoreSearch: true });
+      })
   );
 });

@@ -1,76 +1,13 @@
 // caching.js
-const CACHE_NAME = 'novel-lore-cache-v2';
+const CACHE_NAME = 'novel-lore-cache-v3';
 
 const cacheManager = {
-  // 1. Tambahkan flag status untuk mengunci eksekusi ganda
-  isChecking: false, 
-  
-  /**
-   * Mengambil informasi metadata dari berkas yang tersimpan di dalam Cache
-   */
-  async getCacheMetadata(cache, url) {
-    try {
-      const cachedResponse = await cache.match(url);
-      if (!cachedResponse) return null;
-      
-      return {
-        etag: cachedResponse.headers.get('etag'),
-        lastModified: cachedResponse.headers.get('last-modified'),
-        contentLength: cachedResponse.headers.get('content-length')
-      };
-    } catch (e) {
-      console.warn(`[Cache] Gagal membaca metadata cache untuk: ${url}`, e);
-      return null;
-    }
-  },
+  isChecking: false,
 
-  /**
-   * Mengambil metadata dari server langsung (menggunakan HEAD request)
-   */
-  async getNetworkMetadata(url) {
-    if (!navigator.onLine) return null;
-
-    let cleanUrl = url === './' ? './index.html' : url;
-    try {
-      let response = await fetch(`${cleanUrl}?t=${Date.now()}`, { method: 'HEAD', cache: 'no-cache' });
-      
-      if (!response.ok) {
-        response = await fetch(`${cleanUrl}?t=${Date.now()}`, { method: 'GET', cache: 'no-cache' });
-      }
-
-      if (response.ok) {
-        return {
-          etag: response.headers.get('etag'),
-          lastModified: response.headers.get('last-modified'),
-          contentLength: response.headers.get('content-length')
-        };
-      }
-    } catch (e) {
-      console.warn(`[Cache] Gagal memeriksa metadata jaringan untuk: ${url}`, e);
-    }
-    return null;
-  },
-
-  hasChanged(cached, network) {
-    if (!cached) return true;
-    if (!network) return false;
-
-    if (cached.etag && network.etag) return cached.etag !== network.etag;
-    if (cached.lastModified && network.lastModified) return cached.lastModified !== network.lastModified;
-    if (cached.contentLength && network.contentLength) return cached.contentLength !== network.contentLength;
-
-    return false;
-  },
-
-  /**
-   * Memeriksa pembaruan khusus untuk file index.html sebagai indikator update sistem
-   */
   async checkForUpdate() {
-    // Jika sedang dalam proses pengecekan, abaikan instruksi berikutnya
     if (this.isChecking) return;
     this.isChecking = true;
 
-    // Ambil elemen tombol untuk dinonaktifkan sementara (mencegah spam click)
     const updateBtn = document.getElementById('btnCheckUpdate');
     if (updateBtn) {
       updateBtn.disabled = true;
@@ -83,47 +20,20 @@ const cacheManager = {
       return;
     }
 
-    if (!('caches' in window)) {
-      this.showAlert("Browser Anda tidak mendukung fitur caching modern.", "warning");
-      this.resetCheckingState(updateBtn);
-      return;
-    }
-
     try {
       this.showAlert("Memeriksa pembaruan di server...", "info");
 
-      const cache = await caches.open(CACHE_NAME);
-      // GANTI ./index.html MENJADI ./sw.js
-      const cachedMeta = await this.getCacheMetadata(cache, './sw.js');
-      const networkMeta = await this.getNetworkMetadata('./sw.js');
-
-      if (this.hasChanged(cachedMeta, networkMeta)) {
-        this.showAlert("Mendeteksi versi baru! Memperbarui sistem...", "info");
-        
-        if ('serviceWorker' in navigator) {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            await registration.update();
-            console.log('[Cache] Service worker diperbarui.');
-          }
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          await registration.update();
         }
-
-        // GANTI fetch dan cache.put untuk memperbarui sw.js di dalam cache storage
-        const response = await fetch(`./sw.js?t=${Date.now()}`, { cache: 'reload' });
-        if (response.ok) {
-          await cache.put('./sw.js', response);
-        }
-
-        this.showAlert("Sistem berhasil diperbarui! Memuat ulang...", "success");
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-
-      } else {
-        this.showAlert("Aplikasi Anda sudah menggunakan versi terbaru.", "success");
-        this.resetCheckingState(updateBtn);
       }
-    
+
+      this.showAlert("Aplikasi siap diperbarui. Memuat ulang...", "success");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
 
     } catch (error) {
       console.error("[Cache] Gagal melakukan pembaruan:", error);
@@ -132,7 +42,6 @@ const cacheManager = {
     }
   },
 
-  // Fungsi pembantu untuk mengembalikan status tombol dan flag
   resetCheckingState(button) {
     this.isChecking = false;
     if (button) {
@@ -158,7 +67,6 @@ const cacheManager = {
   }
 };
 
-// Event listener otomasi UI & Registrasi Service Worker
 document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')

@@ -593,15 +593,30 @@ export const ItemModule = {
         // Ambil kata kunci filter
         const filterQuery = (app.currentItemSkillFilter || '').toLowerCase();
         const allSkills = this.data.skills || [];
+        const allSkillTags = this.data.skillTags || []; // Ambil data tag skill
         
-        // Filter skill berdasarkan nama
-        const filteredSkills = allSkills.filter(s => 
-            !filterQuery || (s.name && s.name.toLowerCase().includes(filterQuery))
-        );
+        // Filter skill berdasarkan NAMA atau TAG SKILL
+        const filteredSkills = allSkills.filter(s => {
+            if (!filterQuery) return true;
+
+            // 1. Pencarian berdasarkan nama skill
+            const nameMatch = (s.name || '').toLowerCase().includes(filterQuery);
+
+            // 2. Pencarian berdasarkan nama-nama tag skill
+            const tagNames = (s.tagIds || []).map(id => {
+                const tag = allSkillTags.find(t => t.id === id);
+                return tag ? tag.name.toLowerCase() : '';
+            }).join(' ');
+
+            const tagMatch = tagNames.includes(filterQuery);
+
+            return nameMatch || tagMatch;
+        });
 
         const skillMap = new Map();
         filteredSkills.forEach(s => skillMap.set(s.id, s));
 
+        // FITUR UTAMA TETAP DIPERTAHANKAN:
         // Pertahankan skill yang SEDANG DICENTANG agar tidak tersembunyi saat terkena filter pencarian
         allCheckedIds.forEach(id => {
             if (!skillMap.has(id)) {
