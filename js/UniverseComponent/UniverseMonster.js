@@ -661,6 +661,65 @@ export const UniverseMonsterModule = {
         });
     },
 
+    moveMonsterToCategory(univId, currentCategory, monsterId) {
+        const universe = this.data.universes.find(u => u.id === univId);
+        if (!universe || !universe.monsters) return;
+
+        // Ambil daftar kategori lain selain kategori saat ini
+        const availableCategories = Object.keys(universe.monsters).filter(cat => cat !== currentCategory);
+
+        if (availableCategories.length === 0) {
+            return this.showAlert("Tidak ada kategori lain untuk memindahkan monster ini.", "warning");
+        }
+
+        const monster = universe.monsters[currentCategory].find(m => m.id === monsterId);
+        if (!monster) return;
+
+        const optionsHtml = availableCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+        const content = `
+            <div class="space-y-3 text-left">
+                <p class="text-xs text-slate-300">Pilih kategori tujuan untuk monster <b class="text-red-400">${monster.name}</b>:</p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Kategori Tujuan</label>
+                    <select id="targetMonsterCategorySelect" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-red-500 outline-none transition">
+                        ${optionsHtml}
+                    </select>
+                </div>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Pindahkan Monster",
+            content: content,
+            confirmText: "Pindahkan",
+            confirmColor: "bg-red-600 hover:bg-red-500",
+            onConfirm: () => {
+                const targetCategory = document.getElementById('targetMonsterCategorySelect').value;
+                if (!targetCategory) return false;
+
+                // 1. Hapus dari kategori saat ini
+                universe.monsters[currentCategory] = universe.monsters[currentCategory].filter(m => m.id !== monsterId);
+
+                // 2. Tambahkan ke kategori tujuan
+                if (!universe.monsters[targetCategory]) {
+                    universe.monsters[targetCategory] = [];
+                }
+                universe.monsters[targetCategory].push(monster);
+
+                // 3. Buka otomatis accordion/panel kategori tujuan secara visual
+                const targetSafeCat = targetCategory.replace(/\s/g, '');
+                this.setPanelState(`monsterCat_${targetSafeCat}`, true);
+
+                // 4. Simpan dan render ulang tampilan
+                this.saveData();
+                this.switchView(univId);
+                this.showAlert(`Monster "${monster.name}" berhasil dipindahkan ke kategori "${targetCategory}".`, "success");
+                return true;
+            }
+        });
+    },
+
     async generateMonsterAI(univId, safeCat, targetField) {
         const nameInput = document.getElementById(`newMonsterName_${safeCat}`).value.trim();
         if (!nameInput) {
@@ -1053,6 +1112,11 @@ export const UniverseMonsterModule = {
                 </button>
                 <button onclick="app.deleteMonster('${this.currentView}', '${category}', '${monster.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Monster">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+                <button onclick="app.moveMonsterToCategory('${this.currentView}', '${category}', '${monster.id}')" class="text-slate-400 hover:text-red-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Pindahkan Kategori">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                    </svg>
                 </button>
             </div>
 

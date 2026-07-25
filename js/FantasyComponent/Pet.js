@@ -465,10 +465,29 @@ export const PetModule = {
         }
     },
     deleteFamiliarTag(id) {
-        if(confirm("Hapus tag familiar ini?")) {
-            this.data.familiarTags = this.data.familiarTags.filter(t => t.id !== id);
-            this.saveData(); this.switchView('familiars');
-        }
+        const tag = this.data.familiarTags.find(t => t.id === id);
+        if (!tag) return;
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus tag familiar <b class="text-fuchsia-400">"${tag.name}"</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Tag ini akan dihapus dari daftar tag familiar yang tersedia.</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Tag Familiar",
+            content: content,
+            confirmText: "Hapus Tag",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
+                this.data.familiarTags = this.data.familiarTags.filter(t => t.id !== id);
+                this.saveData();
+                this.switchView('familiars');
+                this.showAlert(`Tag "${tag.name}" berhasil dihapus.`, "success");
+                return true;
+            }
+        });
     },
     autoloadFamiliarTags() {
         const validIds = this.data.familiarTags.map(t => t.id);
@@ -622,12 +641,32 @@ export const PetModule = {
     },
     
     deleteFamiliar(id) {
-        if(confirm("Yakin ingin menghapus familiar ini secara permanen?")) {
-            this.data.familiars = this.data.familiars.filter(f => f.id !== id);
-            this.closeFamiliarDetailFloating();
-            this.setPanelState('addFamiliarForm', false);
-            this.saveData(); this.switchView('familiars');
-        }
+        const fam = this.data.familiars.find(f => f.id === id);
+        if (!fam) return;
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus familiar <b class="text-fuchsia-400">"${fam.name}"</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Tindakan ini tidak dapat dibatalkan dan familiar akan dihapus secara permanen dari daftar.</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Familiar",
+            content: content,
+            confirmText: "Hapus Familiar",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
+                this.data.familiars = this.data.familiars.filter(f => f.id !== id);
+                
+                this.closeFamiliarDetailFloating();
+                this.setPanelState('addFamiliarForm', false);
+                this.saveData();
+                this.switchView('familiars');
+                this.showAlert(`Familiar "${fam.name}" berhasil dihapus.`, "success");
+                return true;
+            }
+        });
     },
 
     // --- LOGIKA ARRAY DIALOG PET SECARA CEPAT DARI CARD/FLOATING ---

@@ -139,8 +139,10 @@ export const UniverseArcModule = {
                 ? '<p class="text-xs text-slate-500 italic p-1">Belum ada data sub-arc di arc ini.</p>' 
                 : arc.subarcs.map((sub, sIndex) => {
                     const subarcPacing = `<span class="text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded ml-1 border border-slate-600">Sub-arc ${sIndex + 1}/${arc.targetSubarcCount || '?'}</span>`;
+                    const isFirst = sIndex === 0;
+                    const isLast = sIndex === arc.subarcs.length - 1;
 
-                    // Jika sedang dalam mode edit sub-arc, langsung tampilkan Editor Inline di posisinya (di bawah)
+                    // Jika sedang dalam mode edit sub-arc, langsung tampilkan Editor Inline di posisinya
                     if (this.editSubarcId === sub.id) {
                         return `
                             <div class="bg-slate-900 border-l-2 border-amber-500 p-3 rounded space-y-3 shadow-inner my-2">
@@ -170,10 +172,10 @@ export const UniverseArcModule = {
                         `;
                     }
 
-                    // Tampilan default untuk item sub-arc dengan konfirmasi hapus kustom
+                    // Tampilan default untuk item sub-arc dengan aksi Naik, Turun, Edit & Hapus
                     return `
                         <div class="bg-slate-900 border-l-2 border-amber-500 p-2.5 pl-3 relative group/sub rounded">
-                            <div class="absolute top-2.5 right-2 flex space-x-1 opacity-0 group-hover/sub:opacity-100 transition items-center">
+                            <div class="absolute top-2.5 right-2 flex space-x-1 opacity-0 group-hover/sub:opacity-100 transition items-center bg-slate-900/90 px-1 py-0.5 rounded backdrop-blur-sm border border-slate-800">
                                 ${this.deleteSubarcIdConfirm === sub.id ? `
                                     <span class="text-[9px] text-rose-400 font-semibold mr-1">Hapus?</span>
                                     <button onclick="app.deleteSubarc('${arc.id}', '${sub.id}', true)" class="bg-rose-600 hover:bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded transition">
@@ -183,15 +185,25 @@ export const UniverseArcModule = {
                                         Batal
                                     </button>
                                 ` : `
-                                    <button onclick="app.openEditSubarc('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400" title="Edit Sub-arc">
+                                    ${!isFirst ? `
+                                        <button onclick="app.moveSubarcUp('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400 p-0.5 transition" title="Naikkan Urutan Sub-arc">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                                        </button>
+                                    ` : ''}
+                                    ${!isLast ? `
+                                        <button onclick="app.moveSubarcDown('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400 p-0.5 transition" title="Turunkan Urutan Sub-arc">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </button>
+                                    ` : ''}
+                                    <button onclick="app.openEditSubarc('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400 p-0.5 transition" title="Edit Sub-arc">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </button>
-                                    <button onclick="app.deleteSubarc('${arc.id}', '${sub.id}', false)" class="text-slate-400 hover:text-rose-500 text-sm font-bold leading-none px-1" title="Hapus Sub-arc">
+                                    <button onclick="app.deleteSubarc('${arc.id}', '${sub.id}', false)" class="text-slate-400 hover:text-rose-500 text-sm font-bold leading-none p-0.5 transition" title="Hapus Sub-arc">
                                         &times;
                                     </button>
                                 `}
                             </div>
-                            <h5 class="text-xs font-bold text-amber-400 mb-1 flex items-center flex-wrap gap-1">
+                            <h5 class="text-xs font-bold text-amber-400 mb-1 flex items-center flex-wrap gap-1 pr-16">
                                 ${sIndex + 1}. ${sub.name}
                                 ${subarcPacing}
                             </h5>
@@ -690,6 +702,41 @@ export const UniverseArcModule = {
         const query = searchInput ? searchInput.value : '';
         if (container) {
             container.innerHTML = this.renderArcList(query);
+        }
+    },
+
+    // =========================================
+    // --- MANAJEMEN URUTAN SUB-ARC ---
+    // =========================================
+    moveSubarcUp(arcId, subarcId) {
+        const arc = this.data.arcs.find(a => a.id === arcId);
+        if (!arc || !arc.subarcs) return;
+
+        const index = arc.subarcs.findIndex(s => s.id === subarcId);
+        if (index > 0) {
+            // Tukar posisi dengan elemen sebelumnya (Naik)
+            const temp = arc.subarcs[index];
+            arc.subarcs[index] = arc.subarcs[index - 1];
+            arc.subarcs[index - 1] = temp;
+
+            this.saveData();
+            this.refreshArcList();
+        }
+    },
+
+    moveSubarcDown(arcId, subarcId) {
+        const arc = this.data.arcs.find(a => a.id === arcId);
+        if (!arc || !arc.subarcs) return;
+
+        const index = arc.subarcs.findIndex(s => s.id === subarcId);
+        if (index !== -1 && index < arc.subarcs.length - 1) {
+            // Tukar posisi dengan elemen setelahnya (Turun)
+            const temp = arc.subarcs[index];
+            arc.subarcs[index] = arc.subarcs[index + 1];
+            arc.subarcs[index + 1] = temp;
+
+            this.saveData();
+            this.refreshArcList();
         }
     },
 

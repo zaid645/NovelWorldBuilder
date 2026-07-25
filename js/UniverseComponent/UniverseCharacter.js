@@ -671,6 +671,61 @@ export const UniverseCharacterModule = {
         });
     },
 
+    moveCharacterToCategory(univId, currentCategory, charId) {
+        const universe = this.data.universes.find(u => u.id === univId);
+        if (!universe) return;
+
+        // Ambil daftar kategori lain selain kategori saat ini
+        const availableCategories = Object.keys(universe.characters).filter(cat => cat !== currentCategory);
+
+        if (availableCategories.length === 0) {
+            return this.showAlert("Tidak ada kategori lain untuk memindahkan karakter ini.", "warning");
+        }
+
+        const char = universe.characters[currentCategory].find(c => c.id === charId);
+        if (!char) return;
+
+        const optionsHtml = availableCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+        const content = `
+            <div class="space-y-3 text-left">
+                <p class="text-xs text-slate-300">Pilih kategori tujuan untuk tokoh <b class="text-indigo-400">${char.name}</b>:</p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Kategori Tujuan</label>
+                    <select id="targetCategorySelect" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 outline-none transition">
+                        ${optionsHtml}
+                    </select>
+                </div>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Pindahkan Karakter",
+            content: content,
+            confirmText: "Pindahkan",
+            confirmColor: "bg-indigo-600 hover:bg-indigo-500",
+            onConfirm: () => {
+                const targetCategory = document.getElementById('targetCategorySelect').value;
+                if (!targetCategory) return false;
+
+                // 1. Hapus dari kategori saat ini
+                universe.characters[currentCategory] = universe.characters[currentCategory].filter(c => c.id !== charId);
+
+                // 2. Tambahkan ke kategori tujuan
+                if (!universe.characters[targetCategory]) {
+                    universe.characters[targetCategory] = [];
+                }
+                universe.characters[targetCategory].push(char);
+
+                // 3. Simpan dan perbarui tampilan
+                this.saveData();
+                this.switchView(univId);
+                this.showAlert(`Tokoh "${char.name}" berhasil dipindahkan ke kategori "${targetCategory}".`, "success");
+                return true;
+            }
+        });
+    },
+
     // ==========================================
     // --- INTEGRASI AI ENCHANTER KHUSUS TOKOH ---
     // ==========================================
@@ -1092,6 +1147,11 @@ export const UniverseCharacterModule = {
                 </button>
                 <button onclick="app.deleteCharacter('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Tokoh">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+                <button onclick="app.moveCharacterToCategory('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Pindahkan Kategori">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                    </svg>
                 </button>
             </div>
 

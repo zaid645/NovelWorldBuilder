@@ -340,11 +340,29 @@ export const SkillModule = {
     },
 
     deleteSkillTag(id) {
-        if(confirm("Hapus tag ini? (Skill yang memakainya akan kehilangan referensi tag ini)")) {
-            this.data.skillTags = this.data.skillTags.filter(t => t.id !== id);
-            this.saveData();
-            this.switchView('skills');
-        }
+        const tag = this.data.skillTags.find(t => t.id === id);
+        if (!tag) return;
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus tag skill <b class="text-indigo-400">"${tag.name}"</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Skill yang menggunakan tag ini akan kehilangan referensinya.</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Tag Skill",
+            content: content,
+            confirmText: "Hapus Tag",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
+                this.data.skillTags = this.data.skillTags.filter(t => t.id !== id);
+                this.saveData();
+                this.switchView('skills');
+                this.showAlert(`Tag "${tag.name}" berhasil dihapus.`, "success");
+                return true;
+            }
+        });
     },
 
     autoloadSkillTags() {
@@ -470,13 +488,33 @@ export const SkillModule = {
     },
 
     deleteSkill(id) {
-        if(confirm("Yakin ingin menghapus skill ini? Tokoh di seluruh semesta yang menggunakannya akan mendapatkan peringatan hilang (Invalid).")) {
-            this.data.skills = this.data.skills.filter(s => s.id !== id);
-            this.saveData();
-            // Tutup floating panel jika skill yang dihapus sedang dibuka
-            this.closeSkillDetailFloating();
-            this.switchView('skills');
-        }
+        const skill = this.data.skills.find(s => s.id === id);
+        if (!skill) return;
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus skill <b class="text-yellow-400">"${skill.name}"</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Tokoh di seluruh semesta yang menggunakannya akan mendapatkan peringatan hilang (Invalid).</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Skill",
+            content: content,
+            confirmText: "Hapus Skill",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
+                this.data.skills = this.data.skills.filter(s => s.id !== id);
+                
+                this.closeSkillDetailFloating();
+                this.setPanelState('addSkillForm', false);
+                this.editSkillId = null;
+                this.saveData();
+                this.switchView('skills');
+                this.showAlert(`Skill "${skill.name}" berhasil dihapus.`, "success");
+                return true;
+            }
+        });
     },
 
     exportSkills() {

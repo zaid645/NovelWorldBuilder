@@ -347,12 +347,33 @@ export const ItemModule = {
             this.saveData(); this.switchView('items');
         }
     },
+
     deleteItemTag(id) {
-        if(confirm("Hapus tag item ini?")) {
-            this.data.itemTags = this.data.itemTags.filter(t => t.id !== id);
-            this.saveData(); this.switchView('items');
-        }
+        const tag = this.data.itemTags.find(t => t.id === id);
+        if (!tag) return;
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus tag item <b class="text-cyan-400">"${tag.name}"</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Tag ini akan dihapus dari daftar tag item yang tersedia.</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Tag Item",
+            content: content,
+            confirmText: "Hapus Tag",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
+                this.data.itemTags = this.data.itemTags.filter(t => t.id !== id);
+                this.saveData();
+                this.switchView('items');
+                this.showAlert(`Tag "${tag.name}" berhasil dihapus.`, "success");
+                return true;
+            }
+        });
     },
+
     autoloadItemTags() {
         const validIds = this.data.itemTags.map(t => t.id);
         let added = 0;
@@ -465,13 +486,32 @@ export const ItemModule = {
         this.saveData(true); this.switchView('items');
     },
     deleteItem(id) {
-        if(confirm("Yakin ingin menghapus item ini?")) {
-            this.data.items = this.data.items.filter(i => i.id !== id);
-            
-            this.closeItemDetailFloating();
-            this.setPanelState('addItemForm', false);
-            this.saveData(); this.switchView('items');
-        }
+        const item = this.data.items.find(i => i.id === id);
+        if (!item) return;
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus item <b class="text-cyan-400">"${item.name}"</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Tindakan ini tidak dapat dibatalkan dan item akan dihapus secara permanen dari daftar.</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Item",
+            content: content,
+            confirmText: "Hapus Item",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
+                this.data.items = this.data.items.filter(i => i.id !== id);
+                
+                this.closeItemDetailFloating();
+                this.setPanelState('addItemForm', false);
+                this.saveData();
+                this.switchView('items');
+                this.showAlert(`Item "${item.name}" berhasil dihapus.`, "success");
+                return true;
+            }
+        });
     },
 
     // ==========================================
