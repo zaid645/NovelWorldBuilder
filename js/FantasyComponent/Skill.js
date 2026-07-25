@@ -69,7 +69,7 @@ export const SkillModule = {
                             
                             <!-- Search Bar -->
                             <div class="mb-4 relative">
-                                <input type="text" id="searchSkillInput" placeholder="Cari skill atau filter berdasarkan tag..." class="bg-slate-900 border border-slate-700 rounded p-2.5 pl-9 text-sm w-full focus:border-indigo-500 focus:outline-none transition" oninput="app.renderSkillGrid()">
+                                <input type="text" id="searchSkillInput" value="${app.currentSkillFilter || ''}" placeholder="Cari skill atau filter berdasarkan tag..." class="bg-slate-900 border border-slate-700 rounded p-2.5 pl-9 text-sm w-full focus:border-indigo-500 focus:outline-none transition" oninput="app.onSearchSkillInput(event)">                                
                                 <svg class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </div>
                             
@@ -569,25 +569,30 @@ export const SkillModule = {
     // ==========================================
     // --- RENDER GRID KARTU (TAMPILAN RINGKAS) ---
     // ==========================================
+    onSearchSkillInput(event) {
+            const keyword = event.target.value;
+            app.currentSkillFilter = keyword; // Simpan di MainScript
+            app.renderSkillGrid(); 
+        },
+
+        // 2. Logika Pembantu: Mengembalikan daftar skill yang sudah difilter
+        getFilteredSkills() {
+            const keyword = (app.currentSkillFilter || '').toLowerCase();
+            const allSkills = app.data.skills || []; 
+
+            if (!keyword) return allSkills; 
+
+            return allSkills.filter(skill => {
+                return skill.name.toLowerCase().includes(keyword);
+            });
+        },
+
     renderSkillGrid() {
         const container = document.getElementById('skillGridContainer');
         if(!container) return;
 
-        const query = (document.getElementById('searchSkillInput')?.value || '').toLowerCase();
-
-        const skillsWithTags = this.data.skills.map(skill => {
-            const tagNames = (skill.tagIds || []).map(id => {
-                const t = this.data.skillTags.find(tag => tag.id === id);
-                return (t && t.name) ? t.name.toLowerCase() : '';
-            }).join(' ');
-            return { ...skill, tagIds: skill.tagIds || [], tagNames };
-        });
-
-        const filtered = skillsWithTags.filter(s => 
-            (s.name || '').toLowerCase().includes(query) || s.tagNames.includes(query)
-        );
-
-        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        // Gunakan fungsi helper global filter skill
+        const filtered = this.getFilteredSkills();
 
         if (filtered.length === 0) {
             container.innerHTML = `<p class="col-span-full text-sm text-slate-500 italic text-center py-8 bg-slate-800/50 rounded border border-dashed border-slate-700">Tidak ada skill yang ditemukan.</p>`;

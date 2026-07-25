@@ -202,10 +202,6 @@ export const UniverseMonsterModule = {
         });
     },
 
-    // =========================================
-    // --- FUNGSI DATA MONSTER (CRUD) ---
-    // =========================================
-
     openAddMonster(univId, category) {
         const safeCat = category.replace(/\s/g, '');
         this.editMonsterId = null; 
@@ -217,9 +213,19 @@ export const UniverseMonsterModule = {
         document.getElementById(`newMonsterApp_${safeCat}`).value = '';
         
         document.querySelectorAll(`.monsterWatakCheck_${safeCat}`).forEach(cb => cb.checked = false);
-        document.querySelectorAll(`.monsterSkillCheck_${safeCat}`).forEach(cb => cb.checked = false);
-        document.querySelectorAll(`.monsterItemCheck_${safeCat}`).forEach(cb => cb.checked = false);
-        document.querySelectorAll(`.monsterFamiliarCheck_${safeCat}`).forEach(cb => cb.checked = false);
+        
+        // Render filter-based checkboxes untuk Form Tambah Monster
+        const skillSearchInput = document.getElementById(`monsterSkillSearch_${safeCat}`);
+        if(skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
+        this.renderMonsterSkillCheckboxes(univId, category, true); 
+        
+        const itemSearchInput = document.getElementById(`monsterItemSearch_${safeCat}`);
+        if(itemSearchInput) itemSearchInput.value = app.currentItemFilter || '';
+        this.renderMonsterItemCheckboxes(univId, category, true); 
+
+        const familiarSearchInput = document.getElementById(`monsterFamiliarSearch_${safeCat}`);
+        if(familiarSearchInput) familiarSearchInput.value = app.currentFamiliarFilter || '';
+        this.renderMonsterFamiliarCheckboxes(univId, category, true);
 
         this.setPanelState(`monsterCat_${safeCat}`, true);
         this.setPanelState(`addMonster_${safeCat}`, true);
@@ -253,9 +259,18 @@ export const UniverseMonsterModule = {
             cb.checked = watakArray.includes(cb.value);
         });
 
-        document.querySelectorAll(`.monsterSkillCheck_${safeCat}`).forEach(cb => cb.checked = (monster.skillIds || []).includes(cb.value));
-        document.querySelectorAll(`.monsterItemCheck_${safeCat}`).forEach(cb => cb.checked = (monster.itemIds || []).includes(cb.value));
-        document.querySelectorAll(`.monsterFamiliarCheck_${safeCat}`).forEach(cb => cb.checked = (monster.familiarIds || []).includes(cb.value));
+        // Render filter-based checkboxes untuk Form Edit Monster (Is Initial = true)
+        const skillSearchInput = document.getElementById(`monsterSkillSearch_${safeCat}`);
+        if(skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
+        this.renderMonsterSkillCheckboxes(univId, category, true);
+
+        const itemSearchInput = document.getElementById(`monsterItemSearch_${safeCat}`);
+        if(itemSearchInput) itemSearchInput.value = app.currentItemFilter || '';
+        this.renderMonsterItemCheckboxes(univId, category, true);
+
+        const familiarSearchInput = document.getElementById(`monsterFamiliarSearch_${safeCat}`);
+        if(familiarSearchInput) familiarSearchInput.value = app.currentFamiliarFilter || '';
+        this.renderMonsterFamiliarCheckboxes(univId, category, true);
 
         // Auto-scroll ke lokasi panel editor
         setTimeout(() => {
@@ -362,7 +377,165 @@ export const UniverseMonsterModule = {
         }
     },
 
-    // --- FUNGSI ARRAY DIALOG & CATATAN ---
+    onMonsterSkillSearchInput(event, univId, category) {
+        app.currentSkillFilter = event.target.value; 
+        app.renderMonsterSkillCheckboxes(univId, category); 
+    },
+
+    renderMonsterSkillCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`monsterSkillList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeMonster = this.editMonsterId ? universe.monsters[category]?.find(m => m.id === this.editMonsterId) : null;
+            allCheckedIds = activeMonster ? (activeMonster.skillIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll(`.monsterSkillCheck_${safeCat}:checked`);
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filteredSkills = app.getFilteredSkills ? app.getFilteredSkills() : this.data.skills;
+        
+        const skillMap = new Map();
+        filteredSkills.forEach(s => skillMap.set(s.id, s));
+        
+        allCheckedIds.forEach(id => {
+            if (!skillMap.has(id)) {
+                const originalSkill = this.data.skills.find(s => s.id === id);
+                if (originalSkill) skillMap.set(originalSkill.id, originalSkill);
+            }
+        });
+
+        const displaySkills = Array.from(skillMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+        if (displaySkills.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada skill yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displaySkills.map(s => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${s.id}" class="monsterSkillCheck_${safeCat} form-checkbox rounded text-indigo-500 bg-slate-800 border-slate-600 focus:ring-indigo-500" 
+                ${allCheckedIds.includes(s.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${s.name}">${s.name}</span>
+            </label>
+        `).join('');
+    },
+
+    onMonsterItemSearchInput(event, univId, category) {
+        app.currentItemFilter = event.target.value; 
+        app.renderMonsterItemCheckboxes(univId, category);
+    },
+
+    renderMonsterItemCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`monsterItemList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeMonster = this.editMonsterId ? universe.monsters[category]?.find(m => m.id === this.editMonsterId) : null;
+            allCheckedIds = activeMonster ? (activeMonster.itemIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll(`.monsterItemCheck_${safeCat}:checked`);
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = (app.currentItemFilter || '').toLowerCase();
+        const allItems = app.getFilteredItems ? app.getFilteredItems() : this.data.items;
+        const filteredItems = allItems.filter(i => 
+            !filterQuery || 
+            i.name.toLowerCase().includes(filterQuery) || 
+            (i.tags && i.tags.some(t => t.toLowerCase().includes(filterQuery)))
+        );
+        
+        const itemMap = new Map();
+        filteredItems.forEach(i => itemMap.set(i.id, i));
+        
+        allCheckedIds.forEach(id => {
+            if (!itemMap.has(id)) {
+                const originalItem = this.data.items.find(i => i.id === id);
+                if (originalItem) itemMap.set(originalItem.id, originalItem);
+            }
+        });
+
+        const displayItems = Array.from(itemMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+        if (displayItems.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada item yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayItems.map(i => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${i.id}" class="monsterItemCheck_${safeCat} form-checkbox rounded text-cyan-500 bg-slate-800 border-slate-600 focus:ring-cyan-500" 
+                ${allCheckedIds.includes(i.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${i.name}">${i.name}</span>
+            </label>
+        `).join('');
+    },
+
+    onMonsterFamiliarSearchInput(event, univId, category) {
+        app.currentFamiliarFilter = event.target.value;
+        app.renderMonsterFamiliarCheckboxes(univId, category);
+    },
+
+    renderMonsterFamiliarCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`monsterFamiliarList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeMonster = this.editMonsterId ? universe.monsters[category]?.find(m => m.id === this.editMonsterId) : null;
+            allCheckedIds = activeMonster ? (activeMonster.familiarIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll(`.monsterFamiliarCheck_${safeCat}:checked`);
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = (app.currentFamiliarFilter || '').toLowerCase();
+        const allFamiliars = app.getFilteredFamiliars ? app.getFilteredFamiliars() : this.data.familiars;
+        const filteredFamiliars = allFamiliars.filter(f => 
+            !filterQuery || 
+            f.name.toLowerCase().includes(filterQuery) || 
+            (f.tags && f.tags.some(t => t.toLowerCase().includes(filterQuery)))
+        );
+        
+        const familiarMap = new Map();
+        filteredFamiliars.forEach(f => familiarMap.set(f.id, f));
+        
+        allCheckedIds.forEach(id => {
+            if (!familiarMap.has(id)) {
+                const originalFam = this.data.familiars.find(f => f.id === id);
+                if (originalFam) familiarMap.set(originalFam.id, originalFam);
+            }
+        });
+
+        const displayFamiliars = Array.from(familiarMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+        if (displayFamiliars.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada familiar/pet yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayFamiliars.map(f => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${f.id}" class="monsterFamiliarCheck_${safeCat} form-checkbox rounded text-fuchsia-500 bg-slate-800 border-slate-600 focus:ring-fuchsia-500" 
+                ${allCheckedIds.includes(f.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${f.name}">${f.name}</span>
+            </label>
+        `).join('');
+    },
+
     addMonsterDialogue(univId, category, monsterId) {
         const inputEl = document.getElementById(`newMonsterDlg_${monsterId}`);
         let text = inputEl.value.trim();
@@ -446,10 +619,6 @@ export const UniverseMonsterModule = {
         });
     },
 
-    // ==========================================
-    // --- INTEGRASI AI ENCHANTER KHUSUS MONSTER ---
-    // ==========================================
-    
     async generateMonsterAI(univId, safeCat, targetField) {
         const nameInput = document.getElementById(`newMonsterName_${safeCat}`).value.trim();
         if (!nameInput) {
@@ -577,10 +746,6 @@ export const UniverseMonsterModule = {
         }
     },
 
-    // =========================================
-    // --- RENDERING TAMPILAN MONSTER ---
-    // =========================================
-
     toggleMonsterCard(monsterId) {
         app.collapsedMonsterCards = app.collapsedMonsterCards || {};
         const isCurrentlyCollapsed = app.collapsedMonsterCards[monsterId];
@@ -603,7 +768,7 @@ export const UniverseMonsterModule = {
     },
 
     renderMonstersArea(universe) {
-        const daftarWatak = app.data.watakList || []; // Menggunakan master watak/sifat yang sama
+        const daftarWatak = app.data.watakList || []; 
         const catDescriptions = universe.monstersCategoryDescriptions || {};
         universe.monsters = universe.monsters || {};
 
@@ -688,40 +853,55 @@ export const UniverseMonsterModule = {
                             <div class="space-y-4 mb-4">
                                 <!-- Skill Khusus -->
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Skill Dimiliki</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        ${[...this.data.skills].sort((a, b) => a.name.localeCompare(b.name)).map(s => `
-                                            <label class="flex items-center space-x-2 cursor-pointer">
-                                                <input type="checkbox" value="${s.id}" class="monsterSkillCheck_${safeCat} form-checkbox rounded text-indigo-500 bg-slate-800 border-slate-600 focus:ring-indigo-500">
-                                                <span class="truncate text-slate-300 hover:text-white transition">${s.name}</span>
-                                            </label>
-                                        `).join('')}
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Skill Dimiliki</label>
+                                    </div>
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="monsterSkillSearch_${safeCat}" 
+                                            value="${app.currentSkillFilter || ''}"
+                                            placeholder="Cari & Filter Skill..." 
+                                            oninput="app.onMonsterSkillSearchInput(event, '${universe.id}', '${category}')"
+                                            class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-indigo-500 outline-none text-slate-300">
+                                    </div>
+                                    <div id="monsterSkillList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                        <!-- Dirender via app.renderMonsterSkillCheckboxes() -->
                                     </div>
                                 </div>
 
                                 <!-- Item Drop/Bawaan -->
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Item Bawaan / Drop Item</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        ${[...this.data.items].sort((a, b) => a.name.localeCompare(b.name)).map(i => `
-                                            <label class="flex items-center space-x-2 cursor-pointer">
-                                                <input type="checkbox" value="${i.id}" class="monsterItemCheck_${safeCat} form-checkbox rounded text-cyan-500 bg-slate-800 border-slate-600 focus:ring-cyan-500">
-                                                <span class="truncate text-slate-300 hover:text-white transition">${i.name}</span>
-                                            </label>
-                                        `).join('')}
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Item Bawaan / Drop Item</label>
+                                    </div>
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="monsterItemSearch_${safeCat}" 
+                                            value="${app.currentItemFilter || ''}"
+                                            placeholder="Cari & Filter Item..." 
+                                            oninput="app.onMonsterItemSearchInput(event, '${universe.id}', '${category}')"
+                                            class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-cyan-500 outline-none text-slate-300">
+                                    </div>
+                                    <div id="monsterItemList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                        <!-- Dirender via app.renderMonsterItemCheckboxes() -->
                                     </div>
                                 </div>
 
                                 <!-- Familiar / Minion -->
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Minion / Summoned Pet</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        ${[...this.data.familiars].sort((a, b) => a.name.localeCompare(b.name)).map(f => `
-                                            <label class="flex items-center space-x-2 cursor-pointer">
-                                                <input type="checkbox" value="${f.id}" class="monsterFamiliarCheck_${safeCat} form-checkbox rounded text-fuchsia-500 bg-slate-800 border-slate-600 focus:ring-fuchsia-500">
-                                                <span class="truncate text-slate-300 hover:text-white transition">${f.name}</span>
-                                            </label>
-                                        `).join('')}
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Minion / Summoned Pet</label>
+                                    </div>
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="monsterFamiliarSearch_${safeCat}" 
+                                            value="${app.currentFamiliarFilter || ''}"
+                                            placeholder="Cari & Filter Minion/Pet..." 
+                                            oninput="app.onMonsterFamiliarSearchInput(event, '${universe.id}', '${category}')"
+                                            class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-fuchsia-500 outline-none text-slate-300">
+                                    </div>
+                                    <div id="monsterFamiliarList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                        <!-- Dirender via app.renderMonsterFamiliarCheckboxes() -->
                                     </div>
                                 </div>
                             </div>
@@ -774,6 +954,7 @@ export const UniverseMonsterModule = {
                 : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through mb-1" title="Sifat dihapus dari Master">Invalid</span>`;
         }).join(' ');
 
+        // Relasi Skill, Item, Familiar
         const monsterSkills = (monster.skillIds || []).map(id => {
             const skill = this.data.skills.find(s => s.id === id);
             return skill ? `<span class="bg-indigo-900/50 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700 font-medium">${skill.name}</span>` : '';
@@ -789,6 +970,7 @@ export const UniverseMonsterModule = {
             return fam ? `<span class="bg-fuchsia-900/50 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded border border-fuchsia-700 font-medium">${fam.name}</span>` : '';
         }).join('');
 
+        // Map Catatan 
         const notesHtml = (monster.notes || []).map((note, index) => `
             <li class="flex justify-between items-start text-xs text-slate-300 border-l-2 border-amber-500/50 pl-2 py-1 group/note bg-slate-800/30 rounded-r">
                 <span class="flex-1 leading-relaxed whitespace-pre-wrap">${note}</span>
@@ -798,6 +980,7 @@ export const UniverseMonsterModule = {
             </li>
         `).join('');
 
+        // Map Dialog/Suara
         const dialoguesHtml = (monster.dialogues || []).map((dlg, index) => `
             <li class="flex justify-between items-start text-xs italic text-slate-300 border-l-2 border-red-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
                 <span class="flex-1 leading-relaxed">${dlg}</span>
@@ -810,20 +993,20 @@ export const UniverseMonsterModule = {
         return `
         <div id="monsterCard_${monster.id}" class="bg-slate-900 border border-slate-700 rounded-lg p-4 relative group flex flex-col hover:border-red-500/50 transition-colors shadow-md">
             
-                <div class="absolute top-3 right-3 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm z-10">
-                    ${index > 0 ? `
-                    <button onclick="app.moveMonsterUp('${this.currentView}', '${category}', '${monster.id}')" class="text-slate-400 hover:text-red-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan Urutan">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                        </svg>
-                    </button>
-                    ` : ''}
-                    <button onclick="app.toggleMonsterCard('${monster.id}')" class="text-slate-400 hover:text-white p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Toggle Tampilan">
+            <div class="absolute top-3 right-3 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm z-10">
+                ${index > 0 ? `
+                <button onclick="app.moveMonsterUp('${this.currentView}', '${category}', '${monster.id}')" class="text-slate-400 hover:text-red-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan Urutan">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                </button>
+                ` : ''}
+                <button onclick="app.toggleMonsterCard('${monster.id}')" class="text-slate-400 hover:text-white p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Toggle Tampilan">
                     <svg id="monsterToggleIcon_${monster.id}" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         ${isCollapsed ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>'}
                     </svg>
                 </button>
-                <button onclick="app.openEditMonster('${this.currentView}', '${category}', '${monster.id}')" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Info Utama Monster">
+                <button onclick="app.openEditMonster('${this.currentView}', '${category}', '${monster.id}')" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Info Monster">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                 </button>
                 <button onclick="app.deleteMonster('${this.currentView}', '${category}', '${monster.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Monster">
@@ -831,16 +1014,18 @@ export const UniverseMonsterModule = {
                 </button>
             </div>
 
+            <!-- HEADER KLIKABLE UNTUK TOGGLE SHOW/CLOSED -->
             <div class="border-b border-slate-700/50 pb-2 mb-2 cursor-pointer" onclick="app.toggleMonsterCard('${monster.id}')">
                 <h4 class="font-bold text-red-400 text-lg mb-1 pr-24">${monster.name}</h4>
                 <div id="monsterWatak_${monster.id}" class="flex flex-wrap gap-1 ${isCollapsed ? 'watak-collapsed' : ''}">${monsterWataks || '<span class="text-[10px] text-slate-500 italic bg-slate-800 px-2 py-0.5 rounded">Belum ada Sifat</span>'}</div>
             </div>
 
+            <!-- BODY COLLAPSIBLE -->
             <div id="monsterBody_${monster.id}" class="${isCollapsed ? 'hidden' : 'flex flex-col md:flex-row gap-6'}">
                 <div class="flex-1 space-y-3 pr-0 md:pr-4">
                     <div class="grid grid-cols-1 gap-2">
-                        <div class="text-[13px] text-slate-300"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Asal-usul / Latar Belakang:</span> <span class="leading-relaxed whitespace-pre-wrap">${monster.background || '-'}</span></div>
-                        <div class="text-[13px] text-slate-300 pt-1.5"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Anatomi / Penampilan:</span> <span class="leading-relaxed whitespace-pre-wrap">${monster.appearance || '-'}</span></div>
+                        <div class="text-[13px] text-slate-300"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Latar Belakang / Asal-usul:</span> <span class="leading-relaxed whitespace-pre-wrap">${monster.background || '-'}</span></div>
+                        <div class="text-[13px] text-slate-300 pt-1.5"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Penampilan / Anatomi:</span> <span class="leading-relaxed whitespace-pre-wrap">${monster.appearance || '-'}</span></div>
                     </div>
 
                     <div class="mt-4 pt-3 border-t border-slate-800/80">
@@ -865,7 +1050,7 @@ export const UniverseMonsterModule = {
                         </ul>
                         
                         <div class="flex items-center space-x-1.5 pt-1">
-                            <input type="text" id="newMonsterDlg_${monster.id}" placeholder="Ketik contoh kutipan/raungan... (Tekan Enter)" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-red-500 transition" onkeydown="if(event.key === 'Enter') app.addMonsterDialogue('${this.currentView}', '${category}', '${monster.id}')">
+                            <input type="text" id="newMonsterDlg_${monster.id}" placeholder="Ketik contoh suara... (Tekan Enter)" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-red-500 transition" onkeydown="if(event.key === 'Enter') app.addMonsterDialogue('${this.currentView}', '${category}', '${monster.id}')">
                             <button onclick="app.addMonsterDialogue('${this.currentView}', '${category}', '${monster.id}')" class="bg-red-600/80 hover:bg-red-500 text-white px-2 py-1.5 rounded text-[10px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
                         </div>
                     </div>
@@ -877,7 +1062,7 @@ export const UniverseMonsterModule = {
                         <div class="flex flex-wrap gap-1">${monsterSkills || '<span class="text-[10px] text-slate-600 italic">Kosong</span>'}</div>
                     </div>
                     <div class="pt-2 border-t border-slate-800/50">
-                        <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Item Bawaan/Drop:</span>
+                        <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Item Bawaan / Drop:</span>
                         <div class="flex flex-wrap gap-1">${monsterItems || '<span class="text-[10px] text-slate-600 italic">Kosong</span>'}</div>
                     </div>
                     <div class="pt-2 border-t border-slate-800/50">

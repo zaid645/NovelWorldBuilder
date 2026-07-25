@@ -74,7 +74,12 @@ export const ItemModule = {
                             
                             <!-- Search Bar -->
                             <div class="mb-4 relative">
-                                <input type="text" id="searchItemInput" placeholder="Cari nama item atau tag..." class="bg-slate-900 border border-slate-700 rounded p-2.5 pl-9 text-sm w-full focus:border-cyan-500 focus:outline-none transition" oninput="app.renderItemGrid()">
+                                <input type="text" 
+                                    id="searchItemInput" 
+                                    value="${app.currentItemFilter || ''}" 
+                                    placeholder="Cari nama item atau tag..." 
+                                    class="bg-slate-900 border border-slate-700 rounded p-2.5 pl-9 text-sm w-full focus:border-cyan-500 focus:outline-none transition" 
+                                    oninput="app.onSearchItemInput(event)">
                                 <svg class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </div>
                             
@@ -105,14 +110,20 @@ export const ItemModule = {
                                 <div class="mb-4">
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Skill Tertaut (Opsional):</label>
                                     <p class="text-[10px] text-slate-500 mb-2">Pilih skill yang akan diberikan atau dapat digunakan oleh pengguna item ini.</p>
-                                    <div class="bg-slate-800 border border-slate-600 rounded p-3 max-h-32 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-sm w-full">
-                                        ${sortedSkills.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-full">Belum ada skill yang tersedia. Buat di menu Skill terlebih dahulu.</span>' : ''}
-                                        ${sortedSkills.map(s => `
-                                            <label class="flex items-center space-x-2 cursor-pointer w-full">
-                                                <input type="checkbox" value="${s.id}" class="itemSkillCheck form-checkbox rounded text-yellow-500 bg-slate-700 border-slate-600 focus:ring-yellow-500">
-                                                <span class="truncate text-slate-300 hover:text-white transition">${s.name}</span>
-                                            </label>
-                                        `).join('')}
+                                    
+                                    <!-- Input Search Skill -->
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="itemSkillSearch" 
+                                            value="${app.currentItemSkillFilter || ''}"
+                                            placeholder="Cari & Filter Skill..." 
+                                            oninput="app.onItemSkillSearchInput(event)"
+                                            class="bg-slate-900 border border-slate-700 rounded p-2 text-xs w-full focus:border-cyan-500 outline-none text-slate-300">
+                                    </div>
+
+                                    <!-- Container Checkbox Skill Dinamis -->
+                                    <div id="itemSkillList" class="bg-slate-800 border border-slate-600 rounded p-3 max-h-32 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-sm w-full">
+                                        <!-- Dirender via app.renderItemSkillCheckboxes() -->
                                     </div>
                                 </div>
 
@@ -380,7 +391,11 @@ export const ItemModule = {
         document.getElementById('newItemApp').value = '';
         document.getElementById('newItemDesc').value = '';
         document.querySelectorAll('.itemTagCheck').forEach(cb => cb.checked = false);
-        document.querySelectorAll('.itemSkillCheck').forEach(cb => cb.checked = false); 
+        
+        // Reset filter & render list skill awal
+        const skillSearchInput = document.getElementById('itemSkillSearch');
+        if (skillSearchInput) skillSearchInput.value = app.currentItemSkillFilter || '';
+        this.renderItemSkillCheckboxes(true);
         
         // Reset pengaturan AI
         const aiUniverse = document.getElementById('aiItemUniverse');
@@ -400,11 +415,13 @@ export const ItemModule = {
         document.getElementById('newItemName').value = item.name;
         document.getElementById('newItemApp').value = item.appearance || '';
         document.getElementById('newItemDesc').value = item.description || '';
-        
         document.querySelectorAll('.itemTagCheck').forEach(cb => cb.checked = item.tagIds.includes(cb.value));
-        // Centang skill yang tertaut
-        document.querySelectorAll('.itemSkillCheck').forEach(cb => cb.checked = (item.skillIds || []).includes(cb.value));
-        
+
+        // Reset filter & render list skill awal
+        const skillSearchInput = document.getElementById('itemSkillSearch');
+        if (skillSearchInput) skillSearchInput.value = app.currentItemSkillFilter || '';
+        this.renderItemSkillCheckboxes(true);
+
         // Reset pengaturan AI
         const aiUniverse = document.getElementById('aiItemUniverse');
         if(aiUniverse) aiUniverse.value = '';
@@ -545,12 +562,79 @@ export const ItemModule = {
     },
 
     // ==========================================
+    // --- BANTUAN FILTER ---
+    // ==========================================
+    onSearchItemInput(e) {
+        app.currentItemFilter = e.target.value;
+        this.renderItemGrid();
+    },
+    // --- BANTUAN FILTER SKILL DI FORM ITEM ---
+    onItemSkillSearchInput(event) {
+        app.currentItemSkillFilter = event.target.value;
+        app.renderItemSkillCheckboxes();
+    },
+
+    renderItemSkillCheckboxes(isInitial = false) {
+        const container = document.getElementById('itemSkillList');
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            // Jika form baru dibuka (Add/Edit), ambil dari item yang sedang di-edit
+            const activeItem = this.editItemId ? this.data.items.find(i => i.id === this.editItemId) : null;
+            allCheckedIds = activeItem ? (activeItem.skillIds || []) : [];
+        } else {
+            // Jika sedang mengetik/mencari, baca status checkbox yang tercentang di layar
+            const currentCheckedNodes = document.querySelectorAll('.itemSkillCheck:checked');
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        // Ambil kata kunci filter
+        const filterQuery = (app.currentItemSkillFilter || '').toLowerCase();
+        const allSkills = this.data.skills || [];
+        
+        // Filter skill berdasarkan nama
+        const filteredSkills = allSkills.filter(s => 
+            !filterQuery || (s.name && s.name.toLowerCase().includes(filterQuery))
+        );
+
+        const skillMap = new Map();
+        filteredSkills.forEach(s => skillMap.set(s.id, s));
+
+        // Pertahankan skill yang SEDANG DICENTANG agar tidak tersembunyi saat terkena filter pencarian
+        allCheckedIds.forEach(id => {
+            if (!skillMap.has(id)) {
+                const originalSkill = allSkills.find(s => s.id === id);
+                if (originalSkill) skillMap.set(originalSkill.id, originalSkill);
+            }
+        });
+
+        // Urutkan alfabetis
+        const displaySkills = Array.from(skillMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (displaySkills.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada skill yang ditemukan.</span>';
+            return;
+        }
+
+        // Render ulang list checkbox
+        container.innerHTML = displaySkills.map(s => `
+            <label class="flex items-center space-x-2 cursor-pointer w-full">
+                <input type="checkbox" value="${s.id}" class="itemSkillCheck form-checkbox rounded text-yellow-500 bg-slate-700 border-slate-600 focus:ring-yellow-500"
+                ${allCheckedIds.includes(s.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${s.name}">${s.name}</span>
+            </label>
+        `).join('');
+    },
+
+    // ==========================================
     // --- RENDER GRID KARTU (TAMPILAN RINGKAS) ---
     // ==========================================
     renderItemGrid() {
         const container = document.getElementById('itemGridContainer');
         if(!container) return;
-        const query = (document.getElementById('searchItemInput')?.value || '').toLowerCase();
+        const query = (app.currentItemFilter || '').toLowerCase();
 
         const itemData = this.data.items.map(item => {
             const tagNames = (item.tagIds || []).map(id => {

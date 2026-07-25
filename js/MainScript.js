@@ -27,8 +27,11 @@ const coreApp = {
     // State edit yang sedang aktif (untuk modal atau panel edit)
     editCharId: null,
     editSkillId: null,
+    currentSkillFilter: null,
     editItemId: null,
+    currentItemFilter: null,
     editFamiliarId: null,
+    currentFamiliarFilter: null,
     editLocationId: null,  
     editArcId: null,       
     editSubArcId: null,

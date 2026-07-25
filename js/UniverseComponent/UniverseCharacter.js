@@ -213,9 +213,18 @@ export const UniverseCharacterModule = {
         document.getElementById(`newApp_${safeCat}`).value = '';
         
         document.querySelectorAll(`.charWatakCheck_${safeCat}`).forEach(cb => cb.checked = false);
-        document.querySelectorAll(`.skillCheck_${safeCat}`).forEach(cb => cb.checked = false);
-        document.querySelectorAll(`.itemCheck_${safeCat}`).forEach(cb => cb.checked = false);
-        document.querySelectorAll(`.familiarCheck_${safeCat}`).forEach(cb => cb.checked = false);
+
+        const skillSearchInput = document.getElementById(`charSkillSearch_${safeCat}`);
+        if(skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
+        this.renderCharSkillCheckboxes(univId, category, true); 
+        
+        const itemSearchInput = document.getElementById(`charItemSearch_${safeCat}`);
+        if(itemSearchInput) itemSearchInput.value = app.currentItemFilter || '';
+        this.renderCharItemCheckboxes(univId, category, true); 
+
+        const familiarSearchInput = document.getElementById(`charFamiliarSearch_${safeCat}`);
+        if(familiarSearchInput) familiarSearchInput.value = app.currentFamiliarFilter || '';
+        this.renderCharFamiliarCheckboxes(univId, category, true);
 
         this.setPanelState(`cat_${safeCat}`, true);
         this.setPanelState(`addChar_${safeCat}`, true);
@@ -249,9 +258,17 @@ export const UniverseCharacterModule = {
             cb.checked = watakArray.includes(cb.value);
         });
 
-        document.querySelectorAll(`.skillCheck_${safeCat}`).forEach(cb => cb.checked = char.skillIds.includes(cb.value));
-        document.querySelectorAll(`.itemCheck_${safeCat}`).forEach(cb => cb.checked = (char.itemIds || []).includes(cb.value));
-        document.querySelectorAll(`.familiarCheck_${safeCat}`).forEach(cb => cb.checked = (char.familiarIds || []).includes(cb.value));
+        const skillSearchInput = document.getElementById(`charSkillSearch_${safeCat}`);
+        if(skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
+        this.renderCharSkillCheckboxes(univId, category, true);
+
+        const itemSearchInput = document.getElementById(`charItemSearch_${safeCat}`);
+        if(itemSearchInput) itemSearchInput.value = app.currentItemFilter || '';
+        this.renderCharItemCheckboxes(univId, category, true);
+
+        const familiarSearchInput = document.getElementById(`charFamiliarSearch_${safeCat}`);
+        if(familiarSearchInput) familiarSearchInput.value = app.currentFamiliarFilter || '';
+        this.renderCharFamiliarCheckboxes(univId, category, true);
 
         // Fitur: Auto-scroll ke lokasi panel editor setelah inisialisasi state
         setTimeout(() => {
@@ -359,6 +376,179 @@ export const UniverseCharacterModule = {
             this.saveData(true); 
             this.switchView(univId);
         }
+    },
+
+    // --- FUNGSI BANTUAN SKILL ---
+    // PENCARIAN SKILL DI FORM KARAKTER
+    onCharSkillSearchInput(event, univId, category) {
+        app.currentSkillFilter = event.target.value; // Titipkan di MainScript
+        app.renderCharSkillCheckboxes(univId, category); // Gambar ulang checkbox
+    },
+
+    renderCharSkillCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`charSkillList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            // 1. Jika PERTAMA KALI dibuka (Add/Edit), inisialisasi dari data tersimpan karakter
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeChar = this.editCharId ? universe.characters[category]?.find(c => c.id === this.editCharId) : null;
+            allCheckedIds = activeChar ? (activeChar.skillIds || []) : [];
+        } else {
+            // 2. Jika dipanggil saat PENCARIAN/INTERAKSI, MURNI baca status checkbox di layar saat ini
+            const currentCheckedNodes = document.querySelectorAll(`.skillCheck_${safeCat}:checked`);
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        // 3. Ambil skill yang lolos filter (memanggil dari SkillModule)
+        const filteredSkills = app.getFilteredSkills ? app.getFilteredSkills() : this.data.skills;
+        
+        const skillMap = new Map();
+        filteredSkills.forEach(s => skillMap.set(s.id, s));
+        
+        // 4. Masukkan kembali skill yang SEDANG DICENTANG agar tidak tersembunyi jika terkena filter pencarian
+        allCheckedIds.forEach(id => {
+            if (!skillMap.has(id)) {
+                const originalSkill = this.data.skills.find(s => s.id === id);
+                if (originalSkill) skillMap.set(originalSkill.id, originalSkill);
+            }
+        });
+
+        // Urutkan berdasarkan nama
+        const displaySkills = Array.from(skillMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+        if (displaySkills.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada skill yang ditemukan.</span>';
+            return;
+        }
+
+        // Render Checkbox
+        container.innerHTML = displaySkills.map(s => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${s.id}" class="skillCheck_${safeCat} form-checkbox rounded text-indigo-500 bg-slate-800 border-slate-600 focus:ring-indigo-500" 
+                ${allCheckedIds.includes(s.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${s.name}">${s.name}</span>
+            </label>
+        `).join('');
+    },
+
+    // --- FUNGSI BANTUAN ITEM ---
+    onCharItemSearchInput(event, univId, category) {
+        app.currentItemFilter = event.target.value; // Berbagi variabel dengan MainScript / ItemModule
+        app.renderCharItemCheckboxes(univId, category);
+    },
+
+    renderCharItemCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`charItemList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeChar = this.editCharId ? universe.characters[category]?.find(c => c.id === this.editCharId) : null;
+            allCheckedIds = activeChar ? (activeChar.itemIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll(`.itemCheck_${safeCat}:checked`);
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        // Ambil data item yang lolos filter pencarian
+        const filterQuery = (app.currentItemFilter || '').toLowerCase();
+        const allItems = app.getFilteredItems ? app.getFilteredItems() : this.data.items;
+        const filteredItems = allItems.filter(i => 
+            !filterQuery || 
+            i.name.toLowerCase().includes(filterQuery) || 
+            (i.tags && i.tags.some(t => t.toLowerCase().includes(filterQuery)))
+        );
+        
+        const itemMap = new Map();
+        filteredItems.forEach(i => itemMap.set(i.id, i));
+        
+        // Pertahankan item yang sedang dicentang agar tidak tersembunyi
+        allCheckedIds.forEach(id => {
+            if (!itemMap.has(id)) {
+                const originalItem = this.data.items.find(i => i.id === id);
+                if (originalItem) itemMap.set(originalItem.id, originalItem);
+            }
+        });
+
+        const displayItems = Array.from(itemMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+        if (displayItems.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada item yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayItems.map(i => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${i.id}" class="itemCheck_${safeCat} form-checkbox rounded text-cyan-500 bg-slate-800 border-slate-600 focus:ring-cyan-500" 
+                ${allCheckedIds.includes(i.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${i.name}">${i.name}</span>
+            </label>
+        `).join('');
+    },
+
+    // --- FUNGSI BANTUAN FAMILIAR / PET ---
+    onCharFamiliarSearchInput(event, univId, category) {
+        app.currentFamiliarFilter = event.target.value; // Berbagi variabel dengan MainScript / PetModule
+        app.renderCharFamiliarCheckboxes(univId, category);
+    },
+
+    renderCharFamiliarCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`charFamiliarList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeChar = this.editCharId ? universe.characters[category]?.find(c => c.id === this.editCharId) : null;
+            allCheckedIds = activeChar ? (activeChar.familiarIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll(`.familiarCheck_${safeCat}:checked`);
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        // Ambil data familiar yang lolos filter pencarian
+        const filterQuery = (app.currentFamiliarFilter || '').toLowerCase();
+        const allFamiliars = app.getFilteredFamiliars ? app.getFilteredFamiliars() : this.data.familiars;
+        const filteredFamiliars = allFamiliars.filter(f => 
+            !filterQuery || 
+            f.name.toLowerCase().includes(filterQuery) || 
+            (f.tags && f.tags.some(t => t.toLowerCase().includes(filterQuery)))
+        );
+        
+        const familiarMap = new Map();
+        filteredFamiliars.forEach(f => familiarMap.set(f.id, f));
+        
+        // Pertahankan familiar yang sedang dicentang agar tidak tersembunyi
+        allCheckedIds.forEach(id => {
+            if (!familiarMap.has(id)) {
+                const originalFam = this.data.familiars.find(f => f.id === id);
+                if (originalFam) familiarMap.set(originalFam.id, originalFam);
+            }
+        });
+
+        const displayFamiliars = Array.from(familiarMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+        if (displayFamiliars.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada familiar/pet yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayFamiliars.map(f => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${f.id}" class="familiarCheck_${safeCat} form-checkbox rounded text-fuchsia-500 bg-slate-800 border-slate-600 focus:ring-fuchsia-500" 
+                ${allCheckedIds.includes(f.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${f.name}">${f.name}</span>
+            </label>
+        `).join('');
     },
 
     // --- FUNGSI ARRAY DIALOG ---
@@ -689,7 +879,7 @@ export const UniverseCharacterModule = {
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Latar Belakang</label>
                                     <button id="btnAiBg_${safeCat}" onclick="app.generateCharAI('${universe.id}', '${safeCat}', 'background')" class="text-[10px] bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 px-2 py-1 rounded transition font-medium flex items-center gap-1">✨ AI Generatif</button>
                                 </div>
-                                <textarea id="newBg_${safeCat}" placeholder="Ketik draf latar belakang..." class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500" rows="3"></textarea>
+                                <textarea id="newBg_${safeCat}" placeholder="Ketik draf latar belakang..." class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500" rows="8"></textarea>
                             </div>
 
                             <div class="mb-4">
@@ -697,46 +887,71 @@ export const UniverseCharacterModule = {
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Penampilan</label>
                                     <button id="btnAiApp_${safeCat}" onclick="app.generateCharAI('${universe.id}', '${safeCat}', 'appearance')" class="text-[10px] bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 px-2 py-1 rounded transition font-medium flex items-center gap-1">✨ AI Generatif</button>
                                 </div>
-                                <textarea id="newApp_${safeCat}" placeholder="Ketik draf rupa/pakaian..." class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500" rows="3"></textarea>
+                                <textarea id="newApp_${safeCat}" placeholder="Ketik draf rupa/pakaian..." class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500" rows="8"></textarea>
                             </div>
 
                             <div class="space-y-4 mb-4">
+                            
                                 <!-- Skill Khusus -->
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Skill Khusus</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        ${[...this.data.skills].sort((a, b) => a.name.localeCompare(b.name)).map(s => `
-                                            <label class="flex items-center space-x-2 cursor-pointer">
-                                                <input type="checkbox" value="${s.id}" class="skillCheck_${safeCat} form-checkbox rounded text-indigo-500 bg-slate-800 border-slate-600 focus:ring-indigo-500">
-                                                <span class="truncate text-slate-300 hover:text-white transition">${s.name}</span>
-                                            </label>
-                                        `).join('')}
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Skill Khusus</label>
+                                    </div>
+                                    <!-- Kotak Pencarian Skill di dalam Form Karakter -->
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="charSkillSearch_${safeCat}" 
+                                            value="${app.currentSkillFilter || ''}"
+                                            placeholder="Cari & Filter Skill..." 
+                                            oninput="app.onCharSkillSearchInput(event, '${universe.id}', '${category}')"
+                                            class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-indigo-500 outline-none text-slate-300">
+                                    </div>
+                                    
+                                    <!-- Container yang akan dirender otomatis oleh JavaScript -->
+                                    <div id="charSkillList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                        <!-- Dirender via app.renderCharSkillCheckboxes() -->
                                     </div>
                                 </div>
 
                                 <!-- Item Bawaan -->
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Item Bawaan</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        ${[...this.data.items].sort((a, b) => a.name.localeCompare(b.name)).map(i => `
-                                            <label class="flex items-center space-x-2 cursor-pointer">
-                                                <input type="checkbox" value="${i.id}" class="itemCheck_${safeCat} form-checkbox rounded text-cyan-500 bg-slate-800 border-slate-600 focus:ring-cyan-500">
-                                                <span class="truncate text-slate-300 hover:text-white transition">${i.name}</span>
-                                            </label>
-                                        `).join('')}
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Item Bawaan</label>
+                                    </div>
+                                    <!-- Input Search Item -->
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="charItemSearch_${safeCat}" 
+                                            value="${app.currentItemFilter || ''}"
+                                            placeholder="Cari & Filter Item..." 
+                                            oninput="app.onCharItemSearchInput(event, '${universe.id}', '${category}')"
+                                            class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-cyan-500 outline-none text-slate-300">
+                                    </div>
+                                    
+                                    <!-- Container Checkbox Item -->
+                                    <div id="charItemList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                        <!-- Dirender via app.renderCharItemCheckboxes() -->
                                     </div>
                                 </div>
 
                                 <!-- Familiar / Pet -->
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Familiar / Pet</label>
-                                    <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        ${[...this.data.familiars].sort((a, b) => a.name.localeCompare(b.name)).map(f => `
-                                            <label class="flex items-center space-x-2 cursor-pointer">
-                                                <input type="checkbox" value="${f.id}" class="familiarCheck_${safeCat} form-checkbox rounded text-fuchsia-500 bg-slate-800 border-slate-600 focus:ring-fuchsia-500">
-                                                <span class="truncate text-slate-300 hover:text-white transition">${f.name}</span>
-                                            </label>
-                                        `).join('')}
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Familiar / Pet</label>
+                                    </div>
+                                    <!-- Input Search Familiar -->
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="charFamiliarSearch_${safeCat}" 
+                                            value="${app.currentFamiliarFilter || ''}"
+                                            placeholder="Cari & Filter Familiar/Pet..." 
+                                            oninput="app.onCharFamiliarSearchInput(event, '${universe.id}', '${category}')"
+                                            class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-fuchsia-500 outline-none text-slate-300">
+                                    </div>
+                                    
+                                    <!-- Container Checkbox Familiar -->
+                                    <div id="charFamiliarList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                        <!-- Dirender via app.renderCharFamiliarCheckboxes() -->
                                     </div>
                                 </div>
                             </div>

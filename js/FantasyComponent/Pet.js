@@ -71,7 +71,12 @@ export const PetModule = {
                             
                             <!-- Search Bar -->
                             <div class="mb-4 relative">
-                                <input type="text" id="searchFamiliarInput" placeholder="Cari nama familiar atau tag..." class="bg-slate-900 border border-slate-700 rounded p-2.5 pl-9 text-sm w-full focus:border-fuchsia-500 focus:outline-none transition" oninput="app.renderFamiliarGrid()">
+                                <input type="text" 
+                                    id="searchFamiliarInput" 
+                                    value="${app.currentFamiliarFilter || ''}" 
+                                    placeholder="Cari nama familiar atau tag..." 
+                                    class="bg-slate-900 border border-slate-700 rounded p-2.5 pl-9 text-sm w-full focus:border-fuchsia-500 focus:outline-none transition" 
+                                    oninput="app.onSearchFamiliarInput(event)">
                                 <svg class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </div>
                             
@@ -142,26 +147,35 @@ export const PetModule = {
                                 
                                 <!-- Integrasi Komponen Lain -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                    <!-- Filter & Checklist Skill -->
                                     <div>
                                         <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Skill Khusus:</label>
-                                        <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
-                                            ${this.data.skills.map(s => `
-                                                <label class="flex items-center space-x-2 cursor-pointer">
-                                                    <input type="checkbox" value="${s.id}" class="famSkillCheck form-checkbox rounded text-indigo-500 bg-slate-700 border-slate-600">
-                                                    <span class="truncate text-slate-300 hover:text-white">${s.name}</span>
-                                                </label>
-                                            `).join('')}
+                                        <div class="mb-2 relative">
+                                            <input type="text" 
+                                                id="famSkillSearch" 
+                                                value="${app.currentSkillFilter || ''}"
+                                                placeholder="Cari Skill..." 
+                                                oninput="app.onFamSkillSearchInput(event)"
+                                                class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:border-indigo-500 outline-none text-slate-300">
+                                        </div>
+                                        <div id="famSkillList" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
+                                            <!-- Dirender via app.renderFamSkillCheckboxes() -->
                                         </div>
                                     </div>
+
+                                    <!-- Filter & Checklist Item -->
                                     <div>
                                         <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Item Bawaan:</label>
-                                        <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
-                                            ${this.data.items.map(i => `
-                                                <label class="flex items-center space-x-2 cursor-pointer">
-                                                    <input type="checkbox" value="${i.id}" class="famItemCheck form-checkbox rounded text-cyan-500 bg-slate-700 border-slate-600">
-                                                    <span class="truncate text-slate-300 hover:text-white">${i.name}</span>
-                                                </label>
-                                            `).join('')}
+                                        <div class="mb-2 relative">
+                                            <input type="text" 
+                                                id="famItemSearch" 
+                                                value="${app.currentItemFilter || ''}"
+                                                placeholder="Cari Item..." 
+                                                oninput="app.onFamItemSearchInput(event)"
+                                                class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:border-cyan-500 outline-none text-slate-300">
+                                        </div>
+                                        <div id="famItemList" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
+                                            <!-- Dirender via app.renderFamItemCheckboxes() -->
                                         </div>
                                     </div>
                                 </div>
@@ -494,8 +508,14 @@ export const PetModule = {
         // Uncheck all Checkboxes
         document.querySelectorAll('.famWatakCheck').forEach(cb => cb.checked = false);
         document.querySelectorAll('.familiarTagCheck').forEach(cb => cb.checked = false);
-        document.querySelectorAll('.famSkillCheck').forEach(cb => cb.checked = false);
-        document.querySelectorAll('.famItemCheck').forEach(cb => cb.checked = false);
+        
+        const famSkillSearch = document.getElementById('famSkillSearch');
+        if (famSkillSearch) famSkillSearch.value = app.currentSkillFilter || '';
+        this.renderFamSkillCheckboxes(true);
+
+        const famItemSearch = document.getElementById('famItemSearch');
+        if (famItemSearch) famItemSearch.value = app.currentItemFilter || '';
+        this.renderFamItemCheckboxes(true);
         
         this.setPanelState('addFamiliarForm', true);
         document.getElementById('saveFamiliarBtn').innerText = "Simpan Familiar";
@@ -533,12 +553,15 @@ export const PetModule = {
         document.querySelectorAll('.familiarTagCheck').forEach(cb => {
             cb.checked = (fam.tagIds || []).includes(cb.value);
         });
-        document.querySelectorAll('.famSkillCheck').forEach(cb => {
-            cb.checked = (fam.skillIds || []).includes(cb.value);
-        });
-        document.querySelectorAll('.famItemCheck').forEach(cb => {
-            cb.checked = (fam.itemIds || []).includes(cb.value);
-        });
+        
+        // Sync Input Filter & Render List Skill/Item sesuai data pet yang di-edit
+        const famSkillSearch = document.getElementById('famSkillSearch');
+        if (famSkillSearch) famSkillSearch.value = app.currentSkillFilter || '';
+        this.renderFamSkillCheckboxes(true);
+
+        const famItemSearch = document.getElementById('famItemSearch');
+        if (famItemSearch) famItemSearch.value = app.currentItemFilter || '';
+        this.renderFamItemCheckboxes(true);
 
         // Reset pengaturan AI (selalu dibersihkan saat edit)
         document.getElementById('aiFamUniverse').value = '';
@@ -834,12 +857,127 @@ export const PetModule = {
     },
 
     // ==========================================
+    // --- BANTUAN FILTER FAMILIAR ---
+    // ==========================================
+    onSearchFamiliarInput(e) {
+        app.currentFamiliarFilter = e.target.value;
+        this.renderFamiliarGrid();
+    },
+
+    // --- SKILL FILTER ---
+    onFamSkillSearchInput(event) {
+        app.currentSkillFilter = event.target.value;
+        this.renderFamSkillCheckboxes();
+    },
+
+    renderFamSkillCheckboxes(isInitial = false) {
+        const container = document.getElementById('famSkillList');
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const activeFam = this.editFamiliarId ? this.data.familiars.find(f => f.id === this.editFamiliarId) : null;
+            allCheckedIds = activeFam ? (activeFam.skillIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll('.famSkillCheck:checked');
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = (app.currentSkillFilter || '').toLowerCase();
+        const allSkills = this.data.skills || [];
+
+        const filteredSkills = allSkills.filter(s => 
+            !filterQuery || (s.name && s.name.toLowerCase().includes(filterQuery))
+        );
+
+        const skillMap = new Map();
+        filteredSkills.forEach(s => skillMap.set(s.id, s));
+
+        // Pertahankan skill yang tercentang agar tidak hilang saat di-filter
+        allCheckedIds.forEach(id => {
+            if (!skillMap.has(id)) {
+                const originalSkill = allSkills.find(s => s.id === id);
+                if (originalSkill) skillMap.set(originalSkill.id, originalSkill);
+            }
+        });
+
+        const displaySkills = Array.from(skillMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (displaySkills.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada skill yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displaySkills.map(s => `
+            <label class="flex items-center space-x-2 cursor-pointer w-full">
+                <input type="checkbox" value="${s.id}" class="famSkillCheck form-checkbox rounded text-indigo-500 bg-slate-700 border-slate-600 focus:ring-indigo-500"
+                ${allCheckedIds.includes(s.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${s.name}">${s.name}</span>
+            </label>
+        `).join('');
+    },
+
+    // --- ITEM FILTER ---
+    onFamItemSearchInput(event) {
+        app.currentItemFilter = event.target.value;
+        this.renderFamItemCheckboxes();
+    },
+
+    renderFamItemCheckboxes(isInitial = false) {
+        const container = document.getElementById('famItemList');
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const activeFam = this.editFamiliarId ? this.data.familiars.find(f => f.id === this.editFamiliarId) : null;
+            allCheckedIds = activeFam ? (activeFam.itemIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll('.famItemCheck:checked');
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = (app.currentItemFilter || '').toLowerCase();
+        const allItems = this.data.items || [];
+
+        const filteredItems = allItems.filter(i => 
+            !filterQuery || (i.name && i.name.toLowerCase().includes(filterQuery))
+        );
+
+        const itemMap = new Map();
+        filteredItems.forEach(i => itemMap.set(i.id, i));
+
+        // Pertahankan item yang tercentang agar tidak hilang saat di-filter
+        allCheckedIds.forEach(id => {
+            if (!itemMap.has(id)) {
+                const originalItem = allItems.find(i => i.id === id);
+                if (originalItem) itemMap.set(originalItem.id, originalItem);
+            }
+        });
+
+        const displayItems = Array.from(itemMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (displayItems.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada item yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayItems.map(i => `
+            <label class="flex items-center space-x-2 cursor-pointer w-full">
+                <input type="checkbox" value="${i.id}" class="famItemCheck form-checkbox rounded text-cyan-500 bg-slate-700 border-slate-600 focus:ring-cyan-500"
+                ${allCheckedIds.includes(i.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${i.name}">${i.name}</span>
+            </label>
+        `).join('');
+    },
+    // ==========================================
     // --- RENDER GRID & CARD PET ---
     // ==========================================
     renderFamiliarGrid() {
         const container = document.getElementById('familiarGridContainer');
         if(!container) return;
-        const query = (document.getElementById('searchFamiliarInput')?.value || '').toLowerCase();
+        const query = (app.currentFamiliarFilter || '').toLowerCase();
 
         const famData = this.data.familiars.map(fam => {
             const tagNames = (fam.tagIds || []).map(id => {
