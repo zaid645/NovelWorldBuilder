@@ -115,7 +115,7 @@ export const ItemModule = {
                                     <div class="mb-2 relative">
                                         <input type="text" 
                                             id="itemSkillSearch" 
-                                            value="${app.currentItemSkillFilter || ''}"
+                                            value="${app.currentSkillFilter || ''}"
                                             placeholder="Cari & Filter Skill..." 
                                             oninput="app.onItemSkillSearchInput(event)"
                                             class="bg-slate-900 border border-slate-700 rounded p-2 text-xs w-full focus:border-cyan-500 outline-none text-slate-300">
@@ -415,7 +415,7 @@ export const ItemModule = {
         
         // Reset filter & render list skill awal
         const skillSearchInput = document.getElementById('itemSkillSearch');
-        if (skillSearchInput) skillSearchInput.value = app.currentItemSkillFilter || '';
+        if (skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
         this.renderItemSkillCheckboxes(true);
         
         // Reset pengaturan AI
@@ -440,7 +440,7 @@ export const ItemModule = {
 
         // Reset filter & render list skill awal
         const skillSearchInput = document.getElementById('itemSkillSearch');
-        if (skillSearchInput) skillSearchInput.value = app.currentItemSkillFilter || '';
+        if (skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
         this.renderItemSkillCheckboxes(true);
 
         // Reset pengaturan AI
@@ -610,7 +610,7 @@ export const ItemModule = {
     },
     // --- BANTUAN FILTER SKILL DI FORM ITEM ---
     onItemSkillSearchInput(event) {
-        app.currentItemSkillFilter = event.target.value;
+        app.currentSkillFilter = event.target.value;
         app.renderItemSkillCheckboxes();
     },
 
@@ -631,7 +631,7 @@ export const ItemModule = {
         }
 
         // Ambil kata kunci filter
-        const filterQuery = (app.currentItemSkillFilter || '').toLowerCase();
+        const filterQuery = (app.currentSkillFilter || '').toLowerCase();
         const allSkills = this.data.skills || [];
         const allSkillTags = this.data.skillTags || []; // Ambil data tag skill
         
