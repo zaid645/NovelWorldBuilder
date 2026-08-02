@@ -2,27 +2,83 @@
 const CACHE_NAME = 'novel-lore-cache-v3';
 
 const LOCAL_ASSETS = [
+  // Index
   './',
   './index.html',
   './sw.js',
   './caching.js',
   './favicon.ico',
   './favicon.svg',
+
+  // Main
   './js/DefaultData.json',
   './js/MainScript.js',
-  './js/FantasyComponent/Item.js',
-  './js/FantasyComponent/Pet.js',
-  './js/FantasyComponent/Skill.js',
-  './js/HeaderMenu/AIEnchanter.js',
-  './js/HeaderMenu/ArcInfo.js',
+  './js/CustomModal.js',
+
+  // FANTASI
+  // - Item
+  './js/FantasyComponent/Item/Item.js',
+  './js/FantasyComponent/Item/ItemExport.js',
+  './js/FantasyComponent/Item/ItemFloating.js',
+  './js/FantasyComponent/Item/ItemForm.js',
+  './js/FantasyComponent/Item/ItemTag.js',
+  './js/FantasyComponent/Item/ItemView.js',
+  // - Pet
+  './js/FantasyComponent/Pet/Pet.js',
+  './js/FantasyComponent/Pet/PetExport.js',
+  './js/FantasyComponent/Pet/PetFloating.js',
+  './js/FantasyComponent/Pet/PetForm.js',
+  './js/FantasyComponent/Pet/PetTag.js',
+  './js/FantasyComponent/Pet/PetView.js',
+  // - Skill
+  './js/FantasyComponent/Skill/Skill.js',
+  './js/FantasyComponent/Skill/SkillExport.js',
+  './js/FantasyComponent/Skill/SkillFloating.js',
+  './js/FantasyComponent/Skill/SkillForm.js',
+  './js/FantasyComponent/Skill/SkillTag.js',
+  './js/FantasyComponent/Skill/SkillView.js',
+
+  // HEADER
   './js/HeaderMenu/NovelBasicInfo.js',
+  './js/HeaderMenu/AIEnchanter.js',
   './js/HeaderMenu/DataSharing.js',
   './js/HeaderMenu/WatakList.js',
-  './js/UniverseComponent/BasicUniverse.js',
-  './js/UniverseComponent/UniverseCharacter.js',
-  './js/UniverseComponent/UniverseMonster.js',
-  './js/UniverseComponent/UniverseLocation.js',
-  './js/UniverseComponent/UniverseLore.js'
+  // - ArcInfo
+  './js/HeaderMenu/ArcInfo/ArcInfo.js',
+  './js/HeaderMenu/ArcInfo/ArcInfoExport.js',
+  './js/HeaderMenu/ArcInfo/ArcInfoFormAi.js',
+  './js/HeaderMenu/ArcInfo/ArcInfoFormArc.js',
+  './js/HeaderMenu/ArcInfo/ArcInfoFormSub.js',
+  './js/HeaderMenu/ArcInfo/ArcInfoShow.js',
+
+  // UNIVERSE COMPONENT
+  './js/UniverseComponent/UniverseLore.js',
+
+  // - Basic Universe
+  './js/UniverseComponent/BasicUniverse/BasicUniverse.js',
+  './js/UniverseComponent/BasicUniverse/BasicUniverseExport.js',
+  './js/UniverseComponent/BasicUniverse/BasicUniverseShow.js',
+  // - Universe Character
+  './js/UniverseComponent/UniverseCharacter/UniverseCharacter.js',
+  './js/UniverseComponent/UniverseCharacter/UniverseCharacterCategory.js',
+  './js/UniverseComponent/UniverseCharacter/UniverseCharacterFormAi.js',
+  './js/UniverseComponent/UniverseCharacter/UniverseCharacterFormMain.js',
+  './js/UniverseComponent/UniverseCharacter/UniverseCharacterFormOuter.js',
+  './js/UniverseComponent/UniverseCharacter/UniverseCharacterFormSub.js',
+  './js/UniverseComponent/UniverseCharacter/UniverseCharacterShow.js',
+  // - Universe monster
+  './js/UniverseComponent/UniverseMonster/UniverseMonster.js',
+  './js/UniverseComponent/UniverseMonster/UniverseMonsterCategory.js',
+  './js/UniverseComponent/UniverseMonster/UniverseMonsterFormAi.js',
+  './js/UniverseComponent/UniverseMonster/UniverseMonsterFormMain.js',
+  './js/UniverseComponent/UniverseMonster/UniverseMonsterFormOuter.js',
+  './js/UniverseComponent/UniverseMonster/UniverseMonsterFormSub.js',
+  './js/UniverseComponent/UniverseMonster/UniverseMonsterShow.js',
+  // - Universe Location
+  './js/UniverseComponent/UniverseLocation/UniverseLocation.js',
+  './js/UniverseComponent/UniverseLocation/UniverseLocationForm.js',
+  './js/UniverseComponent/UniverseLocation/UniverseLocationFormAi.js',
+  './js/UniverseComponent/UniverseLocation/UniverseLocationShow.js'
 ];
 
 const EXTERNAL_ASSETS = [

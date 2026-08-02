@@ -3,18 +3,19 @@
 // ==========================================
 
 import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo.js';
-import { UniverseArcModule } from './HeaderMenu/ArcInfo.js';
+import { ArcInfoModule } from './HeaderMenu/ArcInfo/ArcInfo.js';
 import { DataSharingModule } from './HeaderMenu/DataSharing.js';
 import { AIEnchanterModule } from './HeaderMenu/AIEnchanter.js';
 import { WatakListModule } from './HeaderMenu/WatakList.js';
-import { SkillModule } from './FantasyComponent/Skill.js';
-import { ItemModule } from './FantasyComponent/Item.js';
-import { PetModule } from './FantasyComponent/Pet.js';
-import { UniverseBasicModule } from './UniverseComponent/BasicUniverse.js';
+import { SkillModule } from './FantasyComponent/Skill/Skill.js';
+import { ItemModule } from './FantasyComponent/Item/Item.js';
+import { PetModule } from './FantasyComponent/Pet/Pet.js';
+import { UniverseBasicModule } from './UniverseComponent/BasicUniverse/BasicUniverse.js';
 import { UniverseLoreModule } from './UniverseComponent/UniverseLore.js';
-import { UniverseCharacterModule } from './UniverseComponent/UniverseCharacter.js';
-import { UniverseMonsterModule } from './UniverseComponent/UniverseMonster.js';
-import { UniverseLocationModule } from './UniverseComponent/UniverseLocation.js';
+import { UniverseCharacterModule } from './UniverseComponent/UniverseCharacter/UniverseCharacter.js';
+import { UniverseMonsterModule } from './UniverseComponent/UniverseMonster/UniverseMonster.js';
+import { UniverseLocationModule } from './UniverseComponent/UniverseLocation/UniverseLocation.js';
+import { CustomModal } from './CustomModal.js';
 
 // ==========================================
 // --- CORE APPLICATION LOGIC ---
@@ -32,7 +33,7 @@ const coreApp = {
     currentItemFilter: null,
     editFamiliarId: null,
     currentFamiliarFilter: null,
-    editLocationId: null,  
+    // editLocationId: null,  
     editArcId: null,       
     editSubArcId: null,
 
@@ -518,8 +519,10 @@ const coreApp = {
 window.app = Object.assign(
     {}, 
     coreApp,
+    CustomModal,
+
     NovelBasicInfoModule,
-    UniverseArcModule,
+    ArcInfoModule,
     AIEnchanterModule,
     WatakListModule,
     DataSharingModule,

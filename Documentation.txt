@@ -1,0 +1,13 @@
+# Pendahuluan
+Ini merupakan file dokumentasi untuk menjelaskan kegunaan file.
+Tiap file memuat kegunaan, path, dan fungsi.
+
+
+# Konten
+## index.html
+path : index.html
+use  : file html untuk utama, berisi UI dan tombol.
+
+## MainScipt.js
+path : js/MainScript.js
+use  : Script utama untuk menyatukan semua komponen.
