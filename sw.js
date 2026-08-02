@@ -83,7 +83,8 @@ const LOCAL_ASSETS = [
 
 const EXTERNAL_ASSETS = [
   'https://cdn.tailwindcss.com',
-  'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js'
+  'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
+  'https://unpkg.com/dexie@latest/dist/modern/dexie.mjs'
 ];
 
 // Pemasangan aset saat instalasi

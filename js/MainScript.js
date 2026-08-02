@@ -2,6 +2,8 @@
 // --- IMPORT MODUL KOMPONEN ---
 // ==========================================
 
+import { Dexie } from 'https://unpkg.com/dexie@latest/dist/modern/dexie.mjs';
+
 import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo.js';
 import { ArcInfoModule } from './HeaderMenu/ArcInfo/ArcInfo.js';
 import { DataSharingModule } from './HeaderMenu/DataSharing.js';
@@ -16,6 +18,25 @@ import { UniverseCharacterModule } from './UniverseComponent/UniverseCharacter/U
 import { UniverseMonsterModule } from './UniverseComponent/UniverseMonster/UniverseMonster.js';
 import { UniverseLocationModule } from './UniverseComponent/UniverseLocation/UniverseLocation.js';
 import { CustomModal } from './CustomModal.js';
+
+// ==========================================
+// --- INISIALISASI INDEXED DB ---
+// ==========================================
+const db = new Dexie('NovelLoreDB');
+
+// Membuat skema database (store)
+db.version(1).stores({
+    // keyval: Digunakan untuk menyimpan array biasa atau objek tunggal 
+    // seperti metadata, watakList, skillTags, itemTags, dll.
+    keyval: 'key', 
+    
+    // store di bawah digunakan untuk memecah data besar berdasaarkan ID
+    universes: 'id',
+    arcs: 'id',
+    skills: 'id',
+    items: 'id',
+    familiars: 'id'
+});
 
 // ==========================================
 // --- CORE APPLICATION LOGIC ---
@@ -33,7 +54,6 @@ const coreApp = {
     currentItemFilter: null,
     editFamiliarId: null,
     currentFamiliarFilter: null,
-    // editLocationId: null,  
     editArcId: null,       
     editSubArcId: null,
 
@@ -63,7 +83,9 @@ const coreApp = {
         // Tahan render sampai default data berhasil diambil
         await this.loadDefaultData();
         
-        this.loadData();
+        // Memuat database (Migrasi atau Load reguler)
+        await this.loadData();
+        
         this.setupAutoSave();
         this.renderSidebar();
         
@@ -86,29 +108,26 @@ const coreApp = {
     // --- FETCH DATA JSON EKSTERNAL ---
     async loadDefaultData() {
         try {
-            // Menggunakan import.meta.url agar path-nya selalu relatif terhadap letak MainScript.js ini
             const jsonUrl = new URL('./DefaultData.json', import.meta.url);
             const response = await fetch(jsonUrl);
             
             if (!response.ok) throw new Error("Gagal mengambil file JSON");
             this.defaultData = await response.json();
         } catch (error) {
-            console.error("Gagal memuat DefaultData.json. Pastikan Anda menjalankan aplikasi via lokal server (misal: Live Server) dan file json ada di folder yang sama.", error);
-            // Fallback minimal agar aplikasi tidak hancur lebur
+            console.error("Gagal memuat DefaultData.json.", error);
             this.defaultData = { metadata: { version: "1.0.0" } };
         }
     },
 
     // --- FUNGSI RESET DATA ---
-    resetData() {
+    async resetData() {
         if (confirm("Apakah Anda yakin ingin mereset semua data? Tindakan ini akan menghapus data yang tersimpan dan mengembalikannya ke pengaturan awal.")) {
-            // Mengembalikan data ke kondisi default menggunakan deep copy dari defaultData
+            // Mengembalikan data ke kondisi default
             this.data = JSON.parse(JSON.stringify(this.defaultData));
             
-            // Menyimpan perubahan ke localStorage
-            this.saveData(true);
+            // Menyimpan perubahan ke database dengan metode clear
+            await this.saveData(true);
             
-            // Memperbarui antarmuka dan mengarahkan kembali ke halaman utama
             this.switchView('story-info');
             this.renderSidebar();
             
@@ -117,150 +136,198 @@ const coreApp = {
     },
 
     // --- LOGIKA PENGECEKAN STRUKTUR OTOMATIS ---
-    // Deep check & inject: Jika kunci data belum ada di target (dari localStorage), 
-    // ia akan disalin dari template (DefaultData.json).
     ensureStructure(target, template) {
         if (!template) return;
-        
         for (const key in template) {
-            // Jika cabang belum ada di data user
             if (target[key] === undefined) {
                 const templateValue = template[key];
-                
-                // 1. Cek jika tipe datanya Array
                 if (Array.isArray(templateValue)) {
                     target[key] = [];
-                }
-                // 2. Cek jika tipe datanya Objek murni (bukan null)
-                else if (typeof templateValue === 'object' && templateValue !== null) {
+                } else if (typeof templateValue === 'object' && templateValue !== null) {
                     target[key] = {};
                     this.ensureStructure(target[key], templateValue);
-                }
-                // 3. Cek jika tipe datanya String
-                else if (typeof templateValue === 'string') {
+                } else if (typeof templateValue === 'string') {
                     target[key] = '';
-                }
-                // 4. Cek jika tipe datanya Number
-                else if (typeof templateValue === 'number') {
+                } else if (typeof templateValue === 'number') {
                     target[key] = 0;
-                }
-                // 5. Cek jika tipe datanya Boolean
-                else if (typeof templateValue === 'boolean') {
+                } else if (typeof templateValue === 'boolean') {
                     target[key] = false;
-                }
-                // Fallback untuk tipe data lainnya (null, dll)
-                else {
+                } else {
                     target[key] = templateValue;
                 }
-            } 
-            // Jika cabang sudah ada dan berupa Objek murni, masuk lebih dalam
-            else if (typeof template[key] === 'object' && template[key] !== null && !Array.isArray(template[key])) {
+            } else if (typeof template[key] === 'object' && template[key] !== null && !Array.isArray(template[key])) {
                 this.ensureStructure(target[key], template[key]);
             }
         }
     },
 
-    // --- DATA MANAGEMENT ---
-    loadData() {
-        const saved = localStorage.getItem('novelLoreData');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                if (parsed.metadata && parsed.metadata.version) {
-                    this.data = parsed;
+    // --- DATA MANAGEMENT (IndexedDB & Migration) ---
+    async loadData() {
+        try {
+            // Hitung data untuk melihat apakah IndexedDB kosong
+            const universesCount = await db.universes.count();
+            const keysCount = await db.keyval.count();
 
-                    // ==============================================================
-                    // MAGISNYA DI SINI: Pengecekan struktur cabang secara otomatis!
-                    // Sekarang Anda bisa menambahkan variabel dan object sebanyak apapun
-                    // di DefaultData.json, dan itu akan otomatis termigrasi tanpa membuat If baru.
-                    // ==============================================================
-                    this.ensureStructure(this.data, this.defaultData);
+            if (universesCount === 0 && keysCount === 0) {
+                // ---------------------------------------------------------
+                // FASE 1: INDEXED DB KOSONG (Cari LocalStorage untuk Migrasi)
+                // ---------------------------------------------------------
+                const saved = localStorage.getItem('novelLoreData');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        if (parsed.metadata && parsed.metadata.version) {
+                            this.data = parsed;
+                            this.ensureStructure(this.data, this.defaultData);
 
-                    // --- MIGRASI KUSTOM & SPESIFIK (DIPERTAHANKAN) ---
-                    // Logika spesifik untuk objek di dalam array dan perpindahan data
-                    // tetap ditulis manual karena ensureStructure hanya mengurus cabang dasar.
-
-                    // Migrasi Watak List dari local storage versi kuno
-                    if (!this.data.watakList || this.data.watakList.length === 0) {
-                        const oldWatak = localStorage.getItem('novel_watak_list_data');
-                        if (oldWatak) {
-                            try { this.data.watakList = JSON.parse(oldWatak); } 
-                            catch (e) { this.data.watakList = [...(this.defaultData.watakList || [])]; }
-                        }
-                    }
-                    
-                    // Migrasi Arc Cerita (Lini Cerita yang keluar dari Universe)
-                    if (this.data.universes) {
-                        this.data.universes.forEach(u => {
-                            if (u.storylines && u.storylines.length > 0) {
-                                u.storylines.forEach(arc => this.data.arcs.push(arc));
-                                u.storylines = []; 
-                            }
-                        });
-                    }
-
-                    // Injeksi/Pembersihan Properti Arc yang ada di Sub-Arc
-                    if (this.data.arcs) {
-                        this.data.arcs.forEach(arc => {
-                            if (typeof arc.targetSubarcCount === 'undefined') {
-                                arc.targetSubarcCount = (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].targetSubarcCount) 
-                                    ? arc.subarcs[0].targetSubarcCount : 10;
-                            }
-                            if (typeof arc.universeId === 'undefined') {
-                                arc.universeId = (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].universeId) 
-                                    ? arc.subarcs[0].universeId : '';
-                            }
-                            if (arc.subarcs) {
-                                arc.subarcs.forEach(sub => {
-                                    delete sub.targetSubarcCount;
-                                    delete sub.universeId;
-                                });
-                            }
-                        });
-                    }
-
-                    // Injeksi array kosong untuk variabel di dalam Familiars dan Characters lama
-                    if (this.data.familiars) {
-                        this.data.familiars.forEach(fam => {
-                            if (fam.personality === undefined) fam.personality = ''; 
-                            if (!fam.dialogues) fam.dialogues = []; 
-                        });
-                    }
-
-                    if (this.data.universes) {
-                        this.data.universes.forEach(u => {
-                            if (typeof u.description === 'undefined') u.description = "";
-                            if (u.characters) {
-                                for (let category in u.characters) {
-                                    if (Array.isArray(u.characters[category])) {
-                                        u.characters[category].forEach(c => {
-                                            if (!c.dialogues) c.dialogues = [];
-                                        });
-                                    }
+                            // --- MIGRASI LAMA & KUSTOM (Dipertahankan) ---
+                            if (!this.data.watakList || this.data.watakList.length === 0) {
+                                const oldWatak = localStorage.getItem('novel_watak_list_data');
+                                if (oldWatak) {
+                                    try { this.data.watakList = JSON.parse(oldWatak); } 
+                                    catch (e) { this.data.watakList = [...(this.defaultData.watakList || [])]; }
                                 }
                             }
-                        });
-                    }
+                            
+                            if (this.data.universes) {
+                                this.data.universes.forEach(u => {
+                                    if (u.storylines && u.storylines.length > 0) {
+                                        u.storylines.forEach(arc => this.data.arcs.push(arc));
+                                        u.storylines = []; 
+                                    }
+                                });
+                            }
 
-                    this.updateLastSavedUI();
-                    return;
+                            if (this.data.arcs) {
+                                this.data.arcs.forEach(arc => {
+                                    if (typeof arc.targetSubarcCount === 'undefined') {
+                                        arc.targetSubarcCount = (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].targetSubarcCount) 
+                                            ? arc.subarcs[0].targetSubarcCount : 10;
+                                    }
+                                    if (typeof arc.universeId === 'undefined') {
+                                        arc.universeId = (arc.subarcs && arc.subarcs.length > 0 && arc.subarcs[0].universeId) 
+                                            ? arc.subarcs[0].universeId : '';
+                                    }
+                                    if (arc.subarcs) {
+                                        arc.subarcs.forEach(sub => {
+                                            delete sub.targetSubarcCount;
+                                            delete sub.universeId;
+                                        });
+                                    }
+                                });
+                            }
+
+                            if (this.data.familiars) {
+                                this.data.familiars.forEach(fam => {
+                                    if (fam.personality === undefined) fam.personality = ''; 
+                                    if (!fam.dialogues) fam.dialogues = []; 
+                                });
+                            }
+
+                            if (this.data.universes) {
+                                this.data.universes.forEach(u => {
+                                    if (typeof u.description === 'undefined') u.description = "";
+                                    if (u.characters) {
+                                        for (let category in u.characters) {
+                                            if (Array.isArray(u.characters[category])) {
+                                                u.characters[category].forEach(c => {
+                                                    if (!c.dialogues) c.dialogues = [];
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                            // Migrasi selesai, Simpan Permanen ke IndexedDB
+                            await this.saveData(true);
+                            // Opsional: hapus localstorage lama jika ingin bersih
+                            // localStorage.removeItem('novelLoreData');
+                            
+                            this.updateLastSavedUI();
+                            return;
+                        }
+                    } catch (e) { console.error("Format save lokal korup.", e); }
                 }
-            } catch (e) { console.error("Format save lokal korup.", e); }
+                
+                // Jika tidak ada data lama, gunakan DefaultData
+                this.data = JSON.parse(JSON.stringify(this.defaultData));
+                await this.saveData(true);
+                this.updateLastSavedUI();
+
+            } else {
+                // ---------------------------------------------------------
+                // FASE 2: INDEXED DB TERISI (Load dan Satukan menjadi `this.data`)
+                // ---------------------------------------------------------
+                
+                // Ambil Data Tunggal/Tag dari KeyVal Store
+                const kvMetadata = await db.keyval.get('metadata');
+                const kvStoryInfo = await db.keyval.get('storyInfo');
+                const kvWatakList = await db.keyval.get('watakList');
+                const kvSkillTags = await db.keyval.get('skillTags');
+                const kvItemTags = await db.keyval.get('itemTags');
+                const kvFamiliarTags = await db.keyval.get('familiarTags');
+
+                // Aggregate semua tabel menjadi 1 objek
+                this.data = {
+                    metadata: kvMetadata ? kvMetadata.value : this.defaultData.metadata,
+                    storyInfo: kvStoryInfo ? kvStoryInfo.value : this.defaultData.storyInfo,
+                    watakList: kvWatakList ? kvWatakList.value : this.defaultData.watakList,
+                    skillTags: kvSkillTags ? kvSkillTags.value : this.defaultData.skillTags,
+                    itemTags: kvItemTags ? kvItemTags.value : this.defaultData.itemTags,
+                    familiarTags: kvFamiliarTags ? kvFamiliarTags.value : this.defaultData.familiarTags,
+                    
+                    universes: await db.universes.toArray(),
+                    arcs: await db.arcs.toArray(),
+                    skills: await db.skills.toArray(),
+                    items: await db.items.toArray(),
+                    familiars: await db.familiars.toArray()
+                };
+
+                this.ensureStructure(this.data, this.defaultData);
+                this.updateLastSavedUI();
+            }
+
+        } catch(e) {
+            console.error("Gagal memuat dari IndexedDB:", e);
+            this.showAlert("Gagal membaca database! Lihat konsole.", "error");
         }
-        
-        // Jika belum ada file save di local (pengguna pertama kali)
-        this.data = JSON.parse(JSON.stringify(this.defaultData));
-        this.saveData(true);
     },
 
-    saveData(silent = false) {
+    async saveData(silent = false) {
         this.data.metadata.lastSaved = new Date().toISOString();
-        localStorage.setItem('novelLoreData', JSON.stringify(this.data));
-        this.updateLastSavedUI();
-        if (!silent) this.showAlert("Data berhasil disimpan.", "success");
+
+        try {
+            // Gunakan Transaction Dexie (Jika salah satu error, semua dibatalkan/aman)
+            await db.transaction('rw', [db.keyval, db.universes, db.arcs, db.skills, db.items, db.familiars], async () => {
+                
+                // 1. Simpan KeyVal Items
+                await db.keyval.put({ key: 'metadata', value: this.data.metadata });
+                await db.keyval.put({ key: 'storyInfo', value: this.data.storyInfo });
+                await db.keyval.put({ key: 'watakList', value: this.data.watakList });
+                await db.keyval.put({ key: 'skillTags', value: this.data.skillTags });
+                await db.keyval.put({ key: 'itemTags', value: this.data.itemTags });
+                await db.keyval.put({ key: 'familiarTags', value: this.data.familiarTags });
+
+                // 2. Simpan Array Kompleks (Kosongkan lalu timpa)
+                await db.universes.clear(); await db.universes.bulkAdd(this.data.universes || []);
+                await db.arcs.clear();      await db.arcs.bulkAdd(this.data.arcs || []);
+                await db.skills.clear();    await db.skills.bulkAdd(this.data.skills || []);
+                await db.items.clear();     await db.items.bulkAdd(this.data.items || []);
+                await db.familiars.clear(); await db.familiars.bulkAdd(this.data.familiars || []);
+            });
+
+            this.updateLastSavedUI();
+            if (!silent) this.showAlert("Data berhasil disimpan.", "success");
+            
+        } catch (error) {
+            console.error("Gagal menyimpan ke IndexedDB:", error);
+            this.showAlert("Gagal menyimpan data!", "error");
+        }
     },
 
     setupAutoSave() {
+        // Karena proses async cepat, setInterval berjalan normal
         setInterval(() => this.saveData(true), 2 * 60 * 1000);
     },
 
@@ -405,12 +472,13 @@ const coreApp = {
     },
 
     // --- IMPORT / EXPORT UTAMA ---
-    importMaster(event) {
+    async importMaster(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (e) => {
+        // Jadikan async agar bisa menunggu saveData
+        reader.onload = async (e) => {
             try {
                 const json = JSON.parse(e.target.result);
                 if (!json.metadata || !json.metadata.version) {
@@ -418,16 +486,15 @@ const coreApp = {
                 }
                 this.data = json;
                 
-                // Pastikan struktur import langsung divalidasi juga
                 this.ensureStructure(this.data, this.defaultData);
                 
-                this.saveData();
+                // Simpan langsung ke IndexedDB dengan menimpa data lama
+                await this.saveData();
                 
-                // Refresh interface setelah import
                 this.switchView('story-info'); 
                 this.renderSidebar();
                 
-                this.showAlert("Data Master berhasil dimuat!", "success");
+                this.showAlert("Data Master berhasil dimuat ke Database!", "success");
             } catch (err) {
                 this.showAlert("Gagal memuat file: " + err.message, "error");
             }
@@ -514,8 +581,6 @@ const coreApp = {
 // ==========================================
 // --- MERGE / PENGGABUNGAN ---
 // ==========================================
-// Object.assign akan menyatukan `coreApp` dengan semua fitur dari file komponen
-// menjadi satu objek besar yang disimpan di window.app
 window.app = Object.assign(
     {}, 
     coreApp,
@@ -547,6 +612,6 @@ document.addEventListener('click', (e) => {
 });
 
 // Initialize App saat DOM siap
-window.onload = () => {
-    window.app.init();
+window.onload = async () => {
+    await window.app.init();
 };
