@@ -24,18 +24,16 @@ import { CustomModal } from './CustomModal.js';
 // ==========================================
 const db = new Dexie('NovelLoreDB');
 
-// Membuat skema database (store)
-db.version(1).stores({
-    // keyval: Digunakan untuk menyimpan array biasa atau objek tunggal 
-    // seperti metadata, watakList, skillTags, itemTags, dll.
+// Naikkan versi ke 2 untuk memperbarui skema
+db.version(2).stores({
     keyval: 'key', 
     
-    // store di bawah digunakan untuk memecah data besar berdasaarkan ID
-    universes: 'id',
-    arcs: 'id',
-    skills: 'id',
-    items: 'id',
-    familiars: 'id'
+    // Tambahkan index 'order' di samping 'id'
+    universes: 'id, order',
+    arcs: 'id, order',
+    skills: 'id, order',
+    items: 'id, order',
+    familiars: 'id, order'
 });
 
 // ==========================================
@@ -277,11 +275,12 @@ const coreApp = {
                     itemTags: kvItemTags ? kvItemTags.value : this.defaultData.itemTags,
                     familiarTags: kvFamiliarTags ? kvFamiliarTags.value : this.defaultData.familiarTags,
                     
-                    universes: await db.universes.toArray(),
-                    arcs: await db.arcs.toArray(),
-                    skills: await db.skills.toArray(),
-                    items: await db.items.toArray(),
-                    familiars: await db.familiars.toArray()
+                    // Ambil data yang sudah terurut berdasarkan indeks 'order'
+                    universes: await db.universes.orderBy('order').toArray(),
+                    arcs:      await db.arcs.orderBy('order').toArray(),
+                    skills:    await db.skills.orderBy('order').toArray(),
+                    items:     await db.items.orderBy('order').toArray(),
+                    familiars: await db.familiars.orderBy('order').toArray()
                 };
 
                 this.ensureStructure(this.data, this.defaultData);
@@ -298,7 +297,6 @@ const coreApp = {
         this.data.metadata.lastSaved = new Date().toISOString();
 
         try {
-            // Gunakan Transaction Dexie (Jika salah satu error, semua dibatalkan/aman)
             await db.transaction('rw', [db.keyval, db.universes, db.arcs, db.skills, db.items, db.familiars], async () => {
                 
                 // 1. Simpan KeyVal Items
@@ -309,12 +307,15 @@ const coreApp = {
                 await db.keyval.put({ key: 'itemTags', value: this.data.itemTags });
                 await db.keyval.put({ key: 'familiarTags', value: this.data.familiarTags });
 
-                // 2. Simpan Array Kompleks (Kosongkan lalu timpa)
-                await db.universes.clear(); await db.universes.bulkAdd(this.data.universes || []);
-                await db.arcs.clear();      await db.arcs.bulkAdd(this.data.arcs || []);
-                await db.skills.clear();    await db.skills.bulkAdd(this.data.skills || []);
-                await db.items.clear();     await db.items.bulkAdd(this.data.items || []);
-                await db.familiars.clear(); await db.familiars.bulkAdd(this.data.familiars || []);
+                // Helper untuk menambahkan properti 'order' sesuai urutan Array saat ini
+                const mapWithOrder = (arr) => (arr || []).map((item, index) => ({ ...item, order: index }));
+
+                // 2. Simpan Array Kompleks beserta posisi urutannya
+                await db.universes.clear(); await db.universes.bulkAdd(mapWithOrder(this.data.universes));
+                await db.arcs.clear();      await db.arcs.bulkAdd(mapWithOrder(this.data.arcs));
+                await db.skills.clear();    await db.skills.bulkAdd(mapWithOrder(this.data.skills));
+                await db.items.clear();     await db.items.bulkAdd(mapWithOrder(this.data.items));
+                await db.familiars.clear(); await db.familiars.bulkAdd(mapWithOrder(this.data.familiars));
             });
 
             this.updateLastSavedUI();
