@@ -10,10 +10,15 @@ const LOCAL_ASSETS = [
   './favicon.ico',
   './favicon.svg',
 
-  // Main
-  './js/DefaultData.json',
+  // MAIN
   './js/MainScript.js',
-  './js/CustomModal.js',
+
+  // HELPER
+  './js/BackgroundWorker/DefaultData.json',
+  './js/BackgroundWorker/CustomModal.js',
+  './js/BackgroundWorker/ManagerData.js',
+  './js/BackgroundWorker/ManagerExportImportBasic.js',
+  './js/BackgroundWorker/ManagerUiBasic.js',
 
   // FANTASI
   // - Item
