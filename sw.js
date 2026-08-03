@@ -44,10 +44,16 @@ const LOCAL_ASSETS = [
   './js/FantasyComponent/Skill/SkillView.js',
 
   // HEADER
-  './js/HeaderMenu/NovelBasicInfo.js',
   './js/HeaderMenu/AIEnchanter.js',
   './js/HeaderMenu/DataSharing.js',
   './js/HeaderMenu/WatakList.js',
+  // - NovelBasicInfo
+  './js/HeaderMenu/NovelBasicInfo/NovelBasicInfo.js',
+  './js/HeaderMenu/NovelBasicInfo/NovelBasicInfoExport.js',
+  './js/HeaderMenu/NovelBasicInfo/NovelBasicInfoExportJson.js',
+  './js/HeaderMenu/NovelBasicInfo/NovelBasicInfoExportMd.js',
+  './js/HeaderMenu/NovelBasicInfo/NovelBasicInfoForm.js',
+  './js/HeaderMenu/NovelBasicInfo/NovelBasicInfoShow.js',
   // - ArcInfo
   './js/HeaderMenu/ArcInfo/ArcInfo.js',
   './js/HeaderMenu/ArcInfo/ArcInfoExport.js',
@@ -61,8 +67,10 @@ const LOCAL_ASSETS = [
 
   // - Basic Universe
   './js/UniverseComponent/BasicUniverse/BasicUniverse.js',
-  './js/UniverseComponent/BasicUniverse/BasicUniverseExport.js',
   './js/UniverseComponent/BasicUniverse/BasicUniverseShow.js',
+  './js/UniverseComponent/BasicUniverse/BasicUniverseExport.js',
+  './js/UniverseComponent/BasicUniverse/BasicUniverseExportJson.js',
+  './js/UniverseComponent/BasicUniverse/BasicUniverseExportMd.js',
   // - Universe Character
   './js/UniverseComponent/UniverseCharacter/UniverseCharacter.js',
   './js/UniverseComponent/UniverseCharacter/UniverseCharacterCategory.js',

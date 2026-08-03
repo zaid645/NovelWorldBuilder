@@ -2,15 +2,13 @@
 // --- IMPORT MODUL KOMPONEN ---
 // ==========================================
 
-import { Dexie } from 'https://unpkg.com/dexie@latest/dist/modern/dexie.mjs';
-
 // Helper
 import { CustomModal } from './BackgroundWorker/CustomModal.js';
 import { ManagerData } from './BackgroundWorker/ManagerData.js';
 import { ManagerExportImportBasic } from './BackgroundWorker/ManagerExportImportBasic.js';
 import { ManagerUiBasic } from './BackgroundWorker/ManagerUiBasic.js';
 // Header
-import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo.js';
+import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo/NovelBasicInfo.js';
 import { ArcInfoModule } from './HeaderMenu/ArcInfo/ArcInfo.js';
 import { DataSharingModule } from './HeaderMenu/DataSharing.js';
 import { AIEnchanterModule } from './HeaderMenu/AIEnchanter.js';
