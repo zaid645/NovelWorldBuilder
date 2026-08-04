@@ -235,6 +235,15 @@ export const UniverseMonsterShow = {
             </li>
         `).join('');
 
+        const relationsHtml = (monster.relations || []).map((rel, index) => `
+            <li class="flex justify-between items-start text-xs text-slate-300 border-l-2 border-emerald-500/50 pl-2 py-1 group/rel bg-slate-800/30 rounded-r">
+                <span class="flex-1 leading-relaxed whitespace-pre-wrap">${rel}</span>
+                <button onclick="app.deleteMonsterRelation('${this.currentView}', '${category}', '${monster.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/rel:opacity-100 ml-2 px-1 transition" title="Hapus relasi ini">
+                    &times;
+                </button>
+            </li>
+        `).join('');
+
         // Map Dialog/Suara
         const dialoguesHtml = (monster.dialogues || []).map((dlg, index) => `
             <li class="flex justify-between items-start text-xs italic text-slate-300 border-l-2 border-red-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
@@ -244,6 +253,7 @@ export const UniverseMonsterShow = {
                 </button>
             </li>
         `).join('');
+        
 
         return `
         <div id="monsterCard_${monster.id}" class="bg-slate-900 border border-slate-700 rounded-lg p-4 relative group flex flex-col hover:border-red-500/50 transition-colors shadow-md">
@@ -297,6 +307,18 @@ export const UniverseMonsterShow = {
                         <div class="flex items-start space-x-1.5 pt-1">
                             <textarea id="newMonsterNote_${monster.id}" placeholder="Ketik catatan tambahan... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addMonsterNote('${this.currentView}', '${category}', '${monster.id}'); }"></textarea>
                             <button onclick="app.addMonsterNote('${this.currentView}', '${category}', '${monster.id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Seksi Catatan Relasi Monster -->
+                    <div class="mt-4 pt-3 border-t border-slate-800/80">
+                        <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-2">Catatan Relasi Monster:</span>
+                        <ul class="space-y-1 mb-2">
+                            ${relationsHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada catatan relasi.</li>'}
+                        </ul>
+                        <div class="flex items-start space-x-1.5 pt-1">
+                            <textarea id="newMonsterRelation_${monster.id}" placeholder="Ketik relasi dengan tokoh/monster lain... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addMonsterRelation('${this.currentView}', '${category}', '${monster.id}'); }"></textarea>
+                            <button onclick="app.addMonsterRelation('${this.currentView}', '${category}', '${monster.id}')" class="bg-emerald-600/80 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
                         </div>
                     </div>
 

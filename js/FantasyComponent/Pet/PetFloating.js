@@ -12,12 +12,27 @@ export const PetFloating = {
         if (!fam) return;
         this.activeFamId = id;
 
-        // Set judul dan deskripsi teks
+        // Set Judul
         document.getElementById('floatingFamTitle').innerText = `🐾 ${fam.name}`;
-        document.getElementById('floatingFamApp').innerHTML = fam.appearance || '<span class="italic text-slate-500">Tidak ada informasi penampilan.</span>';
-        document.getElementById('floatingFamDesc').innerHTML = fam.description || fam.background || '<span class="italic text-slate-500">Tidak ada deskripsi efek.</span>';
 
-        // Set Tag Kategori
+        // --- BADGES INFO TAMBAHAN (Ras, Kelamin, Umur) ---
+        const race = (this.data.races || []).find(r => r.id === fam.raceId);
+        const raceBadge = race ? `<span class="bg-amber-900/60 text-amber-300 text-[10px] px-2 py-0.5 rounded border border-amber-700/50 font-medium">🧬 Ras: ${race.name}</span>` : '';
+        
+        let genderBadge = '';
+        if (fam.gender === 'jantan') {
+            genderBadge = '<span class="bg-blue-900/60 text-blue-300 text-[10px] px-2 py-0.5 rounded border border-blue-700/50 font-medium">♂ Jantan</span>';
+        } else if (fam.gender === 'betina') {
+            genderBadge = '<span class="bg-pink-900/60 text-pink-300 text-[10px] px-2 py-0.5 rounded border border-pink-700/50 font-medium">♀ Betina</span>';
+        }
+        
+        const ageBadge = fam.age ? `<span class="bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded border border-slate-600 font-medium">⏳ ${fam.age}</span>` : '';
+
+        // Set Penampilan & Deskripsi Latar Belakang
+        document.getElementById('floatingFamApp').innerHTML = fam.appearance || '<span class="italic text-slate-500">Tidak ada informasi penampilan.</span>';
+        document.getElementById('floatingFamDesc').innerHTML = fam.description || fam.background || '<span class="italic text-slate-500">Tidak ada deskripsi latar belakang.</span>';
+
+        // Set Tag Kategori (Gabungkan dengan Badge Ras/Kelamin/Umur jika ada)
         const resolvedTags = (fam.tagIds || [])
             .map(tagId => this.data.familiarTags.find(t => t.id === tagId))
             .filter(tag => tag !== undefined);
@@ -28,9 +43,10 @@ export const PetFloating = {
             return `<span class="bg-fuchsia-900/60 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded border border-fuchsia-700/50">${tag.name}</span>`;
         }).join('');
 
-        document.getElementById('floatingFamTags').innerHTML = tagHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag</span>';
+        const combinedTags = [raceBadge, genderBadge, ageBadge, tagHtml].filter(Boolean).join('');
+        document.getElementById('floatingFamTags').innerHTML = combinedTags || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded">Tanpa Tag / Info</span>';
         
-        // Set Watak
+        // Set Watak / Kepribadian
         const masterWatakList = app.data.watakList || [];
         let parsedWataks = [];
         if (Array.isArray(fam.personality)) parsedWataks = fam.personality;
@@ -58,24 +74,7 @@ export const PetFloating = {
         }).join('');
         document.getElementById('floatingFamItems').innerHTML = itemHtml || '<span class="text-[10px] text-slate-500 italic bg-slate-900 px-2 py-0.5 rounded border border-slate-700/50">Tidak ada item</span>';
 
-        // Set Dialogues
-        const dialoguesHtml = (fam.dialogues || []).map((dlg, index) => `
-            <li class="flex justify-between items-start text-[11px] italic text-slate-300 border-l-2 border-fuchsia-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r mb-1">
-                <span class="flex-1 leading-relaxed">${dlg}</span>
-                <button onclick="app.deleteFamiliarDialogue('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-1.5 transition px-1" title="Hapus baris ini">&times;</button>
-            </li>
-        `).join('');
-        document.getElementById('floatingFamDialogues').innerHTML = dialoguesHtml || '<li class="text-[10px] text-slate-500 italic">Belum ada dialog.</li>';
-        
-        // Render Input Box for Dialogue
-        document.getElementById('floatingFamDlgInputContainer').innerHTML = `
-            <div class="flex items-center space-x-1.5 pt-1">
-                <input type="text" id="newFamDlg_${fam.id}" placeholder="Ketik kalimat/suara..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-fuchsia-500 transition" onkeydown="if(event.key === 'Enter') app.addFamiliarDialogue('${fam.id}')">
-                <button onclick="app.addFamiliarDialogue('${fam.id}')" class="bg-fuchsia-600/80 hover:bg-fuchsia-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm">+</button>
-            </div>
-        `;
-
-        // --- Set Catatan / Notes ---
+        // --- Set Catatan Khusus Pet / Notes ---
         const notesHtml = (fam.notes || []).map((note, index) => `
             <li class="flex justify-between items-start text-[11px] text-slate-300 border-l-2 border-amber-500/50 pl-2 py-1 group/note bg-slate-800/30 rounded-r mb-1">
                 <span class="flex-1 leading-relaxed whitespace-pre-wrap">${note}</span>
@@ -94,6 +93,45 @@ export const PetFloating = {
                 <button onclick="app.addFamiliarNote('${fam.id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm">+</button>
             </div>
         `;
+
+        // --- Set Catatan Relasi ---
+        const relationsHtml = (fam.relations || []).map((rel, index) => `
+            <li class="flex justify-between items-start text-[11px] text-slate-300 border-l-2 border-rose-500/50 pl-2 py-1 group/rel bg-slate-800/30 rounded-r mb-1">
+                <span class="flex-1 leading-relaxed whitespace-pre-wrap">${rel}</span>
+                <button onclick="app.deleteFamiliarRelation('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/rel:opacity-100 ml-1.5 transition px-1" title="Hapus relasi ini">&times;</button>
+            </li>
+        `).join('');
+        
+        const relEl = document.getElementById('floatingFamRelations');
+        if (relEl) relEl.innerHTML = relationsHtml || '<li class="text-[10px] text-slate-500 italic">Belum ada catatan relasi.</li>';
+
+        const relInputEl = document.getElementById('floatingFamRelInputContainer');
+        if (relInputEl) {
+            relInputEl.innerHTML = `
+                <div class="flex items-start space-x-1.5 pt-1">
+                    <textarea id="newFamRel_${fam.id}" placeholder="Ketik relasi pet ini... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-rose-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addFamiliarRelation('${fam.id}'); }"></textarea>
+                    <button onclick="app.addFamiliarRelation('${fam.id}')" class="bg-rose-600/80 hover:bg-rose-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm h-[34px] flex items-center">+</button>
+                </div>
+            `;
+        }
+
+        // Set Dialogues
+        const dialoguesHtml = (fam.dialogues || []).map((dlg, index) => `
+            <li class="flex justify-between items-start text-[11px] italic text-slate-300 border-l-2 border-blue-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r mb-1">
+                <span class="flex-1 leading-relaxed">${dlg}</span>
+                <button onclick="app.deleteFamiliarDialogue('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-1.5 transition px-1" title="Hapus baris ini">&times;</button>
+            </li>
+        `).join('');
+        document.getElementById('floatingFamDialogues').innerHTML = dialoguesHtml || '<li class="text-[10px] text-slate-500 italic">Belum ada dialog.</li>';
+        
+        // Render Input Box for Dialogue
+        document.getElementById('floatingFamDlgInputContainer').innerHTML = `
+            <div class="flex items-center space-x-1.5 pt-1">
+                <input type="text" id="newFamDlg_${fam.id}" placeholder="Ketik kalimat/suara..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500 transition" onkeydown="if(event.key === 'Enter') app.addFamiliarDialogue('${fam.id}')">
+                <button onclick="app.addFamiliarDialogue('${fam.id}')" class="bg-blue-600/80 hover:bg-fuchsia-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm">+</button>
+            </div>
+        `;
+
 
         // Tampilkan panel
         document.getElementById('floatingFamDetail').classList.remove('hidden');

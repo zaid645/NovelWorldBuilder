@@ -19,8 +19,10 @@ const LOCAL_ASSETS = [
   './js/BackgroundWorker/ManagerData.js',
   './js/BackgroundWorker/ManagerExportImportBasic.js',
   './js/BackgroundWorker/ManagerUiBasic.js',
+  './js/BackgroundWorker/MarkdownExportHelper.js',
 
   // FANTASI
+  './js/FantasyComponent/DataCleaner.js',
   // - Item
   './js/FantasyComponent/Item/Item.js',
   './js/FantasyComponent/Item/ItemExport.js',
@@ -42,9 +44,13 @@ const LOCAL_ASSETS = [
   './js/FantasyComponent/Skill/SkillForm.js',
   './js/FantasyComponent/Skill/SkillTag.js',
   './js/FantasyComponent/Skill/SkillView.js',
+  // - race
+  './js/FantasyComponent/Race/Race.js',
+  './js/FantasyComponent/Race/RaceFloating.js',
+  './js/FantasyComponent/Race/RaceForm.js',
+  './js/FantasyComponent/Race/RaceView.js',
 
   // HEADER
-  './js/HeaderMenu/AIEnchanter.js',
   './js/HeaderMenu/DataSharing.js',
   './js/HeaderMenu/WatakList.js',
   // - NovelBasicInfo
@@ -61,6 +67,12 @@ const LOCAL_ASSETS = [
   './js/HeaderMenu/ArcInfo/ArcInfoFormArc.js',
   './js/HeaderMenu/ArcInfo/ArcInfoFormSub.js',
   './js/HeaderMenu/ArcInfo/ArcInfoShow.js',
+  // - AI Enchanter
+  './js/HeaderMenu/AIEnchanter/AIEnchanter.js',
+  './js/HeaderMenu/AIEnchanter/AIEnchantCore.js',
+  './js/HeaderMenu/AIEnchanter/AIEnchanterDebug.js',
+  './js/HeaderMenu/AIEnchanter/AIEnchanterForm.js',
+  './js/HeaderMenu/AIEnchanter/AIEnchanterShow.js',
 
   // UNIVERSE COMPONENT
   './js/UniverseComponent/UniverseLore.js',

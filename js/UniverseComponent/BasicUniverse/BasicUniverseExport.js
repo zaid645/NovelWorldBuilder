@@ -14,7 +14,10 @@ export const BasicUniverseExport = {
         if (format === 'md') {
             const markdownContent = this.generateUniverseMarkdown([universe]);
             const filename = `semesta_${cleanName}_lore.md`;
-            this.downloadMarkdown(filename, markdownContent);
+            
+            // Menggunakan helper unduh yang nama fungsinya sudah diperbarui
+            this.saveMarkdownFile(filename, markdownContent);
+            
             app.showAlert("Data Semesta berhasil diekspor ke format Markdown (.md).", "success");
         } else {
             const populatedUniverse = this.populateUniverse(universe);
@@ -131,7 +134,10 @@ export const BasicUniverseExport = {
             if (format === 'md') {
                 const markdownContent = this.generateUniverseMarkdown(targetUniverses);
                 const filename = `multi_semesta_lore_${timestamp}.md`;
-                this.downloadMarkdown(filename, markdownContent);
+                
+                // Menggunakan helper unduh yang nama fungsinya sudah diperbarui
+                this.saveMarkdownFile(filename, markdownContent);
+                
                 app.showAlert(`${targetUniverses.length} Semesta berhasil diekspor ke Markdown!`, "success");
             } else {
                 const exportedUniverses = targetUniverses.map(u => this.populateUniverse(u));

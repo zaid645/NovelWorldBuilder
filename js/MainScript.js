@@ -7,17 +7,21 @@ import { CustomModal } from './BackgroundWorker/CustomModal.js';
 import { ManagerData } from './BackgroundWorker/ManagerData.js';
 import { ManagerExportImportBasic } from './BackgroundWorker/ManagerExportImportBasic.js';
 import { ManagerUiBasic } from './BackgroundWorker/ManagerUiBasic.js';
+import { MdExportHelper } from './BackgroundWorker/MarkdownExportHelper.js';
+
 // Header
 import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo/NovelBasicInfo.js';
 import { ArcInfoModule } from './HeaderMenu/ArcInfo/ArcInfo.js';
 import { DataSharingModule } from './HeaderMenu/DataSharing.js';
-import { AIEnchanterModule } from './HeaderMenu/AIEnchanter.js';
+import { AIEnchanterModule } from './HeaderMenu/AIEnchanter/AIEnchanter.js';
 import { WatakListModule } from './HeaderMenu/WatakList.js';
 
 // Fantasy Element
+import { RaceModule } from './FantasyComponent/Race/Race.js';
 import { SkillModule } from './FantasyComponent/Skill/Skill.js';
 import { ItemModule } from './FantasyComponent/Item/Item.js';
 import { PetModule } from './FantasyComponent/Pet/Pet.js';
+import { DataCleaner } from './FantasyComponent/DataCleaner.js';
 
 // Universe
 import { UniverseBasicModule } from './UniverseComponent/BasicUniverse/BasicUniverse.js';
@@ -25,6 +29,7 @@ import { UniverseLoreModule } from './UniverseComponent/UniverseLore.js';
 import { UniverseCharacterModule } from './UniverseComponent/UniverseCharacter/UniverseCharacter.js';
 import { UniverseMonsterModule } from './UniverseComponent/UniverseMonster/UniverseMonster.js';
 import { UniverseLocationModule } from './UniverseComponent/UniverseLocation/UniverseLocation.js';
+
 
 
 
@@ -39,6 +44,7 @@ const coreApp = {
     // State edit yang sedang aktif (untuk modal atau panel edit)
     editCharId: null,
     editSkillId: null,
+    currentRaceFilter: null,
     currentSkillFilter: null,
     editItemId: null,
     currentItemFilter: null,
@@ -74,6 +80,7 @@ const coreApp = {
     }
 };
 
+
 // ==========================================
 // --- MERGE / PENGGABUNGAN ---
 // ==========================================
@@ -86,6 +93,7 @@ window.app = Object.assign(
     ManagerData,
     ManagerExportImportBasic,
     ManagerUiBasic,
+    MdExportHelper,
 
     // Header
     NovelBasicInfoModule,
@@ -95,9 +103,11 @@ window.app = Object.assign(
     DataSharingModule,
     
     // Fantasy Element
+    RaceModule,
     SkillModule,
     ItemModule,
     PetModule,
+    DataCleaner,
 
     // Universe
     UniverseBasicModule,

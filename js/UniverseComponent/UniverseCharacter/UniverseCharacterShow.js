@@ -1,29 +1,21 @@
 // Logika render halaman karakter
 
 export const UniverseCharacterShow = {
-    // =========================================
-    // --- RENDERING TAMPILAN KARAKTER ---
-    // =========================================
+
     toggleCharCard(charId) {
-        // Simpan state secara global agar tidak hilang saat re-render
         app.collapsedCharCards = app.collapsedCharCards || {};
         const isCurrentlyCollapsed = app.collapsedCharCards[charId];
-        
-        // Balikkan state
         app.collapsedCharCards[charId] = !isCurrentlyCollapsed;
         
-        // Manipulasi DOM instan tanpa re-render keseluruhan panel
         const bodyEl = document.getElementById(`charBody_${charId}`);
         const watakEl = document.getElementById(`charWatak_${charId}`);
         const toggleIcon = document.getElementById(`charToggleIcon_${charId}`);
         
         if (app.collapsedCharCards[charId]) {
-            // Closed (Collapse)
             if(bodyEl) { bodyEl.classList.add('hidden'); bodyEl.classList.remove('flex'); }
             if(watakEl) watakEl.classList.add('watak-collapsed');
             if(toggleIcon) toggleIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
         } else {
-            // Open (Expand)
             if(bodyEl) { bodyEl.classList.remove('hidden'); bodyEl.classList.add('flex'); }
             if(watakEl) watakEl.classList.remove('watak-collapsed');
             if(toggleIcon) toggleIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>`;
@@ -31,12 +23,10 @@ export const UniverseCharacterShow = {
     },
 
     renderCharactersArea(universe) {
-        const daftarWatak = app.data.watakList || [];
         const catDescriptions = universe.charactersCategoryDescriptions || {};
 
         let html = `
         <style>
-            /* Limit traits display when character card is collapsed (Max 3 items shown) */
             .watak-collapsed > span:nth-child(n+4) { display: none !important; }
         </style>
         <div class="mb-4 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden mt-6">
@@ -73,28 +63,63 @@ export const UniverseCharacterShow = {
 
                     <div id="cat_${safeCat}" class="p-3 space-y-4 ${this.getPanelClass('cat_' + safeCat)}">                                
                         
-                        <!-- Panel Editor (Notes dan Dialog telah dipindahkan) -->
+                        <!-- Panel Editor Karakter -->
                         <div id="addChar_${safeCat}" class="${this.getPanelClass('addChar_' + safeCat)} bg-slate-800 border border-slate-600 p-4 rounded-lg mb-4 shadow-inner">
                             <h4 id="charFormTitle_${safeCat}" class="text-sm font-bold text-indigo-400 mb-4 border-b border-slate-700 pb-2">Buat Tokoh Baru di ${category}</h4>
                             
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Nama Tokoh <span class="text-rose-400">*</span></label>
-                                <input type="text" id="newName_${safeCat}" placeholder="Nama Tokoh" class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500">
+                            <!-- Grid Nama, Umur, Kelamin -->
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                                <div class="md:col-span-2">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Nama Tokoh <span class="text-rose-400">*</span></label>
+                                    <input type="text" id="newName_${safeCat}" placeholder="Nama Tokoh" class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Umur (Tahun)</label>
+                                    <input type="number" id="newAge_${safeCat}" min="0" step="1" placeholder="Contoh: 25" class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Kelamin</label>
+                                    <select id="newGender_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-indigo-500 text-slate-200">
+                                        <option value="Laki-laki" selected>Laki-laki</option>
+                                        <option value="Perempuan">Perempuan</option>
+                                    </select>
+                                </div>
                             </div>
 
+                            <!-- Pilihan Ras / Spesies (Radio) -->
+                            <div class="mb-4">
+                                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                                    <span>Ras / Spesies (Pilih 1)</span>
+                                </label>
+                                <div class="mb-2 relative">
+                                    <input type="text" 
+                                        id="charRaceSearch_${safeCat}" 
+                                        value="${app.currentCharRaceFilter || ''}"
+                                        placeholder="Cari & Filter Ras..." 
+                                        oninput="app.onCharRaceSearchInput(event, '${universe.id}', '${category}')"
+                                        class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-emerald-500 outline-none text-slate-300">
+                                </div>
+                                <div id="charRaceList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    <!-- Dirender via app.renderCharRaceRadioButtons() -->
+                                </div>
+                            </div>
+
+                            <!-- Pilihan Watak / Kepribadian (Checkbox) -->
                             <div class="mb-4">
                                 <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
                                     <span>Watak / Kepribadian</span>
                                     <span class="text-[10px] font-normal text-slate-500 normal-case">(Pilih min 1 untuk AI Dialog)</span>
                                 </label>
-                                <div class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                    ${daftarWatak.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-full">Belum ada watak di Master Watak.</span>' : ''}
-                                    ${daftarWatak.map(w => `
-                                        <label class="flex items-center space-x-2 cursor-pointer">
-                                            <input type="checkbox" value="${w}" class="charWatakCheck_${safeCat} form-checkbox rounded text-indigo-500 bg-slate-800 border-slate-600 focus:ring-indigo-500">
-                                            <span class="truncate text-slate-300 hover:text-white transition">${w}</span>
-                                        </label>
-                                    `).join('')}
+                                <div class="mb-2 relative">
+                                    <input type="text" 
+                                        id="charWatakSearch_${safeCat}" 
+                                        value="${app.currentWatakFilter || ''}"
+                                        placeholder="Cari & Filter Watak..." 
+                                        oninput="app.onCharWatakSearchInput(event, '${universe.id}', '${category}')"
+                                        class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-indigo-500 outline-none text-slate-300">
+                                </div>
+                                <div id="charWatakList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    <!-- Dirender via app.renderCharWatakCheckboxes() -->
                                 </div>
                             </div>
 
@@ -115,13 +140,11 @@ export const UniverseCharacterShow = {
                             </div>
 
                             <div class="space-y-4 mb-4">
-                            
                                 <!-- Skill Khusus -->
                                 <div>
                                     <div class="flex justify-between items-center mb-1">
                                         <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Skill Khusus</label>
                                     </div>
-                                    <!-- Kotak Pencarian Skill di dalam Form Karakter -->
                                     <div class="mb-2 relative">
                                         <input type="text" 
                                             id="charSkillSearch_${safeCat}" 
@@ -130,10 +153,7 @@ export const UniverseCharacterShow = {
                                             oninput="app.onCharSkillSearchInput(event, '${universe.id}', '${category}')"
                                             class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-indigo-500 outline-none text-slate-300">
                                     </div>
-                                    
-                                    <!-- Container yang akan dirender otomatis oleh JavaScript -->
-                                    <div id="charSkillList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        <!-- Dirender via app.renderCharSkillCheckboxes() -->
+                                    <div id="charSkillList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                     </div>
                                 </div>
 
@@ -142,7 +162,6 @@ export const UniverseCharacterShow = {
                                     <div class="flex justify-between items-center mb-1">
                                         <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Item Bawaan</label>
                                     </div>
-                                    <!-- Input Search Item -->
                                     <div class="mb-2 relative">
                                         <input type="text" 
                                             id="charItemSearch_${safeCat}" 
@@ -151,10 +170,7 @@ export const UniverseCharacterShow = {
                                             oninput="app.onCharItemSearchInput(event, '${universe.id}', '${category}')"
                                             class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-cyan-500 outline-none text-slate-300">
                                     </div>
-                                    
-                                    <!-- Container Checkbox Item -->
-                                    <div id="charItemList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        <!-- Dirender via app.renderCharItemCheckboxes() -->
+                                    <div id="charItemList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                     </div>
                                 </div>
 
@@ -163,7 +179,6 @@ export const UniverseCharacterShow = {
                                     <div class="flex justify-between items-center mb-1">
                                         <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Familiar / Pet</label>
                                     </div>
-                                    <!-- Input Search Familiar -->
                                     <div class="mb-2 relative">
                                         <input type="text" 
                                             id="charFamiliarSearch_${safeCat}" 
@@ -172,10 +187,7 @@ export const UniverseCharacterShow = {
                                             oninput="app.onCharFamiliarSearchInput(event, '${universe.id}', '${category}')"
                                             class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-fuchsia-500 outline-none text-slate-300">
                                     </div>
-                                    
-                                    <!-- Container Checkbox Familiar -->
-                                    <div id="charFamiliarList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-64 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        <!-- Dirender via app.renderCharFamiliarCheckboxes() -->
+                                    <div id="charFamiliarList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                     </div>
                                 </div>
                             </div>
@@ -206,16 +218,27 @@ export const UniverseCharacterShow = {
     },
 
     renderCharacterCard(char, category, index) {
-        // Cek Status Collapse Global
         app.collapsedCharCards = app.collapsedCharCards || {};
         if (app.collapsedCharCards[char.id] === undefined) {
             app.collapsedCharCards[char.id] = true;
         }
         const isCollapsed = app.collapsedCharCards[char.id] === true;
 
+        // Visualisasi Ras (Emerald)
+        const allRaces = app.data.races || [];
+        let raceHtml = "";
+        if (char.raceId) {
+            const foundRace = allRaces.find(r => r.id === char.raceId);
+            if (foundRace) {
+                raceHtml = `<span class="bg-emerald-900/60 text-emerald-300 text-[10px] px-2 py-0.5 rounded border border-emerald-700/50 font-medium whitespace-nowrap inline-flex items-center gap-1" title="Ras/Spesies">🧬 ${foundRace.name}</span>`;
+            } else {
+                raceHtml = `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through" title="Ras telah dihapus">Invalid Ras</span>`;
+            }
+        }
+
+        // Visualisasi Watak (Indigo)
         const masterWatakList = app.data.watakList || [];
         let parsedWataks = [];
-        
         if (Array.isArray(char.personality)) {
             parsedWataks = char.personality;
         } else if (typeof char.personality === 'string' && char.personality.trim() !== '') {
@@ -228,6 +251,12 @@ export const UniverseCharacterShow = {
                 ? `<span class="bg-indigo-900/60 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700/50 font-medium whitespace-nowrap mb-1">${w}</span>`
                 : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through mb-1" title="Watak dihapus dari Master">Invalid</span>`;
         }).join(' ');
+
+        // Visualisasi Umur & Kelamin Info Tag
+        let bioInfoStr = [];
+        if (char.gender) bioInfoStr.push(char.gender);
+        if (char.age !== undefined && char.age !== null && char.age !== '') bioInfoStr.push(`${char.age} thn`);
+        const bioInfoBadge = bioInfoStr.length > 0 ? `<span class="text-xs text-slate-400 font-normal ml-2">(${bioInfoStr.join(' • ')})</span>` : '';
 
         // Relasi Skill, Item, Familiar
         const charSkills = (char.skillIds || []).map(id => {
@@ -245,38 +274,37 @@ export const UniverseCharacterShow = {
             return fam ? `<span class="bg-fuchsia-900/50 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded border border-fuchsia-700 font-medium">${fam.name}</span>` : '';
         }).join('');
 
-        // Map Catatan 
         const notesHtml = (char.notes || []).map((note, index) => `
             <li class="flex justify-between items-start text-xs text-slate-300 border-l-2 border-amber-500/50 pl-2 py-1 group/note bg-slate-800/30 rounded-r">
                 <span class="flex-1 leading-relaxed whitespace-pre-wrap">${note}</span>
-                <button onclick="app.deleteNote('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/note:opacity-100 ml-2 px-1 transition" title="Hapus catatan ini">
-                    &times;
-                </button>
+                <button onclick="app.deleteNote('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/note:opacity-100 ml-2 px-1 transition" title="Hapus catatan ini">&times;</button>
             </li>
         `).join('');
 
-        // Map Dialog
+        const relationsHtml = (char.relations || []).map((rel, index) => `
+            <li class="flex justify-between items-start text-xs text-slate-300 border-l-2 border-emerald-500/50 pl-2 py-1 group/rel bg-slate-800/30 rounded-r">
+                <span class="flex-1 leading-relaxed whitespace-pre-wrap">${rel}</span>
+                <button onclick="app.deleteRelation('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/rel:opacity-100 ml-2 px-1 transition" title="Hapus relasi ini">&times;</button>
+            </li>
+        `).join('');
+
         const dialoguesHtml = (char.dialogues || []).map((dlg, index) => `
             <li class="flex justify-between items-start text-xs italic text-slate-300 border-l-2 border-indigo-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
                 <span class="flex-1 leading-relaxed">${dlg}</span>
-                <button onclick="app.deleteDialogue('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-2 px-1 transition" title="Hapus dialog ini">
-                    &times;
-                </button>
+                <button onclick="app.deleteDialogue('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-2 px-1 transition" title="Hapus dialog ini">&times;</button>
             </li>
         `).join('');
 
         return `
         <div id="charCard_${char.id}" class="bg-slate-900 border border-slate-700 rounded-lg p-4 relative group flex flex-col hover:border-indigo-500/50 transition-colors shadow-md">
             
-                <div class="absolute top-3 right-3 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm z-10">
-                    ${index > 0 ? `
-                    <button onclick="app.moveCharacterUp('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan Urutan">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                        </svg>
-                    </button>
-                    ` : ''}
-                    <button onclick="app.toggleCharCard('${char.id}')" class="text-slate-400 hover:text-white p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Toggle Tampilan">
+            <div class="absolute top-3 right-3 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm z-10">
+                ${index > 0 ? `
+                <button onclick="app.moveCharacterUp('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan Urutan">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                </button>
+                ` : ''}
+                <button onclick="app.toggleCharCard('${char.id}')" class="text-slate-400 hover:text-white p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Toggle Tampilan">
                     <svg id="charToggleIcon_${char.id}" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         ${isCollapsed ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>'}
                     </svg>
@@ -288,15 +316,21 @@ export const UniverseCharacterShow = {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
                 <button onclick="app.moveCharacterToCategory('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Pindahkan Kategori">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                    </svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
                 </button>
             </div>
 
             <!-- HEADER KLIKABLE UNTUK TOGGLE SHOW/CLOSED -->
             <div class="border-b border-slate-700/50 pb-2 mb-2 cursor-pointer" onclick="app.toggleCharCard('${char.id}')">
-                <h4 class="font-bold text-indigo-400 text-lg mb-1 pr-24">${char.name}</h4>
+                <h4 class="font-bold text-indigo-400 text-lg mb-1 pr-24 flex items-center flex-wrap">
+                    <span>${char.name}</span> 
+                    ${bioInfoBadge}
+                </h4>
+                
+                <!-- Beda Baris: Ras ditempatkan di atas watak dengan warna Emerald -->
+                ${raceHtml ? `<div class="mb-1.5">${raceHtml}</div>` : ''}
+
+                <!-- Baris Watak (Indigo) -->
                 <div id="charWatak_${char.id}" class="flex flex-wrap gap-1 ${isCollapsed ? 'watak-collapsed' : ''}">${charWataks || '<span class="text-[10px] text-slate-500 italic bg-slate-800 px-2 py-0.5 rounded">Belum ada Watak</span>'}</div>
             </div>
 
@@ -308,18 +342,31 @@ export const UniverseCharacterShow = {
                         <div class="text-[13px] text-slate-300 pt-1.5"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Rupa / Penampilan:</span> <span class="leading-relaxed whitespace-pre-wrap">${char.appearance || '-'}</span></div>
                     </div>
 
+                    <!-- Seksi Catatan Pribadi Tokoh -->
                     <div class="mt-4 pt-3 border-t border-slate-800/80">
                         <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-2">Catatan Karakter:</span>
                         <ul class="space-y-1 mb-2">
                             ${notesHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada catatan.</li>'}
                         </ul>
-                        
                         <div class="flex items-start space-x-1.5 pt-1">
                             <textarea id="newNote_${char.id}" placeholder="Ketik catatan tambahan... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addNote('${this.currentView}', '${category}', '${char.id}'); }"></textarea>
                             <button onclick="app.addNote('${this.currentView}', '${category}', '${char.id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
                         </div>
                     </div>
 
+                    <!-- Seksi Catatan Relasi Tokoh -->
+                    <div class="mt-4 pt-3 border-t border-slate-800/80">
+                        <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-2">Catatan Relasi Tokoh:</span>
+                        <ul class="space-y-1 mb-2">
+                            ${relationsHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada catatan relasi.</li>'}
+                        </ul>
+                        <div class="flex items-start space-x-1.5 pt-1">
+                            <textarea id="newRelation_${char.id}" placeholder="Ketik relasi dengan tokoh lain... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addRelation('${this.currentView}', '${category}', '${char.id}'); }"></textarea>
+                            <button onclick="app.addRelation('${this.currentView}', '${category}', '${char.id}')" class="bg-emerald-600/80 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Seksi Contoh Dialog -->
                     <div class="mt-4 pt-3 border-t border-slate-800/80">
                         <div class="flex justify-between items-center mb-2">
                             <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block">Contoh Dialog / Kutipan:</span>
@@ -328,7 +375,6 @@ export const UniverseCharacterShow = {
                         <ul class="space-y-1 mb-2">
                             ${dialoguesHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada dialog.</li>'}
                         </ul>
-                        
                         <div class="flex items-center space-x-1.5 pt-1">
                             <input type="text" id="newDlg_${char.id}" placeholder="Ketik contoh kutipan... (Tekan Enter)" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 transition" onkeydown="if(event.key === 'Enter') app.addDialogue('${this.currentView}', '${category}', '${char.id}')">
                             <button onclick="app.addDialogue('${this.currentView}', '${category}', '${char.id}')" class="bg-indigo-600/80 hover:bg-indigo-500 text-white px-2 py-1.5 rounded text-[10px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
@@ -355,4 +401,4 @@ export const UniverseCharacterShow = {
         </div>
         `;
     }
-}
+};

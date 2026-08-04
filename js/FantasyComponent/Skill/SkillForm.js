@@ -86,7 +86,7 @@ export const SkillForm = {
         const content = `
             <div class="space-y-2 text-left">
                 <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus skill <b class="text-yellow-400">"${skill.name}"</b>?</p>
-                <p class="text-xs text-rose-400/80 italic">*Tokoh di seluruh semesta yang menggunakannya akan mendapatkan peringatan hilang (Invalid).</p>
+                <p class="text-xs text-rose-400/80 italic">Semua tokoh yang menggunakan skill ini akan kehilangan skill</p>
             </div>
         `;
 
@@ -97,6 +97,7 @@ export const SkillForm = {
             confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
             onConfirm: () => {
                 this.data.skills = this.data.skills.filter(s => s.id !== id);
+                this.removeSkillId(id, this.data);
                 
                 this.closeSkillDetailFloating();
                 this.setPanelState('addSkillForm', false);

@@ -1,4 +1,4 @@
-// Logika CRUD utama karakter yang memunculkan panel editor
+// Logika CRUD utama karakter
 
 export const UniverseCharacterFormMain = {
     // =========================================
@@ -12,10 +12,19 @@ export const UniverseCharacterFormMain = {
         document.getElementById(`charFormBtn_${safeCat}`).innerText = "Simpan Tokoh";
         
         document.getElementById(`newName_${safeCat}`).value = '';
+        document.getElementById(`newAge_${safeCat}`).value = '';
+        document.getElementById(`newGender_${safeCat}`).value = '';
         document.getElementById(`newBg_${safeCat}`).value = '';
         document.getElementById(`newApp_${safeCat}`).value = '';
-        
-        document.querySelectorAll(`.charWatakCheck_${safeCat}`).forEach(cb => cb.checked = false);
+
+        // Reset Filter Search Input
+        const raceSearchInput = document.getElementById(`charRaceSearch_${safeCat}`);
+        if(raceSearchInput) raceSearchInput.value = app.currentCharRaceFilter || '';
+        this.renderCharRaceRadioButtons(univId, category, true);
+
+        const watakSearchInput = document.getElementById(`charWatakSearch_${safeCat}`);
+        if(watakSearchInput) watakSearchInput.value = app.currentWatakFilter || '';
+        this.renderCharWatakCheckboxes(univId, category, true);
 
         const skillSearchInput = document.getElementById(`charSkillSearch_${safeCat}`);
         if(skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
@@ -28,6 +37,11 @@ export const UniverseCharacterFormMain = {
         const familiarSearchInput = document.getElementById(`charFamiliarSearch_${safeCat}`);
         if(familiarSearchInput) familiarSearchInput.value = app.currentFamiliarFilter || '';
         this.renderCharFamiliarCheckboxes(univId, category, true);
+
+        const genderSelect = document.getElementById(`newGender_${safeCat}`);
+        if (genderSelect) {
+            genderSelect.value = "Laki-laki";
+        }
 
         this.setPanelState(`cat_${safeCat}`, true);
         this.setPanelState(`addChar_${safeCat}`, true);
@@ -46,20 +60,19 @@ export const UniverseCharacterFormMain = {
         document.getElementById(`charFormTitle_${safeCat}`).innerText = `Edit Tokoh: ${char.name}`;
         document.getElementById(`charFormBtn_${safeCat}`).innerText = "Update Tokoh";
         
-        document.getElementById(`newName_${safeCat}`).value = char.name;
+        document.getElementById(`newName_${safeCat}`).value = char.name || '';
+        document.getElementById(`newAge_${safeCat}`).value = char.age !== undefined && char.age !== null ? char.age : '';
+        document.getElementById(`newGender_${safeCat}`).value = char.gender || '';
         document.getElementById(`newBg_${safeCat}`).value = char.background || '';
         document.getElementById(`newApp_${safeCat}`).value = char.appearance || '';
         
-        // Migrasi & Centang Data Watak
-        let watakArray = [];
-        if (Array.isArray(char.personality)) {
-            watakArray = char.personality;
-        } else if (typeof char.personality === 'string' && char.personality.trim() !== '') {
-            watakArray = char.personality.split(',').map(s => s.trim());
-        }
-        document.querySelectorAll(`.charWatakCheck_${safeCat}`).forEach(cb => {
-            cb.checked = watakArray.includes(cb.value);
-        });
+        const raceSearchInput = document.getElementById(`charRaceSearch_${safeCat}`);
+        if(raceSearchInput) raceSearchInput.value = app.currentCharRaceFilter || '';
+        this.renderCharRaceRadioButtons(univId, category, true);
+
+        const watakSearchInput = document.getElementById(`charWatakSearch_${safeCat}`);
+        if(watakSearchInput) watakSearchInput.value = app.currentWatakFilter || '';
+        this.renderCharWatakCheckboxes(univId, category, true);
 
         const skillSearchInput = document.getElementById(`charSkillSearch_${safeCat}`);
         if(skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
@@ -73,7 +86,12 @@ export const UniverseCharacterFormMain = {
         if(familiarSearchInput) familiarSearchInput.value = app.currentFamiliarFilter || '';
         this.renderCharFamiliarCheckboxes(univId, category, true);
 
-        // Fitur: Auto-scroll ke lokasi panel editor setelah inisialisasi state
+        const genderVal = char.gender || 'Laki-laki';
+        const genderSelect = document.getElementById(`newGender_${safeCat}`);
+        if (genderSelect) {
+            genderSelect.value = genderVal;
+        }
+
         setTimeout(() => {
             const editorPanel = document.getElementById(`addChar_${safeCat}`);
             if (editorPanel) {
@@ -89,6 +107,14 @@ export const UniverseCharacterFormMain = {
         const name = document.getElementById(`newName_${safeCat}`).value.trim();
         if (!name) return this.showAlert("Nama tokoh tidak boleh kosong", "error");
 
+        const ageInput = document.getElementById(`newAge_${safeCat}`).value.trim();
+        const age = ageInput !== "" ? parseInt(ageInput, 10) : null;
+        const gender = document.getElementById(`newGender_${safeCat}`).value;
+
+        // Ambil ID Ras terpilih dari Radio Button
+        const selectedRaceNode = document.querySelector(`input[name="charRaceRadio_${safeCat}"]:checked`);
+        const raceId = selectedRaceNode ? selectedRaceNode.value : "";
+
         const background = document.getElementById(`newBg_${safeCat}`).value.trim();
         const appearance = document.getElementById(`newApp_${safeCat}`).value.trim();
         
@@ -103,13 +129,15 @@ export const UniverseCharacterFormMain = {
             const char = universe.characters[category].find(c => c.id === this.editCharId);
             if (char) {
                 char.name = name; 
+                char.age = age;
+                char.gender = gender;
+                char.raceId = raceId;
                 char.personality = personality; 
                 char.background = background;
                 char.appearance = appearance;
                 char.skillIds = skillIds; 
                 char.itemIds = itemIds;
                 char.familiarIds = familiarIds; 
-                // Notes & Dialogues tidak di-overwrite agar tidak hilang
             }
             this.editCharId = null;
             this.showAlert("Tokoh berhasil diupdate", "success");
@@ -117,6 +145,9 @@ export const UniverseCharacterFormMain = {
             universe.characters[category].push({
                 id: this.generateId('c'), 
                 name, 
+                age,
+                gender,
+                raceId,
                 personality, 
                 background, 
                 appearance, 
@@ -169,9 +200,7 @@ export const UniverseCharacterFormMain = {
         const charArray = universe.characters[category];
         const index = charArray.findIndex(c => c.id === charId);
 
-        // Hanya jalankan jika karakter ditemukan dan posisinya bukan yang paling atas (index > 0)
         if (index > 0) {
-            // Tukar posisi dengan elemen di atasnya
             const temp = charArray[index - 1];
             charArray[index - 1] = charArray[index];
             charArray[index] = temp;
@@ -180,4 +209,4 @@ export const UniverseCharacterFormMain = {
             this.switchView(univId);
         }
     }
-}
+};

@@ -10,11 +10,24 @@ export const PetForm = {
         document.getElementById('familiarFormTitle').innerText = "Buat Familiar Baru";
         
         document.getElementById('newFamiliarName').value = '';
+        document.getElementById('newFamiliarAge').value = ''; // FIX: Reset Umur
+        
+        // FIX: Reset Kelamin ke 'Tidak Berlaku'
+        const genderDefault = document.querySelector('input[name="famGender"][value="none"]');
+        if (genderDefault) genderDefault.checked = true;
+
         document.getElementById('newFamiliarApp').value = '';
         document.getElementById('newFamBackground').value = ''; 
                 
-        // Uncheck all Checkboxes
-        document.querySelectorAll('.famWatakCheck').forEach(cb => cb.checked = false);
+        // Reset Search Input & Render Watak, Ras, Skill, Item
+        const famWatakSearch = document.getElementById('famWatakSearch');
+        if (famWatakSearch) famWatakSearch.value = '';
+        this.renderFamWatakCheckboxes(true);
+
+        const famRaceSearch = document.getElementById('famRaceSearch');
+        if (famRaceSearch) famRaceSearch.value = '';
+        this.renderFamRaceRadioButtons(true);
+
         document.querySelectorAll('.familiarTagCheck').forEach(cb => cb.checked = false);
         
         const famSkillSearch = document.getElementById('famSkillSearch');
@@ -28,7 +41,6 @@ export const PetForm = {
         this.setPanelState('addFamiliarForm', true);
         document.getElementById('saveFamiliarBtn').innerText = "Simpan Familiar";
         
-        // Reset pengaturan AI
         document.getElementById('aiFamUniverse').value = '';
         document.getElementById('aiFamDeepLore').checked = false;
         
@@ -43,26 +55,30 @@ export const PetForm = {
         document.getElementById('familiarFormTitle').innerText = `Edit Familiar: ${fam.name}`;
         
         document.getElementById('newFamiliarName').value = fam.name;
+        document.getElementById('newFamiliarAge').value = fam.age || ''; // FIX: Load Umur
+        
+        // FIX: Load Kelamin
+        const genderValue = fam.gender || 'none';
+        const genderRadio = document.querySelector(`input[name="famGender"][value="${genderValue}"]`);
+        if (genderRadio) genderRadio.checked = true;
+
         document.getElementById('newFamiliarApp').value = fam.appearance || '';
         document.getElementById('newFamBackground').value = fam.description || ''; 
-                
-        // Migrasi & Centang Data Watak
-        let watakArray = [];
-        if (Array.isArray(fam.personality)) {
-            watakArray = fam.personality;
-        } else if (typeof fam.personality === 'string' && fam.personality.trim() !== '') {
-            watakArray = fam.personality.split(',').map(s => s.trim());
-        }
 
-        document.querySelectorAll('.famWatakCheck').forEach(cb => {
-            cb.checked = watakArray.includes(cb.value);
-        });
+        // FIX: Render & Centang Watak
+        const famWatakSearch = document.getElementById('famWatakSearch');
+        if (famWatakSearch) famWatakSearch.value = '';
+        this.renderFamWatakCheckboxes(true);
+
+        // FIX: Render & Pilih Ras
+        const famRaceSearch = document.getElementById('famRaceSearch');
+        if (famRaceSearch) famRaceSearch.value = '';
+        this.renderFamRaceRadioButtons(true);
 
         document.querySelectorAll('.familiarTagCheck').forEach(cb => {
             cb.checked = (fam.tagIds || []).includes(cb.value);
         });
         
-        // Sync Input Filter & Render List Skill/Item sesuai data pet yang di-edit
         const famSkillSearch = document.getElementById('famSkillSearch');
         if (famSkillSearch) famSkillSearch.value = app.currentSkillFilter || '';
         this.renderFamSkillCheckboxes(true);
@@ -71,7 +87,6 @@ export const PetForm = {
         if (famItemSearch) famItemSearch.value = app.currentItemFilter || '';
         this.renderFamItemCheckboxes(true);
 
-        // Reset pengaturan AI (selalu dibersihkan saat edit)
         document.getElementById('aiFamUniverse').value = '';
         document.getElementById('aiFamDeepLore').checked = false;
 
@@ -83,12 +98,21 @@ export const PetForm = {
 
     saveFamiliar() {
         const name = document.getElementById('newFamiliarName').value.trim(); 
+        const age = document.getElementById('newFamiliarAge').value.trim(); // FIX: Ambil Umur
+        
+        // FIX: Ambil Kelamin
+        const selectedGender = document.querySelector('input[name="famGender"]:checked');
+        const gender = selectedGender ? selectedGender.value : 'none';
+
+        // FIX: Ambil Ras (Radio)
+        const selectedRace = document.querySelector('input[name="famRace"]:checked');
+        const raceId = selectedRace ? selectedRace.value : null;
+
         const appearance = document.getElementById('newFamiliarApp').value.trim();
         const description = document.getElementById('newFamBackground').value.trim(); 
         
         if (!name) return this.showAlert("Nama familiar wajib diisi", "error");
 
-        // Ambil data string murni untuk watak, array ID untuk sisanya
         const personality = Array.from(document.querySelectorAll('.famWatakCheck:checked')).map(cb => cb.value);
         const tagIds = Array.from(document.querySelectorAll('.familiarTagCheck:checked')).map(cb => cb.value);
         const skillIds = Array.from(document.querySelectorAll('.famSkillCheck:checked')).map(cb => cb.value);
@@ -98,7 +122,10 @@ export const PetForm = {
             const fam = this.data.familiars.find(f => f.id === this.editFamiliarId);
             if (fam) {
                 fam.name = name;
-                fam.personality = personality; // Array of strings
+                fam.age = age; // FIX: Update Umur
+                fam.gender = gender; // FIX: Update Kelamin
+                fam.raceId = raceId; // FIX: Update Ras
+                fam.personality = personality;
                 fam.appearance = appearance;
                 fam.description = description;
                 fam.tagIds = tagIds;
@@ -111,11 +138,15 @@ export const PetForm = {
             this.data.familiars.push({
                 id: this.generateId('f'),
                 name,
-                personality, // Array of strings
+                age, // FIX: Simpan Umur
+                gender, // FIX: Simpan Kelamin
+                raceId, // FIX: Simpan Ras
+                personality,
                 appearance,
                 description,
                 dialogues: [],
                 notes: [],
+                relations: [], // FIX: Inisialisasi Catatan Relasi
                 tagIds,
                 skillIds,
                 itemIds
@@ -123,7 +154,7 @@ export const PetForm = {
             this.showAlert("Familiar baru disimpan", "success");
         }
 
-        this.closeFamiliarDetailFloating(); // Tutup agar update list bersih
+        this.closeFamiliarDetailFloating();
         this.setPanelState('addFamiliarForm', false);
         this.saveData(true);
         this.switchView('familiars'); 
@@ -147,6 +178,7 @@ export const PetForm = {
             confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
             onConfirm: () => {
                 this.data.familiars = this.data.familiars.filter(f => f.id !== id);
+                this.removeFamiliarId(id, this.data);
                 
                 this.closeFamiliarDetailFloating();
                 this.setPanelState('addFamiliarForm', false);
@@ -246,6 +278,40 @@ export const PetForm = {
             if (fam && fam.notes) {
                 fam.notes.splice(noteIndex, 1);
                 
+                this.saveData(true);
+                this.renderFamiliarGrid();
+                
+                if (this.activeFamId === famId) {
+                    this.showFamiliarDetailFloating(famId);
+                }
+            }
+        }
+    },
+
+    addFamiliarRelation(famId) {
+        const inputEl = document.getElementById(`newFamRel_${famId}`);
+        let text = inputEl ? inputEl.value.trim() : "";
+        
+        if (text) {
+            const fam = this.data.familiars.find(f => f.id === famId);
+            if (!fam.relations) fam.relations = [];
+            
+            fam.relations.push(text);
+            
+            this.saveData(true);
+            this.renderFamiliarGrid();
+            
+            if (this.activeFamId === famId) {
+                this.showFamiliarDetailFloating(famId);
+            }
+        }
+    },
+
+    deleteFamiliarRelation(famId, relIndex) {
+        if (confirm("Hapus catatan relasi ini?")) {
+            const fam = this.data.familiars.find(f => f.id === famId);
+            if (fam && fam.relations) {
+                fam.relations.splice(relIndex, 1);
                 this.saveData(true);
                 this.renderFamiliarGrid();
                 
@@ -388,6 +454,94 @@ export const PetForm = {
                 <span class="truncate text-slate-300 hover:text-white transition" title="${i.name}">${i.name}</span>
             </label>
         `).join('');
+    },
+
+    onFamWatakSearchInput(event) {
+        this.renderFamWatakCheckboxes();
+    },
+
+    renderFamWatakCheckboxes(isInitial = false) {
+        const container = document.getElementById('famWatakList');
+        if (!container) return;
+
+        let checkedWataks = [];
+
+        if (isInitial) {
+            const activeFam = this.editFamiliarId ? this.data.familiars.find(f => f.id === this.editFamiliarId) : null;
+            if (activeFam) {
+                if (Array.isArray(activeFam.personality)) {
+                    checkedWataks = activeFam.personality;
+                } else if (typeof activeFam.personality === 'string' && activeFam.personality.trim() !== '') {
+                    checkedWataks = activeFam.personality.split(',').map(s => s.trim());
+                }
+            }
+        } else {
+            const currentChecked = document.querySelectorAll('.famWatakCheck:checked');
+            checkedWataks = Array.from(currentChecked).map(cb => cb.value);
+        }
+
+        const filterQuery = (document.getElementById('famWatakSearch')?.value || '').toLowerCase();
+        const allWataks = this.data.watakList || [];
+
+        const filteredWataks = allWataks.filter(w => w.toLowerCase().includes(filterQuery));
+
+        if (filteredWataks.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada watak ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = filteredWataks.map(w => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${w}" class="famWatakCheck form-checkbox rounded text-fuchsia-500 bg-slate-900 border-slate-600 focus:ring-fuchsia-500"
+                ${checkedWataks.includes(w) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition">${w}</span>
+            </label>
+        `).join('');
+    },
+
+    // --- BANTUAN FILTER RAS ---
+    onFamRaceSearchInput(event) {
+        this.renderFamRaceRadioButtons();
+    },
+
+    renderFamRaceRadioButtons(isInitial = false) {
+        const container = document.getElementById('famRaceList');
+        if (!container) return;
+
+        let selectedRaceId = null;
+
+        if (isInitial) {
+            const activeFam = this.editFamiliarId ? this.data.familiars.find(f => f.id === this.editFamiliarId) : null;
+            selectedRaceId = activeFam ? activeFam.raceId : null;
+        } else {
+            const currentSelected = document.querySelector('input[name="famRace"]:checked');
+            selectedRaceId = currentSelected ? currentSelected.value : null;
+        }
+
+        const filterQuery = (document.getElementById('famRaceSearch')?.value || '').toLowerCase();
+        const allRaces = this.data.races || [];
+
+        const filteredRaces = allRaces.filter(r => (r.name || '').toLowerCase().includes(filterQuery));
+
+        if (filteredRaces.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada ras ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = `
+            <label class="flex items-center space-x-2 cursor-pointer border border-slate-800 p-1.5 rounded bg-slate-950/50">
+                <input type="radio" name="famRace" value="" class="famRaceRadio form-radio text-amber-500 bg-slate-900 border-slate-600 focus:ring-amber-500"
+                ${!selectedRaceId ? 'checked' : ''}>
+                <span class="truncate text-slate-400 italic text-xs">Tanpa Ras</span>
+            </label>
+            ${filteredRaces.map(r => `
+                <label class="flex items-center space-x-2 cursor-pointer border border-slate-800 p-1.5 rounded bg-slate-950/50">
+                    <input type="radio" name="famRace" value="${r.id}" class="famRaceRadio form-radio text-amber-500 bg-slate-900 border-slate-600 focus:ring-amber-500"
+                    ${selectedRaceId === r.id ? 'checked' : ''}>
+                    <span class="truncate text-slate-300 hover:text-white transition text-xs">${r.name}</span>
+                </label>
+            `).join('')}
+        `;
     },
 
     // ==========================================

@@ -1,6 +1,107 @@
 // Logika yang berhubungan dengan modul di luar karakter: skill, item, dan pet
 
 export const UniverseCharacterFormOuter = {
+
+    // --- FUNGSI BANTUAN RAS (SPECIES) ---
+    onCharRaceSearchInput(event, univId, category) {
+        app.currentCharRaceFilter = event.target.value;
+        app.renderCharRaceRadioButtons(univId, category);
+    },
+
+    renderCharRaceRadioButtons(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`charRaceList_${safeCat}`);
+        if (!container) return;
+
+        let selectedRaceId = "";
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeChar = this.editCharId ? universe.characters[category]?.find(c => c.id === this.editCharId) : null;
+            selectedRaceId = activeChar ? (activeChar.raceId || "") : "";
+        } else {
+            const currentCheckedNode = document.querySelector(`input[name="charRaceRadio_${safeCat}"]:checked`);
+            selectedRaceId = currentCheckedNode ? currentCheckedNode.value : "";
+        }
+
+        const filterQuery = (app.currentCharRaceFilter || '').toLowerCase();
+        const allRaces = this.data.races || app.data.races || [];
+
+        const filteredRaces = allRaces.filter(r => 
+            !filterQuery || (r.name || '').toLowerCase().includes(filterQuery)
+        ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (filteredRaces.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada ras yang ditemukan.</span>';
+            return;
+        }
+
+        // Tambahkan opsi "Tanpa Ras" di posisi pertama
+        let html = `
+            <label class="flex items-center space-x-2 cursor-pointer bg-slate-800/50 p-1.5 rounded border border-slate-700/60 hover:border-slate-500 transition">
+                <input type="radio" name="charRaceRadio_${safeCat}" value="" class="form-radio text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500" ${!selectedRaceId ? 'checked' : ''}>
+                <span class="truncate text-xs text-slate-400 italic">Tanpa Ras</span>
+            </label>
+        `;
+
+        html += filteredRaces.map(r => `
+            <label class="flex items-center space-x-2 cursor-pointer bg-slate-800/50 p-1.5 rounded border border-slate-700/60 hover:border-emerald-500/50 transition">
+                <input type="radio" name="charRaceRadio_${safeCat}" value="${r.id}" class="form-radio text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500" ${selectedRaceId === r.id ? 'checked' : ''}>
+                <span class="truncate text-xs text-slate-200 hover:text-white transition font-medium" title="${r.name}">${r.name}</span>
+            </label>
+        `).join('');
+
+        container.innerHTML = html;
+    },
+
+    // --- FUNGSI BANTUAN WATAK ---
+    onCharWatakSearchInput(event, univId, category) {
+        app.currentWatakFilter = event.target.value;
+        app.renderCharWatakCheckboxes(univId, category);
+    },
+
+    renderCharWatakCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`charWatakList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedWataks = [];
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeChar = this.editCharId ? universe.characters[category]?.find(c => c.id === this.editCharId) : null;
+            if (activeChar) {
+                if (Array.isArray(activeChar.personality)) {
+                    allCheckedWataks = activeChar.personality;
+                } else if (typeof activeChar.personality === 'string' && activeChar.personality.trim() !== '') {
+                    allCheckedWataks = activeChar.personality.split(',').map(s => s.trim());
+                }
+            }
+        } else {
+            const currentCheckedNodes = document.querySelectorAll(`.charWatakCheck_${safeCat}:checked`);
+            allCheckedWataks = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = (app.currentWatakFilter || '').toLowerCase();
+        const allWatak = this.data.watakList || app.data.watakList || [];
+
+        const filteredWatak = allWatak.filter(w => 
+            !filterQuery || w.toLowerCase().includes(filterQuery)
+        );
+
+        if (filteredWatak.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada watak yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = filteredWatak.map(w => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${w}" class="charWatakCheck_${safeCat} form-checkbox rounded text-indigo-500 bg-slate-800 border-slate-600 focus:ring-indigo-500" ${allCheckedWataks.includes(w) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition">${w}</span>
+            </label>
+        `).join('');
+    },
+    
     onCharSkillSearchInput(event, univId, category) {
         app.currentSkillFilter = event.target.value; // Titipkan di MainScript
         app.renderCharSkillCheckboxes(univId, category); // Gambar ulang checkbox

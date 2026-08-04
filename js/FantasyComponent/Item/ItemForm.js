@@ -105,6 +105,7 @@ export const ItemForm = {
             confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
             onConfirm: () => {
                 this.data.items = this.data.items.filter(i => i.id !== id);
+                this.removeItemId(id, this.data);
                 
                 this.closeItemDetailFloating();
                 this.setPanelState('addItemForm', false);

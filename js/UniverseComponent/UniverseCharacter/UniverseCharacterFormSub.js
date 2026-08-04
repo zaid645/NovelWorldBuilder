@@ -89,4 +89,46 @@ export const UniverseCharacterFormSub = {
             }
         });
     },
+
+    // --- FUNGSI ARRAY RELASI ---
+    addRelation(univId, category, charId) {
+        const inputEl = document.getElementById(`newRelation_${charId}`);
+        const text = inputEl.value.trim();
+        
+        if (text) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const char = universe.characters[category].find(c => c.id === charId);
+            
+            if (!char.relations) char.relations = [];
+            char.relations.push(text);
+            
+            this.saveData(true); 
+            this.switchView(univId); 
+            
+            // Fitur: Auto-focus kembali ke input relasi
+            setTimeout(() => {
+                const newInput = document.getElementById(`newRelation_${charId}`);
+                if (newInput) newInput.focus();
+            }, 50);
+        }
+    },
+
+    deleteRelation(univId, category, charId, relIndex) {
+        this.showCustomModal({
+            title: "Hapus Catatan Relasi",
+            content: "Hapus catatan relasi ini dari rekaman karakter?",
+            confirmText: "Hapus",
+            confirmColor: "bg-rose-600 hover:bg-rose-500",
+            onConfirm: () => {
+                const universe = this.data.universes.find(u => u.id === univId);
+                const char = universe.characters[category].find(c => c.id === charId);
+                
+                if (char && char.relations) {
+                    char.relations.splice(relIndex, 1);
+                    this.saveData(true);
+                    this.switchView(univId);
+                }
+            }
+        });
+    }
 }

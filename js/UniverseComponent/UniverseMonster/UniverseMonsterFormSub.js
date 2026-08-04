@@ -82,5 +82,47 @@ export const UniverseMonsterFormSub = {
                 }
             }
         });
+    },
+
+    // --- FUNGSI ARRAY RELASI MONSTER ---
+    addMonsterRelation(univId, category, monsterId) {
+        const inputEl = document.getElementById(`newMonsterRelation_${monsterId}`);
+        const text = inputEl.value.trim();
+        
+        if (text) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const monster = universe.monsters[category].find(m => m.id === monsterId);
+            
+            if (!monster.relations) monster.relations = [];
+            monster.relations.push(text);
+            
+            this.saveData(true); 
+            this.switchView(univId); 
+            
+            // Fitur: Auto-focus kembali ke input relasi monster
+            setTimeout(() => {
+                const newInput = document.getElementById(`newMonsterRelation_${monsterId}`);
+                if (newInput) newInput.focus();
+            }, 50);
+        }
+    },
+
+    deleteMonsterRelation(univId, category, monsterId, relIndex) {
+        this.showCustomModal({
+            title: "Hapus Catatan Relasi",
+            content: "Hapus catatan relasi ini dari rekaman monster?",
+            confirmText: "Hapus",
+            confirmColor: "bg-rose-600 hover:bg-rose-500",
+            onConfirm: () => {
+                const universe = this.data.universes.find(u => u.id === univId);
+                const monster = universe.monsters[category].find(m => m.id === monsterId);
+                
+                if (monster && monster.relations) {
+                    monster.relations.splice(relIndex, 1);
+                    this.saveData(true);
+                    this.switchView(univId);
+                }
+            }
+        });
     }
 }

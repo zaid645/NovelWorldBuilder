@@ -9,12 +9,13 @@ import { Dexie } from 'https://unpkg.com/dexie@latest/dist/modern/dexie.mjs';
 const db = new Dexie('NovelLoreDB');
 
 // Naikkan versi ke 2 untuk memperbarui skema
-db.version(2).stores({
+db.version(3).stores({
     keyval: 'key', 
     
     // Tambahkan index 'order' di samping 'id'
     universes: 'id, order',
     arcs: 'id, order',
+    races: 'id, order',
     skills: 'id, order',
     items: 'id, order',
     familiars: 'id, order'
@@ -97,6 +98,8 @@ export const ManagerData = {
                             this.ensureStructure(this.data, this.defaultData);
 
                             // --- MIGRASI LAMA & KUSTOM (Dipertahankan) ---
+                            if (!this.data.races) this.data.races = [];
+
                             if (!this.data.watakList || this.data.watakList.length === 0) {
                                 const oldWatak = localStorage.getItem('novel_watak_list_data');
                                 if (oldWatak) {
@@ -196,6 +199,7 @@ export const ManagerData = {
                     // Ambil data yang sudah terurut berdasarkan indeks 'order'
                     universes: await db.universes.orderBy('order').toArray(),
                     arcs:      await db.arcs.orderBy('order').toArray(),
+                    races:     await db.races.orderBy('order').toArray(),
                     skills:    await db.skills.orderBy('order').toArray(),
                     items:     await db.items.orderBy('order').toArray(),
                     familiars: await db.familiars.orderBy('order').toArray()
@@ -215,7 +219,7 @@ export const ManagerData = {
         this.data.metadata.lastSaved = new Date().toISOString();
 
         try {
-            await db.transaction('rw', [db.keyval, db.universes, db.arcs, db.skills, db.items, db.familiars], async () => {
+            await db.transaction('rw', [db.keyval, db.universes, db.arcs, db.skills, db.items, db.familiars, db.races], async () => {
                 
                 // 1. Simpan KeyVal Items
                 await db.keyval.put({ key: 'metadata', value: this.data.metadata });
@@ -234,6 +238,7 @@ export const ManagerData = {
                 await db.skills.clear();    await db.skills.bulkAdd(mapWithOrder(this.data.skills));
                 await db.items.clear();     await db.items.bulkAdd(mapWithOrder(this.data.items));
                 await db.familiars.clear(); await db.familiars.bulkAdd(mapWithOrder(this.data.familiars));
+                await db.races.clear();     await db.races.bulkAdd(mapWithOrder(this.data.races));
             });
 
             this.updateLastSavedUI();

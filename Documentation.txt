@@ -2,11 +2,40 @@
 Ini merupakan file dokumentasi untuk menjelaskan kegunaan file.
 Tiap file memuat kegunaan, path, dan fungsi.
 
+## title
+* path      : 
+* desc      : 
+* atribut   :
+    - 
+* function  :
+    -
 
 # Konten
+Daftar file, path, desc, atribut, dan function.
+
 ## index.html
-path : index.html
-use  : file html untuk utama, berisi UI dan tombol.
+* path        : index.html
+* desc        : file html untuk utama, berisi UI dan tombol.
+
+## sw.js
+* path      : sw.js
+* desc      : Melakukan caching agar halaman tetap bisa dibuka secara offline.
+* atribut   :
+    - CACHE_NAME            -> Nama versi cache (timpa untuk pembaruan paksa)
+    - LOCAL_ASSETS          -> Path file yang ada di halaman
+    - EXTERNAL_ASSETS       -> Path file di luar halaman
+* function  :
+    -
+    - 
+    -
+
+## caching.js
+* path      : caching.js
+* desc      : Bantuan melakukan caching
+* atribut   :
+    - CACHE_NAME            -> Nama versi cache (timpa untuk pembaruan paksa)
+* function  :
+    -
 
 ## MainScipt.js
 path : js/MainScript.js

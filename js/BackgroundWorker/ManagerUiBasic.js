@@ -30,6 +30,9 @@ export const ManagerUiBasic = {
 
         const fantasyMenuList = document.getElementById('fantasyMenuList');
         fantasyMenuList.innerHTML = `
+            <button onclick="app.switchView('races')" id="menu-races" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center ${this.currentView === 'races' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
+                <span class="mr-2">🧬</span> Master Ras
+            </button>
             <button onclick="app.switchView('skills')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center ${this.currentView === 'skills' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
                 <svg class="w-4 h-4 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 Skills
@@ -132,6 +135,11 @@ export const ManagerUiBasic = {
             titleEl.innerText = "Informasi Dasar Cerita";
             if (typeof this.renderStoryInfo === 'function') {
                 contentArea.innerHTML = this.renderStoryInfo();
+            }
+        } else if (viewId === 'races') {
+            titleEl.innerText = "Master Daftar Ras / Spesies";
+            if (typeof this.renderRaceView === 'function') {
+                contentArea.innerHTML = this.renderRaceView();
             }
         } else if (viewId === 'skills') {
             titleEl.innerText = "Manajemen Skill";

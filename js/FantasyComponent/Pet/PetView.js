@@ -80,25 +80,59 @@ export const PetView = {
                                 <button onclick="app.togglePanel('addFamiliarForm')" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition text-lg">&times;</button>
                                 <h4 id="familiarFormTitle" class="text-sm font-bold text-fuchsia-400 mb-4 border-b border-slate-700 pb-2">Buat Familiar Baru</h4>
                                 
-                                <!-- Kebutuhan Dasar & Watak -->
-                                <div class="mb-4">
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Nama Familiar <span class="text-rose-400">*</span></label>
-                                    <input type="text" id="newFamiliarName" placeholder="Contoh: Fenrir / Kucing Hitam" class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-fuchsia-500">
+                                <!-- Kebutuhan Dasar, Umur & Kelamin (Grid 3 Kolom) -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Nama Familiar <span class="text-rose-400">*</span></label>
+                                        <input type="text" id="newFamiliarName" placeholder="Contoh: Fenrir / Kucing Hitam" class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-fuchsia-500">
+                                    </div>
+
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Umur</label>
+                                        <input type="text" id="newFamiliarAge" placeholder="Contoh: 3 tahun / Dewasa" class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full outline-none focus:border-fuchsia-500">
+                                    </div>
+
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Jenis Kelamin</label>
+                                        <div class="flex items-center space-x-3 bg-slate-800 border border-slate-600 rounded p-2 text-xs h-[38px]">
+                                            <label class="flex items-center space-x-1 cursor-pointer">
+                                                <input type="radio" name="famGender" value="jantan" class="form-radio text-fuchsia-500 bg-slate-900 border-slate-600">
+                                                <span class="text-slate-300">Jantan</span>
+                                            </label>
+                                            <label class="flex items-center space-x-1 cursor-pointer">
+                                                <input type="radio" name="famGender" value="betina" class="form-radio text-fuchsia-500 bg-slate-900 border-slate-600">
+                                                <span class="text-slate-300">Betina</span>
+                                            </label>
+                                            <label class="flex items-center space-x-1 cursor-pointer">
+                                                <input type="radio" name="famGender" value="none" checked class="form-radio text-fuchsia-500 bg-slate-900 border-slate-600">
+                                                <span class="text-slate-400 italic">Tidak Berlaku</span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
 
+                                <!-- Cari & Pilih Ras (Radio Button) -->
+                                <div class="mb-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Ras Pet / Familiar</label>
+                                    <div class="mb-2 relative">
+                                        <input type="text" id="famRaceSearch" placeholder="Cari Ras..." oninput="app.onFamRaceSearchInput(event)" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:border-amber-500 outline-none text-slate-300">
+                                    </div>
+                                    <div id="famRaceList" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                        <!-- Dirender via app.renderFamRaceRadioButtons() -->
+                                    </div>
+                                </div>
+
+                                <!-- Cari Watak & List Watak -->
                                 <div class="mb-4">
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
                                         <span>Kepribadian / Watak <span class="text-rose-400">*</span></span>
-                                        <span class="text-[10px] font-normal text-slate-500 normal-case">(Pilih minimal 1 untuk rujukan AI)</span>
+                                        <span class="text-[10px] font-normal text-slate-500 normal-case">(Pilih minimal 1)</span>
                                     </label>
-                                    <div class="bg-slate-800 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                        ${daftarWatak.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-full">Belum ada watak di Master Watak.</span>' : ''}
-                                        ${daftarWatak.map(w => `
-                                            <label class="flex items-center space-x-2 cursor-pointer">
-                                                <input type="checkbox" value="${w}" class="famWatakCheck form-checkbox rounded text-fuchsia-500 bg-slate-900 border-slate-600 focus:ring-fuchsia-500">
-                                                <span class="truncate text-slate-300 hover:text-white transition">${w}</span>
-                                            </label>
-                                        `).join('')}
+                                    <div class="mb-2 relative">
+                                        <input type="text" id="famWatakSearch" placeholder="Cari Watak..." oninput="app.onFamWatakSearchInput(event)" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:border-fuchsia-500 outline-none text-slate-300">
+                                    </div>
+                                    <div id="famWatakList" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                        <!-- Dirender via app.renderFamWatakCheckboxes() -->
                                     </div>
                                 </div>
 
@@ -236,8 +270,15 @@ export const PetView = {
                             <div id="floatingFamDesc" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
                         </div>
                         <hr class="border-slate-700/60">
+                        <!-- Seksi Catatan Relasi -->
                         <div>
-                            <span class="font-semibold text-yellow-400 uppercase tracking-wider text-[10px] block mb-1.5">Contoh Suara / Dialog:</span>
+                            <span class="font-semibold text-rose-400 uppercase tracking-wider text-[10px] block mb-1.5">Catatan Relasi Tokoh/Pet Lain:</span>
+                            <ul id="floatingFamRelations" class="space-y-1 mb-2"></ul>
+                            <div id="floatingFamRelInputContainer"></div>
+                        </div>
+                        <hr class="border-slate-700/60">
+                        <div>
+                            <span class="font-semibold text-blue-400 uppercase tracking-wider text-[10px] block mb-1.5">Contoh Suara / Dialog:</span>
                             <ul id="floatingFamDialogues" class="space-y-1 mb-2"></ul>
                             <div id="floatingFamDlgInputContainer"></div>
                         </div>
@@ -283,7 +324,8 @@ export const PetView = {
         filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
         if (filtered.length === 0) {
-            container.innerHTML = `<p class="col-span-full text-sm text-slate-500 italic text-center py-8 bg-slate-800/30 rounded border border-dashed border-slate-700">Tidak ada familiar ditemukan.</p>`; return;
+            container.innerHTML = `<p class="col-span-full text-sm text-slate-500 italic text-center py-8 bg-slate-800/30 rounded border border-dashed border-slate-700">Tidak ada familiar ditemukan.</p>`; 
+            return;
         }
         container.innerHTML = filtered.map(f => this.renderFamiliarCard(f)).join('');
     },
@@ -299,7 +341,7 @@ export const PetView = {
             parsedWataks = fam.personality.split(',').map(s => s.trim());
         }
 
-        // Tampilkan maks 2 watak dan KINI MASKIMAL 3 tag di Card kecil
+        // Tampilkan maks 2 watak dan maksimal 3 tag di Card kecil
         const famWataks = parsedWataks.slice(0, 2).map(w => {
             const isValid = masterWatakList.some(master => master.toLowerCase() === w.toLowerCase());
             return isValid 
@@ -307,15 +349,15 @@ export const PetView = {
                 : `<span class="bg-rose-900/50 text-rose-300 text-[9px] px-1.5 py-0.5 rounded border border-rose-700 line-through">Invalid</span>`;
         }).join('');
 
-        const famTags = (fam.tagIds || []).slice(0, 3).map(id => { // Diubah dari .slice(0, 2) menjadi .slice(0, 3)
+        const famTags = (fam.tagIds || []).slice(0, 3).map(id => {
             const tag = this.data.familiarTags.find(t => t.id === id);
             return tag ? `<span class="bg-fuchsia-900/60 text-fuchsia-300 text-[9px] px-1.5 py-0.5 rounded border border-fuchsia-700/50 truncate max-w-[65px] block" title="${tag.name}">${tag.name}</span>` 
                         : '';
         }).join('');
 
-        // Cek Indikator Ekstra (Kalkulasi dikurangi 3 untuk tag)
+        // Cek Indikator Ekstra
         const extraWatakCount = Math.max(0, parsedWataks.length - 2);
-        const extraTagCount = Math.max(0, (fam.tagIds || []).length - 3); // Diubah dari - 2 menjadi - 3
+        const extraTagCount = Math.max(0, (fam.tagIds || []).length - 3);
         const hasExtra = (extraWatakCount + extraTagCount) > 0;
         
         const hasSkills = fam.skillIds && fam.skillIds.length > 0;
@@ -349,7 +391,7 @@ export const PetView = {
                 <svg class="w-8 h-8 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
             </div>
 
-            <!-- Tombol Aksi Melayang (Kecil di Pojok Kanan Atas) -->
+            <!-- Tombol Aksi Melayang -->
             <div class="absolute top-1.5 right-1.5 flex space-x-1 opacity-0 group-hover:opacity-100 transition z-20 bg-slate-900/80 p-0.5 rounded backdrop-blur-sm">
                 <button onclick="event.stopPropagation(); app.openEditFamiliar('${fam.id}')" class="text-slate-400 hover:text-amber-400 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Edit Familiar">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -362,13 +404,11 @@ export const PetView = {
         `;
     },
 
-
     // ==========================================
     // --- BANTUAN PENCARIAN FAMILIAR ---    
     // ==========================================
     onSearchFamiliarInput(e) {
         app.currentFamiliarFilter = e.target.value;
         this.renderFamiliarGrid();
-    },
-
+    }
 }
