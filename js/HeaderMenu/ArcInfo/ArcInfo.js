@@ -11,5 +11,5 @@ export const ArcInfoModule = {
     ...ArcInfoShow,
     ...ArcInfoFormArc,
     ...ArcInfoFormSub,
-    ...ArcInfoFormAi
+    ...ArcInfoFormAi,
 }

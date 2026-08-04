@@ -90,5 +90,15 @@ export const ArcInfoFormArc = {
     cancelDeleteArc() {
         this.deleteArcIdConfirm = null;
         this.refreshArcList();
+    },
+
+    // SINKRONISASI DINAMIS SISI KLIEN
+    refreshArcList() {
+        const container = document.getElementById('arcListContainer');
+        const searchInput = document.getElementById('arcSearchInput');
+        const query = searchInput ? searchInput.value : '';
+        if (container) {
+            container.innerHTML = this.renderArcList(query);
+        }
     }
 }

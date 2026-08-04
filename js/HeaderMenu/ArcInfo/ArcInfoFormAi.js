@@ -1,5 +1,6 @@
-// Logika CRUD menggunakan AI
+import { ArcInfoFormContext } from './ArcInfoFormContext.js';
 
+// Logika CRUD menggunakan AI
 export const ArcInfoFormAi = {
     // =========================================
     // --- INTEGRASI PANGGILAN AI ENCHANTER ----
@@ -49,19 +50,8 @@ export const ArcInfoFormAi = {
         const arc = this.data.arcs.find(a => a.id === arcId);
         
         // Validasi Ketersediaan Konteks Arc
-        if (!arc || !arc.name || !arc.synopsis) {
-            return this.showNotification("GAGAL: Judul dan Deskripsi Arc harus sudah diisi dan 'disimpan' terlebih dahulu agar AI memahami konteks cerita utamanya.", "error");
-        }
-
-        // Validasi Aturan Semesta (Universe)
-        const universeId = arc.universeId;
-        if (!universeId) {
-            return this.showNotification("GAGAL: Arc ini belum memiliki Latar Semesta. Silakan klik tombol 'Edit' pada Arc ini dan pilih Semesta terlebih dahulu.", "error");
-        }
-        
-        const universe = this.data.universes.find(u => u.id === universeId);
-        if (!universe) {
-            return this.showNotification("GAGAL: ID Semesta pada Arc ini tidak valid atau telah dihapus. Silakan edit Arc dan pilih semesta yang tersedia.", "error");
+        if (!arc || !arc.name) {
+            return this.showNotification("GAGAL: Judul Arc harus sudah diisi dan 'disimpan' terlebih dahulu agar AI memahami konteks cerita utamanya.", "error");
         }
 
         // Ambil Target
@@ -82,21 +72,28 @@ export const ArcInfoFormAi = {
             pacingFocus = `PENTING: Sub-arc ini berada di urutan ke-${currentIndex}, MELEBIHI target awal ${targetCount} sub-arc! Rancang logika alur baru (ekstensi) berdasarkan kelanjutan sub-arc sebelumnya.`;
         }
 
+        // --- PENGAMBILAN KONTEKS SECARA AMAN ---
+        const selectedDetails = (typeof ArcInfoFormContext !== 'undefined' && ArcInfoFormContext.getSelectedContextDetails)
+            ? ArcInfoFormContext.getSelectedContextDetails(arcId)
+            : { characters: [], locations: [], universes: [] };
+
         // Konstruksi Payload Kompleks (Memberikan Full Context Semesta & Arc)
         const payload = {
             moduleName: "Sub-arc (Episode Arc)",
             targetData: {
                 arcTitle: arc.name,
-                arcSynopsis: arc.synopsis,
+                arcSynopsis: arc.synopsis || "Belum ada sinopsis global.",
                 subarcCurrentSequence: currentIndex,
                 targetTotalSubarcs: targetCount,
                 subarcTitle: subarcName || "Sub-arc Baru (Tanpa Judul)",
                 draftDescription: subarcDesc || "Belum ada rincian. Buatkan ide masalah/kejadian spesifik dari awal berdasarkan urutan sub-arc ini.",
                 historyPreviousSubarcs: arc.subarcs || [],
-                universeLore: universe 
+                charactersInvolved: selectedDetails.characters || [],
+                locationsInvolved: selectedDetails.locations || [],
+                multiverseLore: selectedDetails.universes || []
             },
             additional_instruction: {
-                focus: `Jabarkan kerangka plot (outline) atau kejadian spesifik untuk sub-arc ini (contoh: munculnya konflik kecil, tokoh ditipu/tersesat, rintangan, atau penemuan penting). Ini adalah dokumen teknis untuk panduan penulis, BUKAN cerita pendek! Langsung tunjukkan apa masalah atau tindakan yang terjadi di sub-arc ini yang selaras dengan tujuan Arc utama. ${pacingFocus} PENTING: Gunakan informasi world-building, tokoh, dan tempat dari 'universeLore'.`,
+                focus: `Jabarkan kerangka plot (outline) atau kejadian spesifik untuk sub-arc ini (contoh: munculnya konflik kecil, tokoh ditipu/tersesat, rintangan, atau penemuan penting). Ini adalah dokumen teknis untuk panduan penulis, BUKAN cerita pendek! Langsung tunjukkan apa masalah atau tindakan yang terjadi di sub-arc ini yang selaras dengan tujuan Arc utama. ${pacingFocus} PENTING: Gunakan informasi world-building, tokoh, dan tempat dari konteks terpilih.`,
                 tone: "Teknis, ringkas, efektif, to-the-point pada konflik, TANPA bahasa puitis/berbunga-bunga layaknya novel",
                 length: "Sangat singkat, 1 hingga 2 paragraf padat"
             }
@@ -125,18 +122,8 @@ export const ArcInfoFormAi = {
     async enchantSubarcFormInline(arcId, subarcId) {
         const arc = this.data.arcs.find(a => a.id === arcId);
         
-        if (!arc || !arc.name || !arc.synopsis) {
-            return this.showNotification("GAGAL: Judul dan Deskripsi Arc harus sudah diisi dan disimpan agar AI memahami konteks cerita utamanya.", "error");
-        }
-
-        const universeId = arc.universeId;
-        if (!universeId) {
-            return this.showNotification("GAGAL: Arc ini belum memiliki Latar Semesta. Edit Arc dan tentukan Semestanya terlebih dahulu.", "error");
-        }
-        
-        const universe = this.data.universes.find(u => u.id === universeId);
-        if (!universe) {
-            return this.showNotification("GAGAL: Referensi Semesta tidak valid.", "error");
+        if (!arc || !arc.name) {
+            return this.showNotification("GAGAL: Judul Arc harus sudah diisi dan disimpan agar AI memahami konteks cerita utamanya.", "error");
         }
 
         const targetCount = arc.targetSubarcCount || 10;
@@ -152,17 +139,24 @@ export const ArcInfoFormAi = {
 
         let pacingFocus = `Sub-arc ini adalah urutan ke-${currentIndex} dari rencana total ${targetCount} sub-arc dalam Arc ini.`;
 
+        // --- PENGAMBILAN KONTEKS SECARA AMAN ---
+        const selectedDetails = (typeof ArcInfoFormContext !== 'undefined' && ArcInfoFormContext.getSelectedContextDetails)
+            ? ArcInfoFormContext.getSelectedContextDetails(arcId)
+            : { characters: [], locations: [], universes: [] };
+
         const payload = {
             moduleName: "Sub-arc (Episode Arc)",
             targetData: {
                 arcTitle: arc.name,
-                arcSynopsis: arc.synopsis,
+                arcSynopsis: arc.synopsis || "Belum ada sinopsis global.",
                 subarcCurrentSequence: currentIndex,
                 targetTotalSubarcs: targetCount,
                 subarcTitle: subarcName || "Sub-arc",
                 draftDescription: subarcDesc || "Kembangkan plot sub-arc spesifik di posisi ini.",
                 historyPreviousSubarcs: arc.subarcs || [],
-                universeLore: universe 
+                charactersInvolved: selectedDetails.characters || [],
+                locationsInvolved: selectedDetails.locations || [],
+                multiverseLore: selectedDetails.universes || []
             },
             additional_instruction: {
                 focus: `Sempurnakan kerangka alur plot untuk sub-arc ini selaras dengan posisi runtutan ke-${currentIndex}. Fokuskan pada kejadian penting, pergerakan karakter, rintangan, atau penemuan strategis. Ini adalah dokumentasi struktur plot (BUKAN fiksi pendek/prosa). ${pacingFocus}`,
@@ -187,5 +181,19 @@ export const ArcInfoFormAi = {
             btn.classList.remove('opacity-50');
             btn.innerHTML = originalText;
         }
-    }
-}
+    },
+
+    showNotification(message, type = 'info') {
+        if (typeof app !== 'undefined') {
+            if (typeof app.showAlert === 'function') {
+                app.showAlert(message, type);
+                return;
+            }
+            if (typeof app.showNotification === 'function' && app.showNotification !== this.showNotification) {
+                app.showNotification('Notifikasi AI', message, type);
+                return;
+            }
+        }
+        alert(message);
+    },
+};

@@ -67,6 +67,7 @@ const LOCAL_ASSETS = [
   './js/HeaderMenu/ArcInfo/ArcInfoFormArc.js',
   './js/HeaderMenu/ArcInfo/ArcInfoFormSub.js',
   './js/HeaderMenu/ArcInfo/ArcInfoShow.js',
+  './js/HeaderMenu/ArcInfo/ArcInfoFormContext.js',
   // - AI Enchanter
   './js/HeaderMenu/AIEnchanter/AIEnchanter.js',
   './js/HeaderMenu/AIEnchanter/AIEnchantCore.js',

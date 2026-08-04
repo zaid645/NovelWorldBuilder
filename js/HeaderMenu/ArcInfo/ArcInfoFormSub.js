@@ -104,5 +104,41 @@ export const ArcInfoFormSub = {
     cancelDeleteSubarc() {
         this.deleteSubarcIdConfirm = null;
         this.refreshArcList();
+    },
+
+
+    // =========================================
+    // --- MANAJEMEN URUTAN SUB-ARC ---
+    // =========================================
+    moveSubarcUp(arcId, subarcId) {
+        const arc = this.data.arcs.find(a => a.id === arcId);
+        if (!arc || !arc.subarcs) return;
+
+        const index = arc.subarcs.findIndex(s => s.id === subarcId);
+        if (index > 0) {
+            // Tukar posisi dengan elemen sebelumnya (Naik)
+            const temp = arc.subarcs[index];
+            arc.subarcs[index] = arc.subarcs[index - 1];
+            arc.subarcs[index - 1] = temp;
+
+            this.saveData();
+            this.refreshArcList();
+        }
+    },
+
+    moveSubarcDown(arcId, subarcId) {
+        const arc = this.data.arcs.find(a => a.id === arcId);
+        if (!arc || !arc.subarcs) return;
+
+        const index = arc.subarcs.findIndex(s => s.id === subarcId);
+        if (index !== -1 && index < arc.subarcs.length - 1) {
+            // Tukar posisi dengan elemen setelahnya (Turun)
+            const temp = arc.subarcs[index];
+            arc.subarcs[index] = arc.subarcs[index + 1];
+            arc.subarcs[index + 1] = temp;
+
+            this.saveData();
+            this.refreshArcList();
+        }
     }
 }
