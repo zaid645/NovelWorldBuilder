@@ -12,6 +12,7 @@ import { MdExportHelper } from './BackgroundWorker/MarkdownExportHelper.js';
 // Header
 import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo/NovelBasicInfo.js';
 import { ArcInfoModule } from './HeaderMenu/ArcInfo/ArcInfo.js';
+import { NovelWriterModule } from './HeaderMenu/NovelWriter/NovelWriter.js';
 import { DataSharingModule } from './HeaderMenu/DataSharing.js';
 import { AIEnchanterModule } from './HeaderMenu/AIEnchanter/AIEnchanter.js';
 import { WatakListModule } from './HeaderMenu/WatakList.js';
@@ -97,6 +98,8 @@ window.app = Object.assign(
 
     // Header
     NovelBasicInfoModule,
+    NovelWriterModule,
+    { NovelWriterModule},
     ArcInfoModule,
     AIEnchanterModule,
     WatakListModule,

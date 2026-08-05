@@ -3,9 +3,11 @@ export const AIEnchanterForm = {
         const config = localStorage.getItem('ai_enchanter_config');
         const defaultConfig = {
             apiKey: '',
-            model: 'gemini-3.1-flash-lite', // Menjadikan gemini-3.1-flash-lite sebagai default
-            maxOutputTokens: 2048,           // Default Max Output Tokens
-            downloadPromptOnly: false,      // Flag mode download prompt
+            model: 'gemini-3.1-flash-lite',
+            maxOutputTokens: 2048,
+            downloadPromptOnly: false,
+            systemRole: 'Penulis Novel dengan gaya Light Novel', // Default Role
+            includeModuleName: false,                          // Default: False (Sesuai Permintaan)
             outputRules: [
                 "HANYA kembalikan teks hasil pengembangan langsung.",
                 "JANGAN memberikan kata pengantar atau penutup seperti 'Berikut hasilnya:', 'Tentu, ini...', atau tanda kutip.",
@@ -23,16 +25,17 @@ export const AIEnchanterForm = {
         };
     },
 
-    saveAIConfig(apiKey, model, outputRules, maxOutputTokens, downloadPromptOnly) {
+    saveAIConfig(apiKey, model, outputRules, maxOutputTokens, downloadPromptOnly, systemRole, includeModuleName) {
         const config = { 
             apiKey, 
             model, 
             outputRules, 
             maxOutputTokens: Number(maxOutputTokens) || 2048,
-            downloadPromptOnly: Boolean(downloadPromptOnly)
+            downloadPromptOnly: Boolean(downloadPromptOnly),
+            systemRole: systemRole || 'Asisten Novelis Pro',
+            includeModuleName: Boolean(includeModuleName)
         };
         localStorage.setItem('ai_enchanter_config', JSON.stringify(config));
         this.addLog('Success', 'Config', 'Menyimpan Konfigurasi', 'Konfigurasi AI berhasil diperbarui.');
-    },
-
-}
+    }
+};

@@ -66,20 +66,24 @@ export const AIEnchanterDebug = {
         URL.revokeObjectURL(url);
     },
 
-    handleSaveAIConfig() {
+    handleSaveAIConfig(showToast = true) {
         const apiKey = document.getElementById('aiApiKey').value.trim();
         const model = document.getElementById('aiModel').value;
         const maxTokens = document.getElementById('aiMaxTokens').value;
         const downloadPromptOnly = document.getElementById('aiDownloadPromptOnly').checked;
+        const systemRole = document.getElementById('aiSystemRole').value.trim();
+        const includeModuleName = document.getElementById('aiIncludeModuleName').checked;
         const rulesText = document.getElementById('aiOutputRules').value;
 
-        // Pisahkan teks menjadi array baris demi baris, hilangkan spasi kosong
         const outputRules = rulesText.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0);
 
-        this.saveAIConfig(apiKey, model, outputRules, maxTokens, downloadPromptOnly);
-        alert("Konfigurasi AI berhasil disimpan!");
+        this.saveAIConfig(apiKey, model, outputRules, maxTokens, downloadPromptOnly, systemRole, includeModuleName);
+        
+        if (showToast) {
+            alert("Konfigurasi AI berhasil disimpan!");
+        }
     },
 
     toggleApiKeyVisibility() {

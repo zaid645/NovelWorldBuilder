@@ -1,44 +1,55 @@
 export const AIEnchanterCore = {
     isRequesting: false,
 
-    // ==========================================
-    // --- INTI ENCHANTER: PANGGILAN GEMINI API -
-    // ==========================================
     async requestEnchant(payload) {
         const config = this.getAIConfig();
         const apiKey = config.apiKey || "";
         const model = config.model || "gemini-3.1-flash-lite";
 
         const { moduleName, targetData, additional_instruction } = payload;
+
+        // 1. Ambil Role dan Opsi Sertakan Nama Modul (bisa dari payload atau config default)
+        const systemRole = payload.systemRole || config.systemRole || "Asisten Novelis Pro";
+        const includeModuleName = payload.includeModuleName ?? config.includeModuleName ?? false;
         
-        // 1. Konstruksi Prompt Terstruktur (Sesuai Konsep JSON Bercabang)
-        let prompt = `Anda adalah Asisten Novelis Pro.\n`;
-        prompt += `Tugas Anda saat ini adalah mengembangkan draf atau informasi dari modul: ${moduleName}.\n\n`;
+        // 2. Konstruksi Prompt Dinamis (Tidak ada data tersembunyi)
+        let prompt = `Anda adalah ${systemRole}.\n`;
+        
+        // Opsi untuk menyertakan nama modul (Default: false)
+        if (includeModuleName && moduleName) {
+            prompt += `Tugas Anda saat ini adalah mengembangkan draf atau informasi dari modul: ${moduleName}.\n\n`;
+        } else {
+            prompt += `Tugas Anda saat ini adalah mengembangkan draf atau informasi yang diberikan.\n\n`;
+        }
         
         prompt += `--- DATA UTAMA ---\n`;
         prompt += `${JSON.stringify(targetData, null, 2)}\n\n`;
         
         prompt += `--- PETUNJUK UTAMA PENGEMBANGAN ---\n`;
-        prompt += `- Fokus Utama: ${additional_instruction.focus || "Tulis narasi detail"}\n`;
-        prompt += `- Nada / Gaya Bahasa: ${additional_instruction.tone || "Sesuai konteks cerita"}\n`;
-        prompt += `- Panjang Teks: ${additional_instruction.length || "Disesuaikan"}\n\n`;
+        if (typeof additional_instruction === 'string') {
+            prompt += `${additional_instruction}\n\n`;
+        } else {
+            prompt += `- Fokus Utama: ${additional_instruction?.focus || "Tulis narasi detail"}\n`;
+            prompt += `- Nada / Gaya Bahasa: ${additional_instruction?.tone || "Sesuai konteks cerita"}\n`;
+            prompt += `- Panjang Teks: ${additional_instruction?.length || "Disesuaikan"}\n\n`;
+        }
         
         prompt += `--- ATURAN OUTPUT (WAJIB DIPATUHI) ---\n`;
-        config.outputRules.forEach((rule, idx) => {
+        const outputRules = payload.outputRules || config.outputRules || [];
+        outputRules.forEach((rule, idx) => {
             prompt += `${idx + 1}. ${rule}\n`;
         });
 
-        // OPSI: Jika mode download prompt aktif, unduh prompt & batalkan request API
+        // OPSI: Jika mode download prompt aktif
         if (config.downloadPromptOnly || payload.downloadPromptOnly) {
-            const filename = `prompt_${moduleName}_${Date.now()}.txt`;
+            const filename = `prompt_${moduleName || 'custom'}_${Date.now()}.txt`;
             this.downloadPromptAsTxt(prompt, filename);
-            this.addLog('Success', moduleName, 'Download Prompt', `Prompt berhasil diunduh sebagai berkas '${filename}'.`);
+            this.addLog('Success', moduleName || 'Core', 'Download Prompt', `Prompt berhasil diunduh sebagai berkas '${filename}'.`);
             return `[PROMPT DOWNLOADED] Prompt telah diunduh sebagai file '${filename}'.`;
         }
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        // Handler untuk mencegah hilangnya proses akibat ketidaksengajaan refresh halaman saat AI sedang memproses
         this.isRequesting = true;
         const beforeUnloadHandler = (e) => {
             e.preventDefault();
@@ -47,9 +58,8 @@ export const AIEnchanterCore = {
         };
         window.addEventListener('beforeunload', beforeUnloadHandler);
 
-        // 2. Jalankan Fetch dengan Aturan Exponential Backoff (Maksimal 3 Kali)
         let attempts = 0;
-        let delay = 1000; // Mulai dengan delay 1 detik
+        let delay = 1000;
         let response;
         let lastError = null;
 
@@ -68,9 +78,7 @@ export const AIEnchanterCore = {
                     body: JSON.stringify(requestBody)
                 });
 
-                if (response.ok) {
-                    break; // Berhasil, keluar dari loop retry
-                }
+                if (response.ok) break;
 
                 const errData = await response.json().catch(() => ({}));
                 lastError = new Error(errData.error?.message || `HTTP error ${response.status}`);
@@ -80,19 +88,17 @@ export const AIEnchanterCore = {
 
             attempts++;
             if (attempts < 3) {
-                // Tunggu berdasarkan skema exponential backoff: 1s, 2s
                 await new Promise(resolve => setTimeout(resolve, delay));
                 delay *= 2;
             }
         }
 
-        // Hapus proteksi refresh karena proses transaksi HTTP selesai
         window.removeEventListener('beforeunload', beforeUnloadHandler);
         this.isRequesting = false;
 
         if (!response || !response.ok) {
             const errorMsg = lastError ? lastError.message : "Gagal terhubung ke API.";
-            this.addLog('Failed', moduleName, `Enchant (${attempts} Percobaan)`, errorMsg);
+            this.addLog('Failed', moduleName || 'Core', `Enchant (${attempts} Percobaan)`, errorMsg);
             throw new Error(`Koneksi AI gagal setelah beberapa kali percobaan: ${errorMsg}`);
         }
 
@@ -104,12 +110,12 @@ export const AIEnchanterCore = {
                 throw new Error("API merespon sukses tetapi teks kosong.");
             }
 
-            this.addLog('Success', moduleName, `Enchant (${attempts + 1} Percobaan)`, `Berhasil mengembangkan data untuk '${targetData.name || targetData.title || "Konten"}'`);
+            this.addLog('Success', moduleName || 'Core', `Enchant (${attempts + 1} Percobaan)`, `Berhasil mengembangkan data.`);
             return generatedText.trim();
 
         } catch (parseError) {
-            this.addLog('Failed', moduleName, 'Parsing Respon', parseError.message);
+            this.addLog('Failed', moduleName || 'Core', 'Parsing Respon', parseError.message);
             throw parseError;
         }
     }
-}
+};

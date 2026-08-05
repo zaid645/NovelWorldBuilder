@@ -186,6 +186,7 @@ export const ManagerData = {
                 const kvSkillTags = await db.keyval.get('skillTags');
                 const kvItemTags = await db.keyval.get('itemTags');
                 const kvFamiliarTags = await db.keyval.get('familiarTags');
+                const kvWriterForm = await db.keyval.get('writerFormState');
 
                 // Aggregate semua tabel menjadi 1 objek
                 this.data = {
@@ -195,6 +196,7 @@ export const ManagerData = {
                     skillTags: kvSkillTags ? kvSkillTags.value : this.defaultData.skillTags,
                     itemTags: kvItemTags ? kvItemTags.value : this.defaultData.itemTags,
                     familiarTags: kvFamiliarTags ? kvFamiliarTags.value : this.defaultData.familiarTags,
+                    writerFormState: kvWriterForm ? kvWriterForm.value : null,
                     
                     // Ambil data yang sudah terurut berdasarkan indeks 'order'
                     universes: await db.universes.orderBy('order').toArray(),
@@ -228,6 +230,9 @@ export const ManagerData = {
                 await db.keyval.put({ key: 'skillTags', value: this.data.skillTags });
                 await db.keyval.put({ key: 'itemTags', value: this.data.itemTags });
                 await db.keyval.put({ key: 'familiarTags', value: this.data.familiarTags });
+                if (this.data.writerFormState) {
+                    await db.keyval.put({ key: 'writerFormState', value: this.data.writerFormState });
+                }
 
                 // Helper untuk menambahkan properti 'order' sesuai urutan Array saat ini
                 const mapWithOrder = (arr) => (arr || []).map((item, index) => ({ ...item, order: index }));

@@ -68,6 +68,12 @@ const LOCAL_ASSETS = [
   './js/HeaderMenu/ArcInfo/ArcInfoFormSub.js',
   './js/HeaderMenu/ArcInfo/ArcInfoShow.js',
   './js/HeaderMenu/ArcInfo/ArcInfoFormContext.js',
+  // - NovelWriter
+  './js/HeaderMenu/NovelWriter/NovelWriter.js',
+  './js/HeaderMenu/NovelWriter/NovelWriterAi.js',
+  './js/HeaderMenu/NovelWriter/NovelWriterForm.js',
+  './js/HeaderMenu/NovelWriter/NovelWriterHelper.js',
+  './js/HeaderMenu/NovelWriter/NovelWriterShow.js',
   // - AI Enchanter
   './js/HeaderMenu/AIEnchanter/AIEnchanter.js',
   './js/HeaderMenu/AIEnchanter/AIEnchantCore.js',
