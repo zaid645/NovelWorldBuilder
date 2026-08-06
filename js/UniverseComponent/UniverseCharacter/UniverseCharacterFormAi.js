@@ -36,8 +36,20 @@ export const UniverseCharacterFormAi = {
         const draftText = targetEl.value.trim();
         const universe = app.data.universes.find(u => u.id === univId);
         let universeContext = "Semesta tidak ditentukan.";
+
         if (universe) {
-            universeContext = `Nama Semesta: ${universe.name}\nDeskripsi Semesta: ${universe.description || '-'}\n`;
+            // 1. Ambil informasi dasar
+            let textBuilder = `Nama Semesta: ${universe.name}\nDeskripsi Semesta: ${universe.description || '-'}\n`;
+
+            // 2. Format data Lores / Catatan Tambahan Semesta jika ada
+            const lores = universe.lores || universe.notes || [];
+            if (Array.isArray(lores) && lores.length > 0) {
+                textBuilder += `Lores & Atribut Semesta:\n- ${lores.join('\n- ')}\n`;
+            } else if (typeof lores === 'string' && lores.trim() !== '') {
+                textBuilder += `Lores & Atribut Semesta: ${lores}\n`;
+            }
+
+            universeContext = textBuilder;
         }
 
         const payload = {
@@ -90,6 +102,9 @@ export const UniverseCharacterFormAi = {
 
         const universeContext = `Nama Semesta: ${universe.name}\nDeskripsi Semesta: ${universe.description || '-'}\n`;
         const crossContext = `\nOUTPUT WAJIB berupa kalimat langsung dipisah Enter. DILARANG memberikan angka (1, 2, 3), bullet point, atau deskripsi narator. Hanya tulisan dialog saja.`;
+        const existingDialogues = (char.dialogues && char.dialogues.length > 0)
+        ? char.dialogues.join('\n')
+        : null;
 
         const payload = {
             moduleName: `Character-DIALOGUES`,
@@ -97,7 +112,9 @@ export const UniverseCharacterFormAi = {
                 namaKarakter: char.name,
                 informasiSemesta: universeContext,
                 konteksSilang: crossContext,
-                drafReferensiPengguna: "(Kosong. Buat murni berdasarkan nama, watak, dan semesta.)"
+                drafReferensiPengguna: existingDialogues 
+                    ? `Contoh dialog yang sudah dibuat pengguna:\n${existingDialogues}`
+                    : "(Kosong. Buat murni berdasarkan nama, watak, dan semesta.)"
             },
             additional_instruction: {
                 focus: `Buatkan 3 hingga 5 baris variasi kalimat kutipan dialog yang sangat mencerminkan sifatnya. Watak Karakter: ${char.personality.join(', ')}`,

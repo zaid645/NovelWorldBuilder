@@ -91,7 +91,7 @@ export const ArcInfoFormAi = {
                 ...aiContextPayload // Inject charactersInvolved, locationsInvolved, dan multiverseLore secara otomatis
             },
             additional_instruction: {
-                focus: `\nJabarkan kerangka plot (outline) atau kejadian spesifik untuk sub-arc ini: \n${pacingFocus} \nPENTING: Gunakan informasi world-building, tokoh, dan tempat dari konteks terpilih.\n\nFORMAT WAJIB:\n[Orientasi]\n(KontenPengenalanMasalah)\n\n[Komplikasi]\n(KontenMulaiTerlibatnyaTokohUtama)\n\n[Klimaks]\n(KontenPuncakKonflik)\n\n[Resolusi]\n(KontenPenyelesaianMasalah)\n\n[Koda]\n(KontenPendapatTokohAkanArcini)`,
+                focus: `\nJabarkan kerangka plot (outline) atau kejadian spesifik untuk sub-arc ini: \n${pacingFocus} \nPENTING: Gunakan informasi world-building, tokoh, dan tempat dari konteks terpilih.\n\nFORMAT WAJIB:\n[Sinopsis]\n(KontenSinopsisSubarc)\n\n\n[Orientasi]\n(KontenPengenalanMasalah)\n\n[Komplikasi]\n(KontenMulaiTerlibatnyaTokohUtama)\n\n[Klimaks]\n(KontenPuncakKonflik)\n\n[Resolusi]\n(KontenPenyelesaianMasalah)\n\n[Koda]\n(KontenPendapatTokohAkanArcini)`,
                 tone: "Teknis, ringkas, efektif, to-the-point pada konflik, TANPA bahasa puitis/berbunga-bunga layaknya novel",
                 length: "Masing-masing bagian 1 - 2 paragraf pendek (3-5 paragraf)."
             }

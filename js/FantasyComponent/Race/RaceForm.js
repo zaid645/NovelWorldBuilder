@@ -113,7 +113,15 @@ export const RaceForm = {
         if (!race) return;
 
         if (confirm(`Apakah Anda yakin ingin menghapus ras '${race.name}'?`)) {
+            // 1. Hapus Ras dari Master Data
             this.data.races = this.data.races.filter(r => r.id !== id);
+
+            // 2. Bersihkan acuan raceId pada Karakter & Familiar (Setara dengan SkillForm)
+            if (typeof this.removeRaceId === 'function') {
+                this.removeRaceId(id, this.data);
+            } else if (typeof DataCleaner !== 'undefined' && DataCleaner.removeRaceId) {
+                DataCleaner.removeRaceId(id, this.data);
+            }
 
             this.saveData(true);
             this.closeRaceDetailFloating();
