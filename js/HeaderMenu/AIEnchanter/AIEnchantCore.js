@@ -34,7 +34,9 @@ export const AIEnchanterCore = {
             prompt += `- Panjang Teks: ${additional_instruction?.length || "Disesuaikan"}\n\n`;
         }
         
-        prompt += `--- ATURAN OUTPUT (WAJIB DIPATUHI) ---\n`;
+        prompt += `--- ATURAN OUTPUT & KEAMANAN (WAJIB DIPATUHI) ---\n`;
+        prompt += `- Dilarang keras menghasilkan konten yang mengandung unsur sensual/porno, rokok, alkohol, perjudian, serta kekerasan berlebihan/detail.\n`;
+        prompt += `- Jika permintaan pengguna atau konteks data mengandung salah satu dari materi terlarang tersebut, JANGAN memproses cerita/draf, melainkan LANGSUNG kembalikan teks persis: "Maaf, saya tidak bisa membantu permintaan ini karena melanggar kebijakan konten."\n`;
         const outputRules = payload.outputRules || config.outputRules || [];
         outputRules.forEach((rule, idx) => {
             prompt += `${idx + 1}. ${rule}\n`;

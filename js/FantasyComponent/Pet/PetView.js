@@ -269,24 +269,24 @@ export const PetView = {
                             <span class="font-semibold text-emerald-400 uppercase tracking-wider text-[10px] block mb-1.5">Latar Belakang:</span>
                             <div id="floatingFamDesc" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
                         </div>
-                        <hr class="border-slate-700/60">
                         <!-- Seksi Catatan Relasi -->
+                        <hr class="border-slate-700/60">
                         <div>
-                            <span class="font-semibold text-rose-400 uppercase tracking-wider text-[10px] block mb-1.5">Catatan Relasi Tokoh/Pet Lain:</span>
-                            <ul id="floatingFamRelations" class="space-y-1 mb-2"></ul>
-                            <div id="floatingFamRelInputContainer"></div>
+                            <span class="font-semibold text-amber-400 uppercase tracking-wider text-[10px] block mb-1.5">Catatan</span>
+                            <ul id="floatingFamNotes" class="space-y-1 mb-2"></ul>
+                            <div id="floatingFamNoteInputContainer"></div>
                         </div>
                         <hr class="border-slate-700/60">
                         <div>
-                            <span class="font-semibold text-blue-400 uppercase tracking-wider text-[10px] block mb-1.5">Contoh Suara / Dialog:</span>
+                            <span class="font-semibold text-blue-400 uppercase tracking-wider text-[10px] block mb-1.5">Dialog</span>
                             <ul id="floatingFamDialogues" class="space-y-1 mb-2"></ul>
                             <div id="floatingFamDlgInputContainer"></div>
                         </div>
                         <hr class="border-slate-700/60">
                         <div>
-                            <span class="font-semibold text-amber-400 uppercase tracking-wider text-[10px] block mb-1.5">Catatan Khusus Pet:</span>
-                            <ul id="floatingFamNotes" class="space-y-1 mb-2"></ul>
-                            <div id="floatingFamNoteInputContainer"></div>
+                            <span class="font-semibold text-rose-400 uppercase tracking-wider text-[10px] block mb-1.5">Relasi</span>
+                            <ul id="floatingFamRelations" class="space-y-1 mb-2"></ul>
+                            <div id="floatingFamRelInputContainer"></div>
                         </div>
                     </div>
                 </div>

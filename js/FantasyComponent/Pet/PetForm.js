@@ -192,44 +192,59 @@ export const PetForm = {
 
     // --- LOGIKA ARRAY DIALOG PET SECARA CEPAT DARI CARD/FLOATING ---
     addFamiliarDialogue(famId) {
-        const inputEl = document.getElementById(`newFamDlg_${famId}`);
+    const inputEl = document.getElementById(`newFamDlg_${famId}`);
         let text = inputEl ? inputEl.value.trim() : "";
         
         if (text) {
             const fam = this.data.familiars.find(f => f.id === famId);
             if (!fam.dialogues) fam.dialogues = [];
             
-            // Otomatis bungkus dengan petik dua jika belum ada di awal & akhir
-            if (!text.includes('"')) {
-                text = `"${text}"`;
-            }
-            
+            if (!text.includes('"')) text = `"${text}"`;
             fam.dialogues.push(text);
             
             this.saveData(true);
             this.renderFamiliarGrid();
             
-            // Refresh jendela floating detail jika sedang terbuka
-            if(this.activeFamId === famId) {
-                this.showFamiliarDetailFloating(famId);
+            if (this.activeFamId === famId) {
+                this.showFamiliarDetailFloating(famId, { 
+                    preserveScroll: true, 
+                    focusInputId: `newFamDlg_${famId}` 
+                });
             }
         }
     },
 
     deleteFamiliarDialogue(famId, dlgIndex) {
-        if (confirm("Hapus contoh dialog ini?")) {
-            const fam = this.data.familiars.find(f => f.id === famId);
-            if (fam && fam.dialogues) {
+        const fam = this.data.familiars.find(f => f.id === famId);
+        if (!fam || !fam.dialogues || fam.dialogues[dlgIndex] === undefined) return;
+
+        const dialogueText = fam.dialogues[dlgIndex];
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus contoh dialog <b class="text-fuchsia-400">${dialogueText}</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Dialog",
+            content: content,
+            confirmText: "Hapus Dialog",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
                 fam.dialogues.splice(dlgIndex, 1);
                 this.saveData(true);
                 this.renderFamiliarGrid();
                 
-                // Refresh jendela floating detail jika sedang terbuka
-                if(this.activeFamId === famId) {
-                    this.showFamiliarDetailFloating(famId);
+                if (this.activeFamId === famId) {
+                    // Tambahkan { preserveScroll: true } sebagai opsi
+                    this.showFamiliarDetailFloating(famId, { preserveScroll: true });
                 }
+                this.showAlert("Dialog berhasil dihapus.", "success");
+                return true;
             }
-        }
+        });
     },
 
     addFamiliarNote(famId) {
@@ -245,47 +260,46 @@ export const PetForm = {
             this.saveData(true);
             this.renderFamiliarGrid();
             
-            // Refresh panel mengambang agar catatan baru langsung muncul
             if (this.activeFamId === famId) {
-                this.showFamiliarDetailFloating(famId);
-            }
-        }
-    },
-
-    editFamiliarNote(famId, noteIndex) {
-        const fam = this.data.familiars.find(f => f.id === famId);
-        if (!fam || !fam.notes || fam.notes[noteIndex] === undefined) return;
-        
-        const currentNote = fam.notes[noteIndex];
-        // Menggunakan dialog popup prompt agar edit hanya terjadi di lapisan panel dialog
-        const newNote = prompt("Ubah catatan familiar:", currentNote);
-        
-        if (newNote !== null && newNote.trim() !== "") {
-            fam.notes[noteIndex] = newNote.trim();
-            
-            this.saveData(true);
-            this.renderFamiliarGrid();
-            
-            if (this.activeFamId === famId) {
-                this.showFamiliarDetailFloating(famId);
+                this.showFamiliarDetailFloating(famId, { 
+                    preserveScroll: true, 
+                    focusInputId: `newFamNote_${famId}` 
+                });
             }
         }
     },
 
     deleteFamiliarNote(famId, noteIndex) {
-        if (confirm("Hapus catatan ini?")) {
-            const fam = this.data.familiars.find(f => f.id === famId);
-            if (fam && fam.notes) {
+        const fam = this.data.familiars.find(f => f.id === famId);
+        if (!fam || !fam.notes || fam.notes[noteIndex] === undefined) return;
+
+        const noteText = fam.notes[noteIndex];
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus catatan <b class="text-fuchsia-400">"${noteText}"</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Catatan",
+            content: content,
+            confirmText: "Hapus Catatan",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
                 fam.notes.splice(noteIndex, 1);
-                
                 this.saveData(true);
                 this.renderFamiliarGrid();
                 
                 if (this.activeFamId === famId) {
-                    this.showFamiliarDetailFloating(famId);
+                    // Tambahkan { preserveScroll: true } sebagai opsi
+                    this.showFamiliarDetailFloating(famId, { preserveScroll: true });
                 }
+                this.showAlert("Catatan berhasil dihapus.", "success");
+                return true;
             }
-        }
+        });
     },
 
     addFamiliarRelation(famId) {
@@ -308,21 +322,39 @@ export const PetForm = {
     },
 
     deleteFamiliarRelation(famId, relIndex) {
-        if (confirm("Hapus catatan relasi ini?")) {
-            const fam = this.data.familiars.find(f => f.id === famId);
-            if (fam && fam.relations) {
+        const fam = this.data.familiars.find(f => f.id === famId);
+        if (!fam || !fam.relations || fam.relations[relIndex] === undefined) return;
+
+        const relText = fam.relations[relIndex];
+
+        const content = `
+            <div class="space-y-2 text-left">
+                <p class="text-sm text-slate-300">Apakah Anda yakin ingin menghapus catatan relasi <b class="text-fuchsia-400">"${relText}"</b>?</p>
+                <p class="text-xs text-rose-400/80 italic">*Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+        `;
+
+        this.showCustomModal({
+            title: "Hapus Relasi",
+            content: content,
+            confirmText: "Hapus Relasi",
+            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+            onConfirm: () => {
                 fam.relations.splice(relIndex, 1);
                 this.saveData(true);
                 this.renderFamiliarGrid();
                 
                 if (this.activeFamId === famId) {
-                    this.showFamiliarDetailFloating(famId);
+                    // Tambahkan { preserveScroll: true } sebagai opsi
+                    this.showFamiliarDetailFloating(famId, { preserveScroll: true });
                 }
+                this.showAlert("Catatan relasi berhasil dihapus.", "success");
+                return true;
             }
-        }
+        });
     },
 
-     // ==========================================
+    // ==========================================
     // --- BANTUAN FILTER FAMILIAR ---
     // ==========================================
 

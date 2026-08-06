@@ -18,6 +18,26 @@ export const NovelWriterShow = {
         }
     },
 
+    async loadPresetMarkdown(fileName) {
+        try {
+            // Mengambil isi file .md dari direktori yang sama
+            const response = await fetch(`./js/HeaderMenu/NovelWriter/${fileName}`);
+            if (!response.ok) {
+                throw new Error(`Gagal mengambil file: ${response.statusText}`);
+            }
+            
+            const markdownText = await response.text();
+            
+            // Update state dan refresh UI
+            this.state.mainInstruction = markdownText.trim();
+            this.novelWriterSaveState();
+            this.refreshUI();
+        } catch (error) {
+            console.error('Error loading markdown preset:', error);
+            alert(`Gagal memuat preset dari file ${fileName}`);
+        }
+    },
+
     renderNovelWriter(providedDb = null) {
         const db = this.getDatabase(providedDb);
         const refFileKeys = Object.keys(this.state.referenceFiles);
@@ -68,9 +88,21 @@ export const NovelWriterShow = {
                     <!-- PRESET QUICK BUTTONS -->
                     <div class="flex flex-wrap items-center gap-1.5 pt-1">
                         <span class="text-[10px] text-slate-400 font-semibold">Preset Cepat:</span>
-                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan POV Orang Ketiga Serba Tahu dengan alur yang mencekam dan kaya sensasi panca indera.'; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">👁️ POV 3 Deskriptif</button>
-                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan POV Orang Pertama (Aku), fokus pada monolog dalam diri dan emosi mendalam.'; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">👤 POV 1 Introspektif</button>
-                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan gaya penulisan fantasi epik, tempo cepat saat pertarungan, dan dialog tegas.'; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">⚔️ Fantasi Epik</button>
+                        <button 
+                            onclick="app.NovelWriterModule.loadPresetMarkdown('slice-of-life-lambat.md')" 
+                            class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">
+                            🍃 Slice of Life Lambat
+                        </button>
+                        <button 
+                            onclick="app.NovelWriterModule.loadPresetMarkdown('pov1-introspektif.md')" 
+                            class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">
+                            👤 POV 1 Introspektif
+                        </button>
+                        <button 
+                            onclick="app.NovelWriterModule.loadPresetMarkdown('pertarungan-intens.md')" 
+                            class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">
+                            ⚔️ Pertarungan Intens
+                        </button>
                     </div>
                 </div>
 

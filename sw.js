@@ -78,6 +78,9 @@ const LOCAL_ASSETS = [
   './js/HeaderMenu/NovelWriter/NovelWriterForm.js',
   './js/HeaderMenu/NovelWriter/NovelWriterHelper.js',
   './js/HeaderMenu/NovelWriter/NovelWriterShow.js',
+  './js/HeaderMenu/NovelWriter/pertarungan-intens.md',
+  './js/HeaderMenu/NovelWriter/pov1-introspektif.md',
+  './js/HeaderMenu/NovelWriter/slice-of-life-lambat.md',
   // - AI Enchanter
   './js/HeaderMenu/AIEnchanter/AIEnchanter.js',
   './js/HeaderMenu/AIEnchanter/AIEnchantCore.js',

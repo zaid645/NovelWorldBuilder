@@ -39,17 +39,41 @@ export const ManagerData = {
 
     // --- FUNGSI RESET DATA ---
     async resetData() {
-        if (confirm("Apakah Anda yakin ingin mereset semua data? Tindakan ini akan menghapus data yang tersimpan dan mengembalikannya ke pengaturan awal.")) {
-            // Mengembalikan data ke kondisi default
-            this.data = JSON.parse(JSON.stringify(this.defaultData));
-            
-            // Menyimpan perubahan ke database dengan metode clear
+        if (confirm("Apakah Anda yakin ingin menghapus SEMUA data? Tindakan ini akan mengosongkan seluruh proyek dan database secara permanen.")) {
+            // 1. Setel data menjadi struktur kosong
+            this.data = {
+                metadata: { 
+                    version: this.defaultData?.metadata?.version || "1.0.0", 
+                    lastSaved: new Date().toISOString() 
+                },
+                storyInfo: {},
+                watakList: [],
+                skillTags: [],
+                itemTags: [],
+                familiarTags: [],
+                writerFormState: null,
+                chapterOffset: 0,
+                calendarEvents: [],
+                universes: [],
+                arcs: [],
+                races: [],
+                skills: [],
+                items: [],
+                familiars: [],
+                chapterOutlines: []
+            };
+
+            // 2. Hapus sisa cache localStorage (jika ada)
+            localStorage.removeItem('novelLoreData');
+
+            // 3. Simpan state kosong ke IndexedDB (fungsi saveData akan meng-clear tabel secara otomatis)
             await this.saveData(true);
-            
+
+            // 4. Perbarui UI
             this.switchView('story-info');
             this.renderSidebar();
-            
-            this.showAlert("Data berhasil direset ke pengaturan awal.", "success");
+
+            this.showAlert("Seluruh data telah berhasil dihapus secara permanen.", "success");
         }
     },
 

@@ -7,10 +7,14 @@ export const PetFloating = {
     // ==========================================
     activeFamId: null,
 
-    showFamiliarDetailFloating(id) {
+    showFamiliarDetailFloating(id, options = {}) {
         const fam = this.data.familiars.find(f => f.id === id);
         if (!fam) return;
         this.activeFamId = id;
+
+        // Simpan posisi scroll saat ini sebelum DOM diperbarui
+        const scrollContainer = document.getElementById('floatingFamDetail')?.querySelector('.overflow-y-auto');
+        const currentScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
 
         // Set Judul
         document.getElementById('floatingFamTitle').innerText = `🐾 ${fam.name}`;
@@ -79,7 +83,6 @@ export const PetFloating = {
             <li class="flex justify-between items-start text-[11px] text-slate-300 border-l-2 border-amber-500/50 pl-2 py-1 group/note bg-slate-800/30 rounded-r mb-1">
                 <span class="flex-1 leading-relaxed whitespace-pre-wrap">${note}</span>
                 <div class="opacity-0 group-hover/note:opacity-100 flex items-center space-x-1 ml-1.5 transition">
-                    <button onclick="app.editFamiliarNote('${fam.id}', ${index})" class="text-amber-500 hover:text-amber-400 text-[10px] px-1" title="Edit Catatan">✎</button>
                     <button onclick="app.deleteFamiliarNote('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs px-1" title="Hapus Catatan">&times;</button>
                 </div>
             </li>
@@ -93,27 +96,6 @@ export const PetFloating = {
                 <button onclick="app.addFamiliarNote('${fam.id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm">+</button>
             </div>
         `;
-
-        // --- Set Catatan Relasi ---
-        const relationsHtml = (fam.relations || []).map((rel, index) => `
-            <li class="flex justify-between items-start text-[11px] text-slate-300 border-l-2 border-rose-500/50 pl-2 py-1 group/rel bg-slate-800/30 rounded-r mb-1">
-                <span class="flex-1 leading-relaxed whitespace-pre-wrap">${rel}</span>
-                <button onclick="app.deleteFamiliarRelation('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/rel:opacity-100 ml-1.5 transition px-1" title="Hapus relasi ini">&times;</button>
-            </li>
-        `).join('');
-        
-        const relEl = document.getElementById('floatingFamRelations');
-        if (relEl) relEl.innerHTML = relationsHtml || '<li class="text-[10px] text-slate-500 italic">Belum ada catatan relasi.</li>';
-
-        const relInputEl = document.getElementById('floatingFamRelInputContainer');
-        if (relInputEl) {
-            relInputEl.innerHTML = `
-                <div class="flex items-start space-x-1.5 pt-1">
-                    <textarea id="newFamRel_${fam.id}" placeholder="Ketik relasi pet ini... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-rose-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addFamiliarRelation('${fam.id}'); }"></textarea>
-                    <button onclick="app.addFamiliarRelation('${fam.id}')" class="bg-rose-600/80 hover:bg-rose-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm h-[34px] flex items-center">+</button>
-                </div>
-            `;
-        }
 
         // Set Dialogues
         const dialoguesHtml = (fam.dialogues || []).map((dlg, index) => `
@@ -132,16 +114,47 @@ export const PetFloating = {
             </div>
         `;
 
+        // --- Set Catatan Relasi ---
+        const relationsHtml = (fam.relations || []).map((rel, index) => `
+            <li class="flex justify-between items-start text-[11px] text-slate-300 border-l-2 border-rose-500/50 pl-2 py-1 group/rel bg-slate-800/30 rounded-r mb-1">
+                <span class="flex-1 leading-relaxed whitespace-pre-wrap">${rel}</span>
+                <button onclick="app.deleteFamiliarRelation('${fam.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/rel:opacity-100 ml-1.5 transition px-1" title="Hapus relasi ini">&times;</button>
+            </li>
+        `).join('');
+        
+        const relEl = document.getElementById('floatingFamRelations');
+        if (relEl) relEl.innerHTML = relationsHtml || '<li class="text-[10px] text-slate-500 italic">Belum ada catatan relasi.</li>';
+
+        const relInputEl = document.getElementById('floatingFamRelInputContainer');
+        if (relInputEl) {
+            relInputEl.innerHTML = `
+                <div class="flex items-start space-x-1.5 pt-1">
+                    <textarea id="newFamRel_${fam.id}" placeholder="Ketik relasi pet ini... (Tekan Enter)" rows="1" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-rose-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addFamiliarRelation('${fam.id}'); }"></textarea>
+                    <button onclick="app.addFamiliarRelation('${fam.id}')" class="bg-rose-600/80 hover:bg-rose-500 text-white px-2 py-1.5 rounded text-[10px] font-medium transition shadow-sm h-[34px] flex items-center">+</button>
+                </div>
+            `;
+        }
+
 
         // Tampilkan panel
         document.getElementById('floatingFamDetail').classList.remove('hidden');
-        const inputEl = document.getElementById(`newFamDlg_${id}`);
-        if (inputEl) {
-            inputEl.focus();
-            const scrollContainer = document.getElementById('floatingFamDetail').querySelector('.overflow-y-auto');
-            if (scrollContainer) {
-                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+
+        // 2. Pulihkan posisi scroll pengguna
+        const updatedScrollContainer = document.getElementById('floatingFamDetail')?.querySelector('.overflow-y-auto');
+        if (updatedScrollContainer) {
+            if (options.preserveScroll) {
+                updatedScrollContainer.scrollTop = currentScrollTop;
+            } else if (options.isInitialOpen) {
+                updatedScrollContainer.scrollTop = 0; // Scroll ke paling atas saat pertama kali dibuka
+            } else {
+                updatedScrollContainer.scrollTop = currentScrollTop;
             }
+        }
+
+        // 3. Kembalikan fokus ke input yang sedang digunakan (jika ada)
+        if (options.focusInputId) {
+            const targetInput = document.getElementById(options.focusInputId);
+            if (targetInput) targetInput.focus();
         }
     },
 

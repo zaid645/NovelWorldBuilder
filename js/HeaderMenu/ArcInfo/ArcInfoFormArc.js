@@ -12,7 +12,6 @@ export const ArcInfoFormArc = {
         
         document.getElementById('newArcName').value = '';
         document.getElementById('newArcSyn').value = '';
-        document.getElementById('newArcUniverse').value = '';
         document.getElementById('newArcTarget').value = 10;
         
         document.getElementById('addArcForm').scrollIntoView({ behavior: 'smooth' });
@@ -30,7 +29,6 @@ export const ArcInfoFormArc = {
 
         document.getElementById('newArcName').value = arc.name;
         document.getElementById('newArcSyn').value = arc.synopsis || '';
-        document.getElementById('newArcUniverse').value = arc.universeId || '';
         document.getElementById('newArcTarget').value = arc.targetSubarcCount || 10;
         
         document.getElementById('addArcForm').scrollIntoView({ behavior: 'smooth' });
@@ -43,7 +41,6 @@ export const ArcInfoFormArc = {
         if (!name) return this.showNotification("Nama Arc tidak boleh dibiarkan kosong.", "error");
         
         const synopsis = document.getElementById('newArcSyn').value.trim();
-        const universeId = document.getElementById('newArcUniverse').value;
         const targetCount = parseInt(document.getElementById('newArcTarget').value) || 10;
 
         if (this.editArcId === null) {
@@ -51,18 +48,18 @@ export const ArcInfoFormArc = {
                 id: this.generateId('arc'),
                 name: name,
                 synopsis: synopsis,
-                universeId: universeId,
                 targetSubarcCount: targetCount,
                 subarcs: []
             };
             this.data.arcs.push(newArc);
+            // Otomatis arahkan konteks aktif ke Arc yang baru dibuat
+            this.activeArcContextId = newArc.id;
             this.showNotification("Arc berhasil ditambahkan!", "success");
         } else {
             const arc = this.data.arcs.find(a => a.id === this.editArcId);
             if (arc) {
                 arc.name = name;
                 arc.synopsis = synopsis;
-                arc.universeId = universeId;
                 arc.targetSubarcCount = targetCount;
                 this.showNotification("Pengaturan Arc berhasil diperbarui!", "success");
             }
@@ -71,6 +68,20 @@ export const ArcInfoFormArc = {
         this.saveData();
         this.setPanelState('addArcForm', false);
         this.refreshArcList();
+    },
+
+    refreshArcList() {
+        const container = document.getElementById('arcListContainer');
+        const searchInput = document.getElementById('arcSearchInput');
+        const query = searchInput ? searchInput.value : '';
+        if (container) {
+            container.innerHTML = this.renderArcList(query);
+        }
+
+        // Panggil re-render panel konteks dinamis secara otomatis
+        if (typeof this.refreshContextPanel === 'function') {
+            this.refreshContextPanel();
+        }
     },
 
     deleteArc(arcId, confirmed = false) {
@@ -90,15 +101,5 @@ export const ArcInfoFormArc = {
     cancelDeleteArc() {
         this.deleteArcIdConfirm = null;
         this.refreshArcList();
-    },
-
-    // SINKRONISASI DINAMIS SISI KLIEN
-    refreshArcList() {
-        const container = document.getElementById('arcListContainer');
-        const searchInput = document.getElementById('arcSearchInput');
-        const query = searchInput ? searchInput.value : '';
-        if (container) {
-            container.innerHTML = this.renderArcList(query);
-        }
     }
 }

@@ -92,8 +92,8 @@ export const ArcInfoShow = {
                     </div>
                     
                     <div class="flex gap-2 mb-1">
-                        <input type="text" id="newArcName" placeholder="Nama Arc Cerita (cth: Arc Invasi Semesta)" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm w-2/3 text-slate-200 focus:outline-none focus:border-indigo-500">
-                        <input type="number" id="newArcTarget" placeholder="Target Sub-arc" class="w-1/3 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500" min="1" title="Target Jumlah Total Sub-arc">
+                        <input type="text" id="newArcName" autocomplete="off" placeholder="Nama Arc Cerita (cth: Arc Invasi Semesta)" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm w-2/3 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <input type="number" id="newArcTarget" value="10" placeholder="Target Total Sub-arc" class="w-1/3 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500" min="1" title="Target Jumlah Total Sub-arc">
                     </div>
 
                     <textarea id="newArcSyn" placeholder="Sinopsis Singkat Arc..." class="bg-slate-900 border border-slate-700 rounded p-2 text-sm w-full focus:outline-none focus:border-indigo-500" rows="5"></textarea>
