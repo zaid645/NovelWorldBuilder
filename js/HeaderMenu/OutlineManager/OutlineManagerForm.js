@@ -299,11 +299,18 @@ export const ChapterOutlineForm = {
      * Menghitung total akumulasi BAB dari Arc-Arc sebelum arcId yang diberikan
      */
     getChapterOffset(arcId) {
-        if (!this.data || !Array.isArray(this.data.arcs) || !Array.isArray(this.data.chapterOutlines)) return 0;
+        if (!this.data) return 0;
+        if (!Array.isArray(this.data.arcs) || !Array.isArray(this.data.chapterOutlines)) return 0;
 
-        let offset = 0;
+        // Ambil offset dasar dari this.data tanpa menimpa nilai secara paksa
+        const baseOffset = Number.isInteger(this.data.chapterOffset) 
+            ? Math.max(0, this.data.chapterOffset) 
+            : 0;
+
+        let offset = baseOffset;
+
         for (const arc of this.data.arcs) {
-            if (arc.id === arcId) break; // Berhenti jika sudah mencapai Arc aktif
+            if (arc.id === arcId) break;
             
             const store = this.data.chapterOutlines.find(s => s.arcId === arc.id);
             if (store && Array.isArray(store.chapters)) {

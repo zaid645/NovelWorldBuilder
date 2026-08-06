@@ -29,7 +29,7 @@ export const NovelWriterShow = {
                 <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-md">
                     <div>
                         <h2 class="text-base font-bold text-indigo-400 flex items-center gap-2">
-                            📖 Novel Writer Studio
+                            Novel Writer Studio
                         </h2>
                         <p class="text-xs text-slate-400">Pilih semesta, karakter, monster, dan lokasi, lalu kembangkan adegan cerita dengan AI.</p>
                     </div>
@@ -37,11 +37,11 @@ export const NovelWriterShow = {
                     <div class="flex bg-slate-900/80 p-1 rounded-lg border border-slate-700 text-xs w-full sm:w-auto">
                         <button onclick="app.NovelWriterModule.state.activeTab = 'selection'; app.NovelWriterModule.refreshUI(); app.NovelWriterModule.novelWriterSaveState();" 
                             class="flex-1 sm:flex-none px-3 py-1.5 rounded transition ${this.state.activeTab === 'selection' ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}">
-                            🎯 Seleksi Konteks
+                            Seleksi Konteks
                         </button>
                         <button onclick="app.NovelWriterModule.state.activeTab = 'attributes'; app.NovelWriterModule.refreshUI(); app.NovelWriterModule.novelWriterSaveState();" 
                             class="flex-1 sm:flex-none px-3 py-1.5 rounded transition ${this.state.activeTab === 'attributes' ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}">
-                            ⚙️ Filter Atribut
+                            Filter Atribut
                         </button>
                     </div>
                 </div>
@@ -50,7 +50,7 @@ export const NovelWriterShow = {
                 <div class="bg-slate-800 p-4 rounded-lg border border-indigo-500/40 shadow-md space-y-2">
                     <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                         <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wide flex items-center gap-2">
-                            📜 Main Instruction (Instruksi Utama Penulisan)
+                            Main Instruction (Instruksi Utama Penulisan)
                         </h3>
                         <span class="text-[10px] text-slate-400 italic">Dipergunakan terus-menerus di semua generasi AI</span>
                     </div>
@@ -159,7 +159,7 @@ export const NovelWriterShow = {
                     <!-- PROMPT SCENE TEXTAREA (Aman tersimpan otomatis) -->
                     <div class="space-y-1.5 border-t border-slate-700/60 pt-3">
                         <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wide">
-                            📝 Text Prompt Scene / Instruksi Adegan
+                            Text Prompt Scene / Instruksi Adegan
                         </label>
                         <textarea 
                             rows="6"
@@ -189,7 +189,7 @@ export const NovelWriterShow = {
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-700 pb-2">
                         <div class="flex items-center gap-2">
                             <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wide">
-                                📖 Output Naskah Novel
+                                Output Naskah Novel
                             </h3>
                             <span id="nw-word-count" class="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-mono">
                                 ${this.state.outputContent.trim() ? this.state.outputContent.trim().split(/\s+/).length : 0} kata
@@ -199,15 +199,15 @@ export const NovelWriterShow = {
                             <button 
                                 onclick="app.NovelWriterModule.clearOutput();"
                                 class="bg-rose-950/60 border border-rose-800 hover:bg-rose-900 text-rose-300 px-2.5 py-1 rounded transition text-[11px]"
-                            >🗑️ Bersihkan</button>
+                            >Bersihkan</button>
                             <button 
                                 onclick="app.NovelWriterModule.copyOutputToClipboard()"
                                 class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded transition text-[11px]"
-                            >📋 Salin Teks</button>
+                            >Salin Teks</button>
                             <button 
                                 onclick="app.NovelWriterModule.downloadOutputAsTxt()"
                                 class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded transition text-[11px] font-semibold shadow"
-                            >💾 Download .txt</button>
+                            >Download .txt</button>
                         </div>
                     </div>
 
@@ -309,7 +309,7 @@ export const NovelWriterShow = {
                     <div class="bg-slate-900/90 p-3 rounded border border-slate-700 flex flex-col h-64">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-xs font-bold text-amber-300 flex items-center gap-1">
-                                🌌 Semesta <span id="nw-universe-count">(${this.state.selectedUniverseIds.length})</span>
+                                Semesta <span id="nw-universe-count">(${this.state.selectedUniverseIds.length})</span>
                             </span>
                             <button onclick="app.NovelWriterModule.state.selectedUniverseIds = []; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.updateListUI('universe');" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
                         </div>
@@ -329,7 +329,7 @@ export const NovelWriterShow = {
                     <div class="bg-slate-900/90 p-3 rounded border border-slate-700 flex flex-col h-64">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-xs font-bold text-indigo-300 flex items-center gap-1">
-                                👤 Karakter <span id="nw-character-count">(${this.state.selectedCharacterIds.length})</span>
+                                Karakter <span id="nw-character-count">(${this.state.selectedCharacterIds.length})</span>
                             </span>
                             <button onclick="app.NovelWriterModule.state.selectedCharacterIds = []; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.updateListUI('character'); app.NovelWriterModule.updateShortcutUI();" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
                         </div>
@@ -349,7 +349,7 @@ export const NovelWriterShow = {
                     <div class="bg-slate-900/90 p-3 rounded border border-slate-700 flex flex-col h-64">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-xs font-bold text-rose-300 flex items-center gap-1">
-                                🐉 Monster/Musuh <span id="nw-monster-count">(${this.state.selectedMonsterIds.length})</span>
+                                Monster/Musuh <span id="nw-monster-count">(${this.state.selectedMonsterIds.length})</span>
                             </span>
                             <button onclick="app.NovelWriterModule.state.selectedMonsterIds = []; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.updateListUI('monster');" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
                         </div>
@@ -369,7 +369,7 @@ export const NovelWriterShow = {
                     <div class="bg-slate-900/90 p-3 rounded border border-slate-700 flex flex-col h-64">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-xs font-bold text-emerald-300 flex items-center gap-1">
-                                📍 Lokasi Terlibat <span id="nw-location-count">(${this.state.selectedLocationIds.length})</span>
+                                Lokasi Terlibat <span id="nw-location-count">(${this.state.selectedLocationIds.length})</span>
                             </span>
                             <button onclick="app.NovelWriterModule.state.selectedLocationIds = []; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.updateListUI('location'); app.NovelWriterModule.updateShortcutUI();" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
                         </div>
@@ -386,7 +386,7 @@ export const NovelWriterShow = {
                     </div>
 
                 </div>
-            </div>
+            </div>s
         `;
     },
 

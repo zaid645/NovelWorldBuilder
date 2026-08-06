@@ -20,6 +20,15 @@ export const ManagerUiBasic = {
         const writeMenuList = document.getElementById('writeMenuList');
         if (writeMenuList) {
             writeMenuList.innerHTML = `
+
+                    <!-- Kalender Perencanaan -->
+                <button onclick="app.switchView('calendar')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center mb-1 ${this.currentView === 'calendar' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
+                    <svg class="w-4 h-4 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2 2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>Kalender Perencanaan</span>
+                </button>
+
                 <!-- Manajemen Arc Cerita -->
                 <button onclick="app.switchView('arcs')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center mb-1 ${this.currentView === 'arcs' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
                     <svg class="w-4 h-4 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,6 +249,14 @@ export const ManagerUiBasic = {
             if (module && typeof module.renderNovelWriter === 'function') {
                 contentArea.innerHTML = module.renderNovelWriter();
                 module.initNovelWriter();
+            }
+        } else if (viewId === 'calendar') {
+            titleEl.innerText = "Kalender Perencanaan Cerita";
+            if (typeof this.renderCalendarView === 'function') {
+                contentArea.innerHTML = this.renderCalendarView();
+                if (typeof this.initCalendar === 'function') {
+                    this.initCalendar();
+                }
             }
         } else if (viewId === 'chapter-outline') {
             titleEl.innerText = "Outline Chapter";

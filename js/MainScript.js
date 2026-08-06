@@ -11,6 +11,7 @@ import { MdExportHelper } from './BackgroundWorker/MarkdownExportHelper.js';
 
 // Header
 import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo/NovelBasicInfo.js';
+import { CalendarModule } from './HeaderMenu/Calender/Calender.js';
 import { ArcInfoModule } from './HeaderMenu/ArcInfo/ArcInfo.js';
 import { ChapterOutlineModule } from './HeaderMenu/OutlineManager/OutlineManagerShow.js';
 import { NovelWriterModule } from './HeaderMenu/NovelWriter/NovelWriter.js';
@@ -99,7 +100,8 @@ window.app = Object.assign(
 
     // Header
     NovelBasicInfoModule,
-    { NovelWriterModule}, // <- SENGAJA ganda karena kalau dihapus malah error.
+    CalendarModule,
+    { NovelWriterModule}, // <- BEDA SENDIRI
     ArcInfoModule,
     ChapterOutlineModule,
     AIEnchanterModule,

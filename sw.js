@@ -53,6 +53,7 @@ const LOCAL_ASSETS = [
   // HEADER
   './js/HeaderMenu/DataSharing.js',
   './js/HeaderMenu/WatakList.js',
+  './js/HeaderMenu/Calender/Calender.js',
   // - NovelBasicInfo
   './js/HeaderMenu/NovelBasicInfo/NovelBasicInfo.js',
   './js/HeaderMenu/NovelBasicInfo/NovelBasicInfoExport.js',

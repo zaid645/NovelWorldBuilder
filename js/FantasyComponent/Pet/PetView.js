@@ -122,6 +122,18 @@ export const PetView = {
                                     </div>
                                 </div>
 
+                                <div class="mb-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Tag Familiar:</label>
+                                    <div class="bg-slate-800 border border-slate-600 rounded p-2 max-h-24 overflow-y-auto flex flex-wrap gap-2 text-sm">
+                                        ${this.data.familiarTags.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t => `
+                                            <label class="flex items-center space-x-1.5 bg-slate-900 px-2 py-1 rounded border border-slate-700 cursor-pointer">
+                                                <input type="checkbox" value="${t.id}" class="familiarTagCheck form-checkbox rounded text-fuchsia-500 bg-slate-700 border-slate-600">
+                                                <span class="truncate text-slate-300 text-xs">${t.name}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
                                 <!-- Cari Watak & List Watak -->
                                 <div class="mb-4">
                                     <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
@@ -206,18 +218,6 @@ export const PetView = {
                                         <div id="famItemList" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
                                             <!-- Dirender via app.renderFamItemCheckboxes() -->
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Tag Familiar:</label>
-                                    <div class="bg-slate-800 border border-slate-600 rounded p-2 max-h-24 overflow-y-auto flex flex-wrap gap-2 text-sm">
-                                        ${this.data.familiarTags.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t => `
-                                            <label class="flex items-center space-x-1.5 bg-slate-900 px-2 py-1 rounded border border-slate-700 cursor-pointer">
-                                                <input type="checkbox" value="${t.id}" class="familiarTagCheck form-checkbox rounded text-fuchsia-500 bg-slate-700 border-slate-600">
-                                                <span class="truncate text-slate-300 text-xs">${t.name}</span>
-                                            </label>
-                                        `).join('')}
                                     </div>
                                 </div>
                                 

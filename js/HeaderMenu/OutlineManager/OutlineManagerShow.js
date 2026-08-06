@@ -57,6 +57,18 @@ export const ChapterOutlineModule = {
                             </select>
                         </div>
 
+                        <!-- Input Offsite BAB -->
+                        <div class="flex items-center gap-2 bg-slate-800 p-1.5 px-3 rounded border border-slate-700" title="Jumlah bab awal dari luar sistem (misal: isi 5 maka urutan bab mulai dari BAB 6)">
+                            <label for="inputChapterOffset" class="text-xs text-slate-400 font-semibold whitespace-nowrap">Offsite BAB:</label>
+                            <input 
+                                type="number" 
+                                id="inputChapterOffset" 
+                                min="0" 
+                                value="${this.data?.chapterOffset || 0}" 
+                                class="w-16 bg-slate-900 border border-slate-600 text-white text-xs p-1 rounded text-center focus:ring-2 focus:ring-indigo-500" 
+                            />
+                        </div>
+
                         <!-- Attach File Global (Persist antar-Arc) -->
                         <div class="flex items-center gap-2 bg-slate-800 p-1.5 px-3 rounded border border-slate-700">
                             <span class="text-xs text-slate-400 font-semibold">📎 File Pengetahuan AI:</span>
@@ -206,6 +218,27 @@ export const ChapterOutlineModule = {
             this.outlineRefreshUI();
         });
 
+        // Event Handler Offsite BAB (Persist ke Data)
+        document.getElementById('inputChapterOffset')?.addEventListener('change', (e) => {
+            const value = parseInt(e.target.value, 10);
+            const newOffset = isNaN(value) || value < 0 ? 0 : value;
+
+            if (!this.data) this.data = {};
+            
+            // Pastikan tersimpan sebagai angka
+            this.data.chapterOffset = newOffset;
+
+            // Panggil persistence method
+            if (typeof this.saveData === 'function') {
+                this.saveData();
+            } else if (typeof app !== 'undefined' && typeof app.saveData === 'function') {
+                app.saveData();
+            }
+
+            ChapterOutlineForm.showNotification.call(this, "Offsite BAB berhasil diperbarui!", "success");
+            this.outlineRefreshUI();
+        });
+
         // 2. Attach File .txt Event
         document.getElementById('inputKnowledgeFile')?.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -351,6 +384,13 @@ export const ChapterOutlineModule = {
     },
 
     handleSaveChapter() {
+        // Sinkronisasi offset dari input DOM sebelum proses simpan
+        const offsetInput = document.getElementById('inputChapterOffset');
+        if (offsetInput && this.data) {
+            const offsetVal = parseInt(offsetInput.value, 10);
+            this.data.chapterOffset = isNaN(offsetVal) || offsetVal < 0 ? 0 : offsetVal;
+        }
+
         const title = document.getElementById('inputChapterTitle').value;
         const content = document.getElementById('inputChapterContent').value;
 

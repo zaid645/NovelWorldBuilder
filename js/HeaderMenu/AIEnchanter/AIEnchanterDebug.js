@@ -82,7 +82,7 @@ export const AIEnchanterDebug = {
         this.saveAIConfig(apiKey, model, outputRules, maxTokens, downloadPromptOnly, systemRole, includeModuleName);
         
         if (showToast) {
-            alert("Konfigurasi AI berhasil disimpan!");
+            this.showAlert("Konfigurasi AI berhasil disimpan!", "success");
         }
     },
 
@@ -103,7 +103,7 @@ export const AIEnchanterDebug = {
         const btn = document.getElementById('btnTestAI');
 
         if (!testInput || !testInput.value.trim()) {
-            return alert("Ketikkan teks uji coba terlebih dahulu.");
+            return this.showAlert("Ketikkan teks uji coba terlebih dahulu.", "warning");
         }
 
         const promptText = testInput.value.trim();

@@ -188,7 +188,10 @@ export const ManagerData = {
                 const kvItemTags = await db.keyval.get('itemTags');
                 const kvFamiliarTags = await db.keyval.get('familiarTags');
                 const kvWriterForm = await db.keyval.get('writerFormState');
-                const kvChapterOutlines = await db.keyval.get('chapterOutlines');
+                // const kvChapterOutlines = await db.keyval.get('chapterOutlines');
+                const kvChapterOffset = await db.keyval.get('chapterOffset');
+                const kvCalendarEvents = await db.keyval.get('calendarEvents');
+                
 
                 // Aggregate semua tabel menjadi 1 objek
                 this.data = {
@@ -199,6 +202,9 @@ export const ManagerData = {
                     itemTags: kvItemTags ? kvItemTags.value : this.defaultData.itemTags,
                     familiarTags: kvFamiliarTags ? kvFamiliarTags.value : this.defaultData.familiarTags,
                     writerFormState: kvWriterForm ? kvWriterForm.value : null,
+                    chapterOffset: kvChapterOffset ? kvChapterOffset.value : 0,
+                    calendarEvents: kvCalendarEvents ? kvCalendarEvents.value : [],
+                    
                     
                     // Ambil data yang sudah terurut berdasarkan indeks 'order'
                     universes: await db.universes.orderBy('order').toArray(),
@@ -229,6 +235,8 @@ export const ManagerData = {
                 // 1. Simpan KeyVal Items
                 await db.keyval.put({ key: 'metadata', value: this.data.metadata });
                 await db.keyval.put({ key: 'storyInfo', value: this.data.storyInfo });
+                await db.keyval.put({ key: 'chapterOffset', value: this.data.chapterOffset || 0 });
+                await db.keyval.put({ key: 'calendarEvents', value: this.data.calendarEvents || [] });
                 await db.keyval.put({ key: 'watakList', value: this.data.watakList });
                 await db.keyval.put({ key: 'skillTags', value: this.data.skillTags });
                 await db.keyval.put({ key: 'itemTags', value: this.data.itemTags });
