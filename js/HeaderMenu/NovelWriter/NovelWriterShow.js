@@ -35,11 +35,11 @@ export const NovelWriterShow = {
                     </div>
 
                     <div class="flex bg-slate-900/80 p-1 rounded-lg border border-slate-700 text-xs w-full sm:w-auto">
-                        <button onclick="app.NovelWriterModule.state.activeTab = 'selection'; app.NovelWriterModule.refreshUI();" 
+                        <button onclick="app.NovelWriterModule.state.activeTab = 'selection'; app.NovelWriterModule.refreshUI(); app.NovelWriterModule.novelWriterSaveState();" 
                             class="flex-1 sm:flex-none px-3 py-1.5 rounded transition ${this.state.activeTab === 'selection' ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}">
                             🎯 Seleksi Konteks
                         </button>
-                        <button onclick="app.NovelWriterModule.state.activeTab = 'attributes'; app.NovelWriterModule.refreshUI();" 
+                        <button onclick="app.NovelWriterModule.state.activeTab = 'attributes'; app.NovelWriterModule.refreshUI(); app.NovelWriterModule.novelWriterSaveState();" 
                             class="flex-1 sm:flex-none px-3 py-1.5 rounded transition ${this.state.activeTab === 'attributes' ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}">
                             ⚙️ Filter Atribut
                         </button>
@@ -62,15 +62,15 @@ export const NovelWriterShow = {
                         oninput="
                             app.NovelWriterModule.state.mainInstruction = this.value;
                             app.NovelWriterModule.novelWriterSaveState();
-                            "
+                        "
                     >${this.state.mainInstruction}</textarea>
 
                     <!-- PRESET QUICK BUTTONS -->
                     <div class="flex flex-wrap items-center gap-1.5 pt-1">
                         <span class="text-[10px] text-slate-400 font-semibold">Preset Cepat:</span>
-                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan POV Orang Ketiga Serba Tahu dengan alur yang mencekam dan kaya sensasi panca indera.'; app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">👁️ POV 3 Deskriptif</button>
-                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan POV Orang Pertama (Aku), fokus pada monolog dalam diri dan emosi mendalam.'; app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">👤 POV 1 Introspektif</button>
-                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan gaya penulisan fantasi epik, tempo cepat saat pertarungan, dan dialog tegas.'; app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">⚔️ Fantasi Epik</button>
+                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan POV Orang Ketiga Serba Tahu dengan alur yang mencekam dan kaya sensasi panca indera.'; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">👁️ POV 3 Deskriptif</button>
+                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan POV Orang Pertama (Aku), fokus pada monolog dalam diri dan emosi mendalam.'; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">👤 POV 1 Introspektif</button>
+                        <button onclick="app.NovelWriterModule.state.mainInstruction = 'Gunakan gaya penulisan fantasi epik, tempo cepat saat pertarungan, dan dialog tegas.'; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.refreshUI();" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300">⚔️ Fantasi Epik</button>
                     </div>
                 </div>
 
@@ -156,7 +156,7 @@ export const NovelWriterShow = {
                         ${this.renderShortcutPanel(db)}
                     </div>
 
-                    <!-- PROMPT SCENE TEXTAREA (Aman dari overwrite) -->
+                    <!-- PROMPT SCENE TEXTAREA (Aman tersimpan otomatis) -->
                     <div class="space-y-1.5 border-t border-slate-700/60 pt-3">
                         <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wide">
                             📝 Text Prompt Scene / Instruksi Adegan
@@ -165,7 +165,10 @@ export const NovelWriterShow = {
                             rows="6"
                             placeholder="Contoh: Tokoh utama memasuki perpustakaan terlarang di malam hari. Tiba-tiba ia mendengar langkah kaki misterius di balik rak buku..."
                             class="w-full bg-slate-900 border border-slate-700 rounded p-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-sans leading-relaxed"
-                            oninput="app.NovelWriterModule.state.generatePrompt = this.value;"
+                            oninput="
+                                app.NovelWriterModule.state.generatePrompt = this.value;
+                                app.NovelWriterModule.novelWriterSaveState();
+                            "
                         >${this.state.generatePrompt}</textarea>
                     </div>
 
@@ -194,7 +197,7 @@ export const NovelWriterShow = {
                         </div>
                         <div class="flex flex-wrap gap-1.5 text-xs">
                             <button 
-                                onclick="app.NovelWriterModule.clearOutput()"
+                                onclick="app.NovelWriterModule.clearOutput();"
                                 class="bg-rose-950/60 border border-rose-800 hover:bg-rose-900 text-rose-300 px-2.5 py-1 rounded transition text-[11px]"
                             >🗑️ Bersihkan</button>
                             <button 
@@ -217,6 +220,7 @@ export const NovelWriterShow = {
                         oninput="
                             app.NovelWriterModule.state.outputContent = this.value;
                             app.NovelWriterModule.updateWordCountUI(this.value);
+                            app.NovelWriterModule.novelWriterSaveState();
                         "
                     >${this.state.outputContent}</textarea>
                 </div>
@@ -227,7 +231,10 @@ export const NovelWriterShow = {
     // SUB-PANEL: SHORTCUTS BAR
     renderShortcutPanel(providedDb = null) {
         const topChars = this.getTopEntities('characters', 10);
-        const topLocs = this.getTopEntities('locations', 5);
+        const hiddenLocIds = this.getImplicitHiddenLocationIds(providedDb);
+        const topLocs = this.getTopEntities('locations', 10)
+                            .filter(l => !hiddenLocIds.has(l.id))
+                            .slice(0, 5);
 
         return `
             <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/80 space-y-2 text-xs">
@@ -284,7 +291,6 @@ export const NovelWriterShow = {
     // FUNGSI PEMBANTU UNTUK FORMAT PARAGRAF NOVEL
     formatAIOutput(rawText) {
         if (!rawText) return '';
-        // Memastikan setiap paragraf dipisahkan oleh double newline (\n\n)
         return rawText
             .replace(/\r\n/g, '\n')
             .split(/\n+/)
@@ -292,7 +298,6 @@ export const NovelWriterShow = {
             .filter(p => p.length > 0)
             .join('\n\n');
     },
-
 
     // SUB-PANEL: SELEKSI KONTEKS ENTITAS (4 BOX GRID)
     renderSelectionPanel(db) {
@@ -306,7 +311,7 @@ export const NovelWriterShow = {
                             <span class="text-xs font-bold text-amber-300 flex items-center gap-1">
                                 🌌 Semesta <span id="nw-universe-count">(${this.state.selectedUniverseIds.length})</span>
                             </span>
-                            <button onclick="app.NovelWriterModule.state.selectedUniverseIds = []; app.NovelWriterModule.updateListUI('universe');" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
+                            <button onclick="app.NovelWriterModule.state.selectedUniverseIds = []; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.updateListUI('universe');" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
                         </div>
                         <input 
                             type="text" 
@@ -326,7 +331,7 @@ export const NovelWriterShow = {
                             <span class="text-xs font-bold text-indigo-300 flex items-center gap-1">
                                 👤 Karakter <span id="nw-character-count">(${this.state.selectedCharacterIds.length})</span>
                             </span>
-                            <button onclick="app.NovelWriterModule.state.selectedCharacterIds = []; app.NovelWriterModule.updateListUI('character'); app.NovelWriterModule.updateShortcutUI();" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
+                            <button onclick="app.NovelWriterModule.state.selectedCharacterIds = []; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.updateListUI('character'); app.NovelWriterModule.updateShortcutUI();" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
                         </div>
                         <input 
                             type="text" 
@@ -346,7 +351,7 @@ export const NovelWriterShow = {
                             <span class="text-xs font-bold text-rose-300 flex items-center gap-1">
                                 🐉 Monster/Musuh <span id="nw-monster-count">(${this.state.selectedMonsterIds.length})</span>
                             </span>
-                            <button onclick="app.NovelWriterModule.state.selectedMonsterIds = []; app.NovelWriterModule.updateListUI('monster');" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
+                            <button onclick="app.NovelWriterModule.state.selectedMonsterIds = []; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.updateListUI('monster');" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
                         </div>
                         <input 
                             type="text" 
@@ -366,7 +371,7 @@ export const NovelWriterShow = {
                             <span class="text-xs font-bold text-emerald-300 flex items-center gap-1">
                                 📍 Lokasi Terlibat <span id="nw-location-count">(${this.state.selectedLocationIds.length})</span>
                             </span>
-                            <button onclick="app.NovelWriterModule.state.selectedLocationIds = []; app.NovelWriterModule.updateListUI('location'); app.NovelWriterModule.updateShortcutUI();" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
+                            <button onclick="app.NovelWriterModule.state.selectedLocationIds = []; app.NovelWriterModule.novelWriterSaveState(); app.NovelWriterModule.updateListUI('location'); app.NovelWriterModule.updateShortcutUI();" class="text-[10px] text-slate-500 hover:text-rose-400">Reset</button>
                         </div>
                         <input 
                             type="text" 
@@ -385,97 +390,166 @@ export const NovelWriterShow = {
         `;
     },
 
-    // ITEM RENDERERS (PARSIAL UNTUK PRESERVE FOCUS INPUT)
+    // ITEM RENDERERS (DENGAN FEATURE PIN ITEM TERPILIH DI PALING ATAS & SELALU TAMPIL)
     renderUniverseItems(providedDb = null) {
         const universes = this.getAllUniverses(providedDb);
-        const q = this.state.universeSearchQuery.toLowerCase();
-        const filtered = universes.filter(u => 
-            (u.name && u.name.toLowerCase().includes(q)) ||
-            (u.description && u.description.toLowerCase().includes(q))
-        );
+        const q = this.state.universeSearchQuery.toLowerCase().trim();
+        const selected = this.state.selectedUniverseIds;
+
+        // Filter: Selalu sertakan yang tercentang OR yang cocok dengan kata kunci
+        const filtered = universes.filter(u => {
+            const isSelected = selected.includes(u.id);
+            if (isSelected) return true;
+            if (!q) return true;
+            return (u.name && u.name.toLowerCase().includes(q)) ||
+                   (u.description && u.description.toLowerCase().includes(q));
+        });
+
+        // Urutkan: Yang tercentang muncul paling atas
+        filtered.sort((a, b) => {
+            const aSel = selected.includes(a.id) ? 1 : 0;
+            const bSel = selected.includes(b.id) ? 1 : 0;
+            return bSel - aSel;
+        });
 
         if (filtered.length === 0) return '<p class="text-[10px] text-slate-500 italic p-1">Semesta tidak ditemukan.</p>';
 
-        return filtered.map(u => `
-            <label class="flex items-center gap-2 p-1 hover:bg-slate-800 rounded cursor-pointer select-none text-[11px]">
-                <input 
-                    type="checkbox" 
-                    ${this.state.selectedUniverseIds.includes(u.id) ? 'checked' : ''} 
-                    onchange="app.NovelWriterModule.toggleUniverseSelection('${u.id}', this.checked)"
-                    class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0"
-                />
-                <span class="truncate ${this.state.selectedUniverseIds.includes(u.id) ? 'text-amber-300 font-semibold' : 'text-slate-300'}">${u.name}</span>
-            </label>
-        `).join('');
+        return filtered.map(u => {
+            const isChecked = selected.includes(u.id);
+            return `
+                <label class="flex items-center gap-2 p-1 hover:bg-slate-800 rounded cursor-pointer select-none text-[11px]">
+                    <input 
+                        type="checkbox" 
+                        ${isChecked ? 'checked' : ''} 
+                        onchange="app.NovelWriterModule.toggleUniverseSelection('${u.id}', this.checked)"
+                        class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0"
+                    />
+                    <span class="truncate ${isChecked ? 'text-amber-300 font-semibold' : 'text-slate-300'}">${u.name}</span>
+                </label>
+            `;
+        }).join('');
     },
 
     renderCharacterItems(providedDb = null) {
         const characters = this.getAllCharacters(providedDb);
-        const q = this.state.charSearchQuery.toLowerCase();
-        const filtered = characters.filter(c => 
-            (c.name && c.name.toLowerCase().includes(q)) ||
-            (c.universeName && c.universeName.toLowerCase().includes(q))
-        );
+        const q = this.state.charSearchQuery.toLowerCase().trim();
+        const selected = this.state.selectedCharacterIds;
+
+        // Filter: Selalu sertakan yang tercentang OR yang cocok dengan kata kunci
+        const filtered = characters.filter(c => {
+            const isSelected = selected.includes(c.id);
+            if (isSelected) return true;
+            if (!q) return true;
+            return (c.name && c.name.toLowerCase().includes(q)) ||
+                   (c.universeName && c.universeName.toLowerCase().includes(q));
+        });
+
+        // Urutkan: Yang tercentang muncul paling atas
+        filtered.sort((a, b) => {
+            const aSel = selected.includes(a.id) ? 1 : 0;
+            const bSel = selected.includes(b.id) ? 1 : 0;
+            return bSel - aSel;
+        });
 
         if (filtered.length === 0) return '<p class="text-[10px] text-slate-500 italic p-1">Karakter tidak ditemukan.</p>';
 
-        return filtered.map(c => `
-            <label class="flex items-center gap-2 p-1 hover:bg-slate-800 rounded cursor-pointer select-none text-[11px]">
-                <input 
-                    type="checkbox" 
-                    ${this.state.selectedCharacterIds.includes(c.id) ? 'checked' : ''} 
-                    onchange="app.NovelWriterModule.toggleCharacterSelection('${c.id}', this.checked)"
-                    class="rounded bg-slate-800 border-slate-600 text-indigo-600 focus:ring-0"
-                />
-                <span class="truncate ${this.state.selectedCharacterIds.includes(c.id) ? 'text-indigo-300 font-semibold' : 'text-slate-300'}">${c.name}</span>
-            </label>
-        `).join('');
+        return filtered.map(c => {
+            const isChecked = selected.includes(c.id);
+            return `
+                <label class="flex items-center gap-2 p-1 hover:bg-slate-800 rounded cursor-pointer select-none text-[11px]">
+                    <input 
+                        type="checkbox" 
+                        ${isChecked ? 'checked' : ''} 
+                        onchange="app.NovelWriterModule.toggleCharacterSelection('${c.id}', this.checked)"
+                        class="rounded bg-slate-800 border-slate-600 text-indigo-600 focus:ring-0"
+                    />
+                    <span class="truncate ${isChecked ? 'text-indigo-300 font-semibold' : 'text-slate-300'}">${c.name}</span>
+                </label>
+            `;
+        }).join('');
     },
 
     renderMonsterItems(providedDb = null) {
         const monsters = this.getAllMonsters(providedDb);
-        const q = this.state.monsterSearchQuery.toLowerCase();
-        const filtered = monsters.filter(m => 
-            (m.name && m.name.toLowerCase().includes(q)) ||
-            (m.universeName && m.universeName.toLowerCase().includes(q))
-        );
+        const q = this.state.monsterSearchQuery.toLowerCase().trim();
+        const selected = this.state.selectedMonsterIds;
+
+        // Filter: Selalu sertakan yang tercentang OR yang cocok dengan kata kunci
+        const filtered = monsters.filter(m => {
+            const isSelected = selected.includes(m.id);
+            if (isSelected) return true;
+            if (!q) return true;
+            return (m.name && m.name.toLowerCase().includes(q)) ||
+                   (m.universeName && m.universeName.toLowerCase().includes(q));
+        });
+
+        // Urutkan: Yang tercentang muncul paling atas
+        filtered.sort((a, b) => {
+            const aSel = selected.includes(a.id) ? 1 : 0;
+            const bSel = selected.includes(b.id) ? 1 : 0;
+            return bSel - aSel;
+        });
 
         if (filtered.length === 0) return '<p class="text-[10px] text-slate-500 italic p-1">Monster tidak ditemukan.</p>';
 
-        return filtered.map(m => `
-            <label class="flex items-center gap-2 p-1 hover:bg-slate-800 rounded cursor-pointer select-none text-[11px]">
-                <input 
-                    type="checkbox" 
-                    ${this.state.selectedMonsterIds.includes(m.id) ? 'checked' : ''} 
-                    onchange="app.NovelWriterModule.toggleMonsterSelection('${m.id}', this.checked)"
-                    class="rounded bg-slate-800 border-slate-600 text-rose-600 focus:ring-0"
-                />
-                <span class="truncate ${this.state.selectedMonsterIds.includes(m.id) ? 'text-rose-300 font-semibold' : 'text-slate-300'}">${m.name}</span>
-            </label>
-        `).join('');
+        return filtered.map(m => {
+            const isChecked = selected.includes(m.id);
+            return `
+                <label class="flex items-center gap-2 p-1 hover:bg-slate-800 rounded cursor-pointer select-none text-[11px]">
+                    <input 
+                        type="checkbox" 
+                        ${isChecked ? 'checked' : ''} 
+                        onchange="app.NovelWriterModule.toggleMonsterSelection('${m.id}', this.checked)"
+                        class="rounded bg-slate-800 border-slate-600 text-rose-600 focus:ring-0"
+                    />
+                    <span class="truncate ${isChecked ? 'text-rose-300 font-semibold' : 'text-slate-300'}">${m.name}</span>
+                </label>
+            `;
+        }).join('');
     },
 
     renderLocationItems(providedDb = null) {
         const locations = this.getAllLocations(providedDb);
-        const q = this.state.locSearchQuery.toLowerCase();
-        const filtered = locations.filter(l => 
-            (l.name && l.name.toLowerCase().includes(q)) ||
-            (l.path && l.path.toLowerCase().includes(q))
-        );
+        const q = this.state.locSearchQuery.toLowerCase().trim();
+        const selected = this.state.selectedLocationIds;
+
+        // Dapatkan semua ID child yang otomatis diwakili oleh parent-nya
+        const hiddenLocationIds = this.getImplicitHiddenLocationIds(providedDb);
+
+        const filtered = locations.filter(l => {
+            // Sembunyikan child dari antarmuka jika parent-nya sudah dicentang
+            if (hiddenLocationIds.has(l.id)) return false;
+
+            const isSelected = selected.includes(l.id);
+            if (isSelected) return true;
+            if (!q) return true;
+            return (l.name && l.name.toLowerCase().includes(q)) ||
+                (l.path && l.path.toLowerCase().includes(q));
+        });
+
+        // Urutkan: Yang tercentang muncul paling atas
+        filtered.sort((a, b) => {
+            const aSel = selected.includes(a.id) ? 1 : 0;
+            const bSel = selected.includes(b.id) ? 1 : 0;
+            return bSel - aSel;
+        });
 
         if (filtered.length === 0) return '<p class="text-[10px] text-slate-500 italic p-1">Lokasi tidak ditemukan.</p>';
 
-        return filtered.map(l => `
-            <label class="flex items-center gap-2 p-1 hover:bg-slate-800 rounded cursor-pointer select-none text-[11px]">
-                <input 
-                    type="checkbox" 
-                    ${this.state.selectedLocationIds.includes(l.id) ? 'checked' : ''} 
-                    onchange="app.NovelWriterModule.toggleLocationSelection('${l.id}', this.checked)"
-                    class="rounded bg-slate-800 border-slate-600 text-emerald-600 focus:ring-0"
-                />
-                <span class="truncate ${this.state.selectedLocationIds.includes(l.id) ? 'text-emerald-300 font-semibold' : 'text-slate-300'}">${l.name}</span>
-            </label>
-        `).join('');
+        return filtered.map(l => {
+            const isChecked = selected.includes(l.id);
+            return `
+                <label class="flex items-center gap-2 p-1 hover:bg-slate-800 rounded cursor-pointer select-none text-[11px]">
+                    <input 
+                        type="checkbox" 
+                        ${isChecked ? 'checked' : ''} 
+                        onchange="app.NovelWriterModule.toggleLocationSelection('${l.id}', this.checked)"
+                        class="rounded bg-slate-800 border-slate-600 text-emerald-600 focus:ring-0"
+                    />
+                    <span class="truncate ${isChecked ? 'text-emerald-300 font-semibold' : 'text-slate-300'}">${l.name}</span>
+                </label>
+            `;
+        }).join('');
     },
 
     // SUB-PANEL: FILTER ATRIBUT GLOBAL
@@ -488,13 +562,12 @@ export const NovelWriterShow = {
                     <span class="text-[10px] text-slate-400 italic">* Centang atribut yang ingin dimasukkan ke dalam konteks AI</span>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs text-slate-300">
-                    <label class="flex items-center gap-2 bg-slate-900/80 p-2 rounded border border-slate-700/60 hover:bg-slate-900 cursor-pointer select-none">
-                        <input type="checkbox" ${attrs.basicInfo ? 'checked' : ''} onchange="app.NovelWriterModule.setAttribute('basicInfo', this.checked)" class="rounded bg-slate-800 border-slate-600 text-indigo-500">
-                        <span>Info Dasar</span>
-                    </label>
-                    <label class="flex items-center gap-2 bg-slate-900/80 p-2 rounded border border-slate-700/60 hover:bg-slate-900 cursor-pointer select-none">
-                        <input type="checkbox" ${attrs.personality ? 'checked' : ''} onchange="app.NovelWriterModule.setAttribute('personality', this.checked)" class="rounded bg-slate-800 border-slate-600 text-indigo-500">
-                        <span>Kepribadian</span>
+                    <label class="flex items-center gap-2 bg-slate-900/80 p-2 rounded border border-slate-700/60 opacity-75 cursor-not-allowed select-none" title="Info Dasar selalu diikutsertakan">
+                        <input type="checkbox" checked disabled class="rounded bg-slate-800 border-slate-600 text-indigo-500 cursor-not-allowed">
+                        <span class="font-semibold text-indigo-300">Info Dasar (Wajib)</span>
+                    </label><label class="flex items-center gap-2 bg-slate-900/80 p-2 rounded border border-slate-700/60 opacity-75 cursor-not-allowed select-none" title="Kepribadian selalu diikutsertakan">
+                        <input type="checkbox" checked disabled class="rounded bg-slate-800 border-slate-600 text-indigo-500 cursor-not-allowed">
+                        <span class="font-semibold text-indigo-300">Kepribadian (Wajib)</span>
                     </label>
                     <label class="flex items-center gap-2 bg-slate-900/80 p-2 rounded border border-slate-700/60 hover:bg-slate-900 cursor-pointer select-none">
                         <input type="checkbox" ${attrs.background ? 'checked' : ''} onchange="app.NovelWriterModule.setAttribute('background', this.checked)" class="rounded bg-slate-800 border-slate-600 text-indigo-500">
@@ -532,4 +605,4 @@ export const NovelWriterShow = {
             </div>
         `;
     }
-}
+};

@@ -51,26 +51,62 @@ export const NovelWriterAi = {
             id: u.id,
             name: u.name,
             description: u.description || '',
-            lore: u.lores || u.lore || []
+            lore: u.lores || []
         }));
 
         // 2. Lokasi Data
         const allLocations = this.getAllLocations(db);
-        const selectedLocations = this.resolveEntityIds(this.state.selectedLocationIds, allLocations).map(l => ({
+        // Gunakan ID Efektif (Parent + Seluruh Child) jika method tersedia
+        const effectiveLocationIds = typeof this.getEffectiveSelectedLocationIds === 'function' 
+            ? this.getEffectiveSelectedLocationIds(db) 
+            : this.state.selectedLocationIds;
+
+        const selectedLocations = this.resolveEntityIds(effectiveLocationIds, allLocations).map(l => ({
             id: l.id,
             name: l.name,
-            path: l.path || '',
-            description: l.description || l.notes || ''
+            description: l.description || '',
+            visuals: l.visuals || ''
         }));
 
         // Helper Ekstraksi Entitas Karakter/Monster
+        // Inisialisasi Glossary Registry
+        const glossary = {
+            races: new Map(),
+            skills: new Map(),
+            items: new Map(),
+            familiars: new Map()
+        };
+
+        // Helper daftar item
+        const registerItemToGlossary = (item) => {
+            glossary.items.set(item.id || item.name, item);
+            // Ekstraksi skill bawaan dari item ke glossary.skills
+            if (Array.isArray(item.skillIds) && db.skills) {
+                const itemSkills = this.resolveEntityIds(item.skillIds, db.skills);
+                itemSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
+            }
+        };
+        
         const formatEntity = (entity) => {
-            const result = { id: entity.id, name: entity.name };
+            // Hapus ID, gunakan langsung name
+            const result = { name: entity.name };
 
             if (attrs.basicInfo) {
                 result.role = entity.role || entity.peran || null;
                 result.age = entity.age || entity.umur || entity.usia || null;
                 result.gender = entity.gender || entity.jenisKelamin || null;
+                
+                if (db.races && entity.raceId) {
+                    const raceObj = this.resolveEntityIds([entity.raceId], db.races)[0];
+                    if (raceObj) {
+                        result.race = raceObj.name;
+                        glossary.races.set(raceObj.id || raceObj.name, raceObj);
+                    } else {
+                        result.race = entity.raceId;
+                    }
+                } else {
+                    result.race = entity.race || null;
+                }
             }
             if (attrs.personality && (entity.personality || entity.watak)) {
                 result.personality = entity.personality || entity.watak;
@@ -81,11 +117,36 @@ export const NovelWriterAi = {
             if (attrs.appearance && entity.appearance) {
                 result.appearance = entity.appearance;
             }
+            // Resolusi & Daftarkan ke Glosarium
             if (attrs.skillIds && Array.isArray(entity.skillIds) && db.skills) {
-                result.skills = this.resolveEntityIds(entity.skillIds, db.skills).map(s => s.name);
+                const resolvedSkills = this.resolveEntityIds(entity.skillIds, db.skills);
+                result.skills = resolvedSkills.map(s => s.name);
+                resolvedSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
             }
             if (attrs.itemIds && Array.isArray(entity.itemIds) && db.items) {
-                result.items = this.resolveEntityIds(entity.itemIds, db.items).map(i => i.name);
+                const resolvedItems = this.resolveEntityIds(entity.itemIds, db.items);
+                result.items = resolvedItems.map(i => i.name);
+                resolvedItems.forEach(i => registerItemToGlossary(i));
+            }
+            if (attrs.familiarIds && Array.isArray(entity.familiarIds) && (db.familiars || db.pets)) {
+                const famList = db.familiars || db.pets || [];
+                const resolvedFams = this.resolveEntityIds(entity.familiarIds, famList);
+                result.familiars = resolvedFams.map(f => f.name);
+                resolvedFams.forEach(f => {
+                    glossary.familiars.set(f.id || f.name, f);
+                    
+                    // Ekstraksi sub-skill langsung milik Pet
+                    if (Array.isArray(f.skillIds) && db.skills) {
+                        const famSkills = this.resolveEntityIds(f.skillIds, db.skills);
+                        famSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
+                    }
+                    
+                    // Ekstraksi sub-item milik Pet BESERTA skill bawaan item tersebut
+                    if (Array.isArray(f.itemIds) && db.items) {
+                        const famItems = this.resolveEntityIds(f.itemIds, db.items);
+                        famItems.forEach(i => registerItemToGlossary(i)); // <-- Menggunakan helper
+                    }
+                });
             }
             if (attrs.dialogues && Array.isArray(entity.dialogues)) {
                 result.dialogues = entity.dialogues;
@@ -103,7 +164,14 @@ export const NovelWriterAi = {
         const selectedMonsters = this.resolveEntityIds(this.state.selectedMonsterIds, allMonsters).map(formatEntity);
 
         // Buat String Markdown fullPromptContext untuk Kompatibilitas AI
-        const fullPrompt = this.buildFullPromptString(db, selectedUniverses, selectedLocations, selectedCharacters, selectedMonsters);
+        const fullPrompt = this.buildFullPromptString(
+            db, 
+            selectedUniverses, 
+            selectedLocations, 
+            selectedCharacters, 
+            selectedMonsters, 
+            glossary
+        );
 
         // Mengembalikan payload tanpa duplikasi array JSON entitas
         return {
@@ -115,53 +183,161 @@ export const NovelWriterAi = {
         };
     },
 
-    buildFullPromptString(db, universes, locations, characters, monsters) {
+    buildFullPromptString(db, universes, locations, characters, monsters, glossary = {}) {
         let payload = "";
 
+        // Helper perubah objek karakter/monster ke Markdown bertingkat
+        const renderEntityMarkdown = (entity) => {
+            let md = `### ${entity.name}\n`;
+            if (entity.role) md += `- **Peran**: ${entity.role}\n`;
+            if (entity.age) md += `- **Umur**: ${entity.age}\n`;
+            if (entity.gender) md += `- **Gender**: ${entity.gender}\n`;
+            if (entity.race) md += `- **Ras**: ${entity.race}\n`;
+            if (entity.personality) md += `- **Kepribadian**: ${entity.personality}\n`;
+            if (entity.background) md += `- **Latar Belakang**: ${entity.background}\n`;
+            if (entity.appearance) md += `- **Penampilan**: ${entity.appearance}\n`;
+            if (entity.skills?.length) md += `- **Skill**: ${entity.skills.join(', ')}\n`;
+            if (entity.items?.length) md += `- **Item**: ${entity.items.join(', ')}\n`;
+            if (entity.familiars?.length) md += `- **Pet/Familiar**: ${entity.familiars.join(', ')}\n`;
+            if (entity.dialogues?.length) md += `- **Gaya Dialog**: ${Array.isArray(entity.dialogues) ? entity.dialogues.join(' / ') : entity.dialogues}\n`;
+            if (entity.notes) md += `- **Catatan**: ${entity.notes}\n`;
+            return md;
+        };
+
+        // 1. Semesta + Lore
         if (universes.length > 0) {
             payload += `# SEMESTA TERPILIH (${universes.length})\n`;
             universes.forEach(u => {
-                payload += `## SEMESTA: ${u.name}\n${u.description ? 'Deskripsi: ' + u.description + '\n' : ''}\n`;
+                payload += `## SEMESTA: ${u.name}\n`;
+                if (u.description) payload += `**Deskripsi**: ${u.description}\n`;
+                
+                const loreList = u.lore || u.lores || [];
+                if (Array.isArray(loreList) && loreList.length > 0) {
+                    payload += `**Lore Semesta**:\n`;
+                    loreList.forEach(l => {
+                        const title = typeof l === 'object' ? (l.title || l.name || '') : '';
+                        const content = typeof l === 'object' ? (l.content || l.description || l.text || '') : l;
+                        payload += `- ${title ? `*${title}*: ` : ''}${content}\n`;
+                    });
+                }
+                payload += `\n`;
             });
             payload += `---\n\n`;
         }
 
+        // 2. Lokasi Terlibat
         if (locations.length > 0) {
             payload += `## LOKASI TERLIBAT\n`;
-            locations.forEach(l => payload += `- **${l.name}** (${l.path}): ${l.description}\n`);
+            locations.forEach(l => {
+                payload += `- **${l.name}**: ${l.description || ''} ${l.visuals || ''}\n`;
+            });
             payload += "\n---\n\n";
         }
 
+        // 3. Karakter Terlibat (Format Markdown)
         if (characters.length > 0) {
             payload += `## KARAKTER TERLIBAT\n`;
-            characters.forEach(c => payload += `- **${c.name}**: ${JSON.stringify(c)}\n`);
-            payload += "\n---\n\n";
+            characters.forEach(c => payload += renderEntityMarkdown(c) + "\n");
+            payload += "---\n\n";
         }
 
+        // 4. Monster Terlibat (Format Markdown)
         if (monsters.length > 0) {
             payload += `## MONSTER / MUSUH TERLIBAT\n`;
-            monsters.forEach(m => payload += `- **${m.name}**: ${JSON.stringify(m)}\n`);
+            monsters.forEach(m => payload += renderEntityMarkdown(m) + "\n");
+            payload += "---\n\n";
+        }
+
+        // 5. Glosarium Entitas Terkait (Skill, Item, Pet/Familiar)
+        if (glossary && (glossary.races?.size > 0 || glossary.skills?.size > 0 || glossary.items?.size > 0 || glossary.familiars?.size > 0)) {
+            payload += `## GLOSARIUM DETAIL ENTITAS\n`;
+            
+
+            if (glossary.familiars?.size > 0) {
+                payload += `### Pet & Familiar\n`;
+                glossary.familiars.forEach(f => {
+                    const details = [];
+
+                    if (f.description) details.push(`Deskripsi: ${f.description}`);
+                    if (f.appearance) details.push(`Penampilan: ${f.appearance}`);
+
+                    // Personality (Array / String)
+                    if (f.personality && f.personality.length) {
+                        const pText = Array.isArray(f.personality) ? f.personality.join(', ') : f.personality;
+                        details.push(`Kepribadian: ${pText}`);
+                    }
+
+                    // Resolusi skillIds -> Nama Skill
+                    if (Array.isArray(f.skillIds) && db.skills) {
+                        const fSkills = this.resolveEntityIds(f.skillIds, db.skills).map(s => s.name);
+                        if (fSkills.length > 0) details.push(`Skill: ${fSkills.join(', ')}`);
+                    }
+
+                    // Resolusi itemIds -> Nama Item
+                    if (Array.isArray(f.itemIds) && db.items) {
+                        const fItems = this.resolveEntityIds(f.itemIds, db.items).map(i => i.name);
+                        if (fItems.length > 0) details.push(`Item: ${fItems.join(', ')}`);
+                    }
+
+                    // Dialogues (Array)
+                    if (f.dialogues && f.dialogues.length) {
+                        const dText = Array.isArray(f.dialogues) ? f.dialogues.join(' / ') : f.dialogues;
+                        details.push(`Gaya Dialog: ${dText}`);
+                    }
+
+                    // Notes (Array / String)
+                    if (f.notes && f.notes.length) {
+                        const nText = Array.isArray(f.notes) ? f.notes.join('; ') : f.notes;
+                        details.push(`Catatan: ${nText}`);
+                    }
+
+                    // Relations (Array / String)
+                    if (f.relations && f.relations.length) {
+                        const rText = Array.isArray(f.relations) ? f.relations.join(', ') : f.relations;
+                        details.push(`Relasi: ${rText}`);
+                    }
+
+                    const infoStr = details.length > 0 ? details.join(' | ') : 'Tidak ada deskripsi';
+                    payload += `- **${f.name}**: ${infoStr}\n`;
+                });
+            }
+
+            if (glossary.items?.size > 0) {
+                payload += `### Item & Senjata\n`;
+                glossary.items.forEach(i => {
+                    let itemSkillsInfo = '';
+                    if (Array.isArray(i.skillIds) && db.skills) {
+                        const attachedSkills = this.resolveEntityIds(i.skillIds, db.skills).map(s => s.name);
+                        if (attachedSkills.length > 0) {
+                            itemSkillsInfo = ` | Skill Item: ${attachedSkills.join(', ')}`;
+                        }
+                    }
+                    payload += `- **${i.name}**: ${i.description || i.effect || 'Tidak ada deskripsi'}${itemSkillsInfo}\n`;
+                });
+            }
+            if (glossary.skills?.size > 0) {
+                payload += `### Skill & Kemampuan\n`;
+                glossary.skills.forEach(s => {
+                    payload += `- **${s.name}**: ${s.description || s.effect || 'Tidak ada deskripsi'}\n`;
+                });
+            }
+
+            if (glossary.races?.size > 0) {
+                payload += `### Ras & Spesies\n`;
+                glossary.races.forEach(r => {
+                    payload += `- **${r.name}**: ${r.description || 'Tidak ada deskripsi'}\n`;
+                });
+            }
             payload += "\n---\n\n";
         }
 
+        // 6. File Referensi
         if (Object.keys(this.state.referenceFiles).length > 0) {
             payload += `## DICTIONARY FILE REFERENSI\n`;
             Object.entries(this.state.referenceFiles).forEach(([fname, content]) => {
                 payload += `### FILE: ${fname}\n${content.trim()}\n\n`;
             });
             payload += `---\n\n`;
-        }
-
-        if (this.state.mainInstruction.trim()) {
-            payload += `## INSTRUKSI UTAMA PENULISAN\n${this.state.mainInstruction.trim()}\n\n---\n\n`;
-        }
-
-        if (this.state.generatePrompt.trim()) {
-            payload += `## ADEGAN / SCENE CERITA YANG DIKEMBANGKAN SEKARANG\n${this.state.generatePrompt.trim()}\n\n---\n\n`;
-        }
-
-        if (this.state.outputContent.trim()) {
-            payload += `## KONTEKS NARASI SEBELUMNYA\n${this.state.outputContent.trim()}\n\n`;
         }
 
         return payload;
@@ -215,6 +391,8 @@ export const NovelWriterAi = {
             if (outputArea) {
                 outputArea.value = this.state.outputContent;
                 outputArea.scrollTop = outputArea.scrollHeight;
+                app.NovelWriterModule.updateWordCountUI(outputArea.value);
+                app.NovelWriterModule.novelWriterSaveState();
             }
 
             this.showNotification("Narasi novel berhasil dibuat oleh AI!", "success");

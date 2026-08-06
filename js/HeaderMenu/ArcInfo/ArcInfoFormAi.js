@@ -73,11 +73,11 @@ export const ArcInfoFormAi = {
         }
 
         // --- PENGAMBILAN KONTEKS SECARA AMAN ---
-        const selectedDetails = (typeof ArcInfoFormContext !== 'undefined' && ArcInfoFormContext.getSelectedContextDetails)
-            ? ArcInfoFormContext.getSelectedContextDetails(arcId)
-            : { characters: [], locations: [], universes: [] };
+        const aiContextPayload = (typeof ArcInfoFormContext !== 'undefined' && ArcInfoFormContext.buildAiContextPayload)
+            ? ArcInfoFormContext.buildAiContextPayload(arcId)
+            : { charactersInvolved: [], locationsInvolved: [], multiverseLore: [] };
 
-        // Konstruksi Payload Kompleks (Memberikan Full Context Semesta & Arc)
+        // Konstruksi Payload
         const payload = {
             moduleName: "Sub-arc (Episode Arc)",
             targetData: {
@@ -88,14 +88,12 @@ export const ArcInfoFormAi = {
                 subarcTitle: subarcName || "Sub-arc Baru (Tanpa Judul)",
                 draftDescription: subarcDesc || "Belum ada rincian. Buatkan ide masalah/kejadian spesifik dari awal berdasarkan urutan sub-arc ini.",
                 historyPreviousSubarcs: arc.subarcs || [],
-                charactersInvolved: selectedDetails.characters || [],
-                locationsInvolved: selectedDetails.locations || [],
-                multiverseLore: selectedDetails.universes || []
+                ...aiContextPayload // Inject charactersInvolved, locationsInvolved, dan multiverseLore secara otomatis
             },
             additional_instruction: {
-                focus: `Jabarkan kerangka plot (outline) atau kejadian spesifik untuk sub-arc ini (contoh: munculnya konflik kecil, tokoh ditipu/tersesat, rintangan, atau penemuan penting). Ini adalah dokumen teknis untuk panduan penulis, BUKAN cerita pendek! Langsung tunjukkan apa masalah atau tindakan yang terjadi di sub-arc ini yang selaras dengan tujuan Arc utama. ${pacingFocus} PENTING: Gunakan informasi world-building, tokoh, dan tempat dari konteks terpilih.`,
+                focus: `\nJabarkan kerangka plot (outline) atau kejadian spesifik untuk sub-arc ini: \n${pacingFocus} \nPENTING: Gunakan informasi world-building, tokoh, dan tempat dari konteks terpilih.\n\nFORMAT WAJIB:\n[Orientasi]\n(KontenPengenalanMasalah)\n\n[Komplikasi]\n(KontenMulaiTerlibatnyaTokohUtama)\n\n[Klimaks]\n(KontenPuncakKonflik)\n\n[Resolusi]\n(KontenPenyelesaianMasalah)\n\n[Koda]\n(KontenPendapatTokohAkanArcini)`,
                 tone: "Teknis, ringkas, efektif, to-the-point pada konflik, TANPA bahasa puitis/berbunga-bunga layaknya novel",
-                length: "Sangat singkat, 1 hingga 2 paragraf padat"
+                length: "Masing-masing bagian 1 - 2 paragraf pendek (3-5 paragraf)."
             }
         };
 
@@ -140,9 +138,9 @@ export const ArcInfoFormAi = {
         let pacingFocus = `Sub-arc ini adalah urutan ke-${currentIndex} dari rencana total ${targetCount} sub-arc dalam Arc ini.`;
 
         // --- PENGAMBILAN KONTEKS SECARA AMAN ---
-        const selectedDetails = (typeof ArcInfoFormContext !== 'undefined' && ArcInfoFormContext.getSelectedContextDetails)
-            ? ArcInfoFormContext.getSelectedContextDetails(arcId)
-            : { characters: [], locations: [], universes: [] };
+        const aiContextPayload = (typeof ArcInfoFormContext !== 'undefined' && ArcInfoFormContext.buildAiContextPayload)
+            ? ArcInfoFormContext.buildAiContextPayload(arcId)
+            : { charactersInvolved: [], locationsInvolved: [], multiverseLore: [] };
 
         const payload = {
             moduleName: "Sub-arc (Episode Arc)",
@@ -154,9 +152,7 @@ export const ArcInfoFormAi = {
                 subarcTitle: subarcName || "Sub-arc",
                 draftDescription: subarcDesc || "Kembangkan plot sub-arc spesifik di posisi ini.",
                 historyPreviousSubarcs: arc.subarcs || [],
-                charactersInvolved: selectedDetails.characters || [],
-                locationsInvolved: selectedDetails.locations || [],
-                multiverseLore: selectedDetails.universes || []
+                ...aiContextPayload
             },
             additional_instruction: {
                 focus: `Sempurnakan kerangka alur plot untuk sub-arc ini selaras dengan posisi runtutan ke-${currentIndex}. Fokuskan pada kejadian penting, pergerakan karakter, rintangan, atau penemuan strategis. Ini adalah dokumentasi struktur plot (BUKAN fiksi pendek/prosa). ${pacingFocus}`,

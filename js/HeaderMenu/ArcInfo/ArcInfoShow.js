@@ -246,7 +246,13 @@ export const ArcInfoShow = {
     renderLocationSubPanel(arcId, selectedLocs) {
         this.syncContextData();
         const searchResults = ArcInfoFormContext.searchLocations(this.locSearchQuery);
+        
+        // Inisialisasi hiddenLocIds dari context
+        const hiddenLocIds = ArcInfoFormContext.getImplicitHiddenLocationIds(arcId);
         const selectedIds = selectedLocs.map(l => l.id);
+
+        // Filter lokasi terpilih & tersembunyi
+        const visibleSearchResults = searchResults.filter(l => !hiddenLocIds.has(l.id));
 
         return `
             <div class="space-y-3">
@@ -259,8 +265,8 @@ export const ArcInfoShow = {
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div class="bg-slate-900/80 border border-slate-700/60 rounded p-2 max-h-48 overflow-y-auto space-y-1.5">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Opsi Hasil Pencarian (${searchResults.length}):</span>
-                        ${searchResults.length === 0 ? '<p class="text-[11px] text-slate-500 italic p-1">Tidak ada lokasi ditemukan.</p>' : searchResults.map(loc => `
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Opsi Hasil Pencarian (${visibleSearchResults.length}):</span>
+                        ${visibleSearchResults.length === 0 ? '<p class="text-[11px] text-slate-500 italic p-1">Tidak ada lokasi ditemukan.</p>' : visibleSearchResults.map(loc => `
                             <label class="flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer transition text-xs select-none">
                                 <input type="checkbox" ${selectedIds.includes(loc.id) ? 'checked' : ''} 
                                     onchange="app.toggleContextCheck('${arcId}', 'location', '${loc.id}')"
@@ -386,7 +392,7 @@ export const ArcInfoShow = {
                                 ${!isFirst ? `<button onclick="app.moveSubarcUp('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400 p-0.5 transition" title="Naikkan"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg></button>` : ''}
                                 ${!isLast ? `<button onclick="app.moveSubarcDown('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400 p-0.5 transition" title="Turunkan"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>` : ''}
                                 <button onclick="app.openEditSubarc('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-amber-400 p-0.5 transition" title="Edit"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-                                <button onclick="app.deleteSubarc('${arc.id}', '${sub.id}')" class="text-slate-400 hover:text-rose-500 text-sm font-bold leading-none p-0.5 transition" title="Hapus">&times;</button>
+                                <button onclick="event.stopPropagation(); app.deleteSubarc('${arc.id}', '${sub.id}', true)" class="text-slate-400 hover:text-rose-500 text-sm font-bold leading-none p-1 transition cursor-pointer" title="Hapus Sub-arc">&times;</button>
                             </div>
                             <h5 class="text-xs font-bold text-amber-400 mb-1 flex items-center flex-wrap gap-1 pr-16">
                                 ${sIndex + 1}. ${sub.name}
@@ -565,24 +571,4 @@ export const ArcInfoShow = {
             );
         }
     },
-
-    deleteSubarc(arcId, subarcId) {
-        if (typeof app !== 'undefined' && typeof app.confirmDeleteSubarc === 'function') {
-            app.confirmDeleteSubarc(arcId, subarcId);
-        } else {
-            this.showNotification(
-                'Hapus Sub-arc',
-                'Apakah Anda yakin ingin menghapus sub-arc ini?',
-                'error',
-                () => {
-                    const arc = this.data.arcs.find(a => a.id === arcId);
-                    if (arc && arc.subarcs) {
-                        arc.subarcs = arc.subarcs.filter(s => s.id !== subarcId);
-                        if (typeof this.saveData === 'function') this.saveData();
-                        this.refreshArcMenuView();
-                    }
-                }
-            );
-        }
-    }
 };

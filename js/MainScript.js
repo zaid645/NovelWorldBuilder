@@ -12,6 +12,7 @@ import { MdExportHelper } from './BackgroundWorker/MarkdownExportHelper.js';
 // Header
 import { NovelBasicInfoModule } from './HeaderMenu/NovelBasicInfo/NovelBasicInfo.js';
 import { ArcInfoModule } from './HeaderMenu/ArcInfo/ArcInfo.js';
+import { ChapterOutlineModule } from './HeaderMenu/OutlineManager/OutlineManagerShow.js';
 import { NovelWriterModule } from './HeaderMenu/NovelWriter/NovelWriter.js';
 import { DataSharingModule } from './HeaderMenu/DataSharing.js';
 import { AIEnchanterModule } from './HeaderMenu/AIEnchanter/AIEnchanter.js';
@@ -99,8 +100,9 @@ window.app = Object.assign(
     // Header
     NovelBasicInfoModule,
     NovelWriterModule,
-    { NovelWriterModule},
+    { NovelWriterModule}, // <- SENGAJA ganda karena kalau dihapus malah error.
     ArcInfoModule,
+    ChapterOutlineModule,
     AIEnchanterModule,
     WatakListModule,
     DataSharingModule,

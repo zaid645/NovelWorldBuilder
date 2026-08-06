@@ -9,7 +9,7 @@ import { Dexie } from 'https://unpkg.com/dexie@latest/dist/modern/dexie.mjs';
 const db = new Dexie('NovelLoreDB');
 
 // Naikkan versi ke 2 untuk memperbarui skema
-db.version(3).stores({
+db.version(4).stores({
     keyval: 'key', 
     
     // Tambahkan index 'order' di samping 'id'
@@ -18,7 +18,8 @@ db.version(3).stores({
     races: 'id, order',
     skills: 'id, order',
     items: 'id, order',
-    familiars: 'id, order'
+    familiars: 'id, order',
+    chapterOutlines: 'arcId'
 });
 
 export const ManagerData = {
@@ -187,6 +188,7 @@ export const ManagerData = {
                 const kvItemTags = await db.keyval.get('itemTags');
                 const kvFamiliarTags = await db.keyval.get('familiarTags');
                 const kvWriterForm = await db.keyval.get('writerFormState');
+                const kvChapterOutlines = await db.keyval.get('chapterOutlines');
 
                 // Aggregate semua tabel menjadi 1 objek
                 this.data = {
@@ -204,7 +206,8 @@ export const ManagerData = {
                     races:     await db.races.orderBy('order').toArray(),
                     skills:    await db.skills.orderBy('order').toArray(),
                     items:     await db.items.orderBy('order').toArray(),
-                    familiars: await db.familiars.orderBy('order').toArray()
+                    familiars: await db.familiars.orderBy('order').toArray(),
+                    chapterOutlines: await db.chapterOutlines.toArray() || [],
                 };
 
                 this.ensureStructure(this.data, this.defaultData);
@@ -221,7 +224,7 @@ export const ManagerData = {
         this.data.metadata.lastSaved = new Date().toISOString();
 
         try {
-            await db.transaction('rw', [db.keyval, db.universes, db.arcs, db.skills, db.items, db.familiars, db.races], async () => {
+            await db.transaction('rw', [db.keyval, db.universes, db.arcs, db.skills, db.items, db.familiars, db.races, db.chapterOutlines], async () => {
                 
                 // 1. Simpan KeyVal Items
                 await db.keyval.put({ key: 'metadata', value: this.data.metadata });
@@ -244,6 +247,7 @@ export const ManagerData = {
                 await db.items.clear();     await db.items.bulkAdd(mapWithOrder(this.data.items));
                 await db.familiars.clear(); await db.familiars.bulkAdd(mapWithOrder(this.data.familiars));
                 await db.races.clear();     await db.races.bulkAdd(mapWithOrder(this.data.races));
+                await db.chapterOutlines.clear(); await db.chapterOutlines.bulkAdd(this.data.chapterOutlines || []);
             });
 
             this.updateLastSavedUI();

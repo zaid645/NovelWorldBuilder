@@ -3,14 +3,24 @@ export const NovelWriterHelper = {
         this.state.outputContent = "";
         const outputArea = document.getElementById('novel-output-area');
         if (outputArea) outputArea.value = "";
+        app.NovelWriterModule.updateWordCountUI(outputArea.value);
+        app.NovelWriterModule.novelWriterSaveState();
         this.showNotification("Output novel telah dibersihkan.", "info");
+
     },
 
     copyOutputToClipboard() {
         if (!this.state.outputContent.trim()) {
             return this.showNotification("Belum ada teks novel untuk disalin!", "error");
         }
-        navigator.clipboard.writeText(this.state.outputContent)
+
+        // Normalisasi line break (\r\n -> \n) lalu ganti pemisah baris ganda/bertumpuk menjadi tepat satu \n
+        const cleanedText = this.state.outputContent
+            .replace(/\r\n/g, '\n')  // Mengubah line-ending Windows menjadi standar \n
+            .replace(/\n+/g, '\n')   // Mengubah 2 atau lebih \n berurutan menjadi 1 \n saja
+            .trim();
+
+        navigator.clipboard.writeText(cleanedText)
             .then(() => this.showNotification("Teks novel berhasil disalin ke clipboard!", "success"))
             .catch(err => console.error("Gagal menyalin teks: ", err));
     },

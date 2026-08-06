@@ -28,6 +28,14 @@ export const ManagerUiBasic = {
                     <span>Manajemen Arc Cerita</span>
                 </button>
 
+                <!-- Manajemen Outline Cerita -->
+                <button onclick="app.switchView('chapter-outline')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center mb-1 ${this.currentView === 'chapter-outline' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
+                    <svg class="w-4 h-4 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <span>Outline</span>
+                </button>
+
                 <!-- Tulis Novel AI (Pena/Pensil - Hijau) -->
                 <button onclick="app.switchView('write-novel')" class="w-full text-left px-3 py-2 rounded transition text-sm flex items-center mb-1 ${this.currentView === 'write-novel' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700'}">
                     <svg class="w-4 h-4 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,6 +232,11 @@ export const ManagerUiBasic = {
             titleEl.innerText = "Manajemen Lini Cerita (Arc)";
             if (typeof this.renderArcsView === 'function') {
                 contentArea.innerHTML = this.renderArcsView();
+            }
+        } else if (viewId === 'chapter-outline') {
+            titleEl.innerText = "Outline Chapter";
+            if (typeof this.renderArcsView === 'function') {
+                contentArea.innerHTML = this.renderChapterOutline();
             }
         } else if (viewId === 'write-novel') {
             titleEl.innerText = "Tulis Novel";

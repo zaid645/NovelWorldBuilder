@@ -82,10 +82,13 @@ export const ArcInfoFormSub = {
     },
 
     deleteSubarc(arcId, subarcId, confirmed = false) {
+        // Jika belum dikonfirmasi, minta konfirmasi via browser/modal
         if (!confirmed) {
-            this.deleteSubarcIdConfirm = subarcId;
-            this.refreshArcList();
-            return;
+            if (confirm("Apakah Anda yakin ingin menghapus sub-arc ini?")) {
+                confirmed = true;
+            } else {
+                return;
+            }
         }
 
         const arc = this.data.arcs.find(a => a.id === arcId);

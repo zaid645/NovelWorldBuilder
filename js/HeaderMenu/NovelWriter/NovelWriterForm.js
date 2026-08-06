@@ -79,16 +79,15 @@ export const NovelWriterForm = {
     },
 
     novelWriterLoadState() {
-        const db = this.getDatabase();
+    const db = this.getDatabase();
         if (db && db.writerFormState) {
-            // Gabungkan state tersimpan dengan default state
-            this.state = {
-                ...this.state,
-                ...db.writerFormState
-            };
+            // Gunakan Object.assign agar referensi memori this.state tetap sama
+            Object.assign(this.state, db.writerFormState);
         }
-
-        // Lakukan pembersihan ID invalid setelah data dimuat
+        // Pastikan Info Dasar dan Watak selalu true setelah data dimuat
+        this.state.globalAttributes.basicInfo = true;
+        this.state.globalAttributes.personality = true;
+        
         this.novelWriteSanitizeSelectedIds();
     },
 
@@ -181,13 +180,18 @@ export const NovelWriterForm = {
             sourceDb.locations.forEach(l => list.push(l));
         }
 
-        const extractRecursive = (nodeList, uName = '', parentPath = '') => {
+        const visitedIds = new Set();
+
+        const extractRecursive = (nodeList, uName = '') => {
             if (!Array.isArray(nodeList)) return;
             nodeList.forEach(loc => {
-                const fullPath = parentPath ? `${parentPath} > ${loc.name}` : loc.name;
-                list.push({ ...loc, path: fullPath, universeName: uName });
-                if (loc.children) extractRecursive(loc.children, uName, fullPath);
-                if (loc.subLocations) extractRecursive(loc.subLocations, uName, fullPath);
+                if (loc.id && visitedIds.has(loc.id)) return;
+                if (loc.id) visitedIds.add(loc.id);
+
+                list.push({ ...loc, universeName: uName });
+                
+                if (loc.children) extractRecursive(loc.children, uName);
+                if (loc.subLocations) extractRecursive(loc.subLocations, uName);
             });
         };
 
@@ -215,10 +219,14 @@ export const NovelWriterForm = {
 
     getTopEntities(type, limit = 10) {
         const db = this.getDatabase();
-        const all = type === 'characters' ? this.getAllCharacters(db) : this.getAllLocations(db);
-        const stats = this.state.usageStats[type] || {};
+        let all = [];
 
-        // Sort by usage count descending, fallback to natural list order
+        if (type === 'characters') all = this.getAllCharacters(db);
+        else if (type === 'monsters') all = this.getAllMonsters(db);
+        else if (type === 'locations') all = this.getAllLocations(db);
+
+        const stats = (this.state.usageStats && this.state.usageStats[type]) || {};
+
         return [...all].sort((a, b) => {
             const countA = stats[a.id] || 0;
             const countB = stats[b.id] || 0;
@@ -230,6 +238,11 @@ export const NovelWriterForm = {
     // EVENT HANDLERS & MUTATIONS
     // =========================================================================
     setAttribute(key, value) {
+        if (key === 'basicInfo' || key === 'personality') {
+            this.state.globalAttributes[key] = true;
+            return;
+        }
+        
         if (key in this.state.globalAttributes) {
             this.state.globalAttributes[key] = Boolean(value);
             this.novelWriterSaveState();
@@ -287,6 +300,10 @@ export const NovelWriterForm = {
         if (willSelect) {
             if (index === -1) this.state.selectedLocationIds.push(locId);
             this.recordUsage('locations', locId);
+
+            // Saring & hapus child lokasi dari seleksi eksplisit karena sudah diwakili oleh parent
+            const descendantIds = new Set(this.getDescendantLocationIds(locId));
+            this.state.selectedLocationIds = this.state.selectedLocationIds.filter(id => !descendantIds.has(id));
         } else {
             if (index !== -1) this.state.selectedLocationIds.splice(index, 1);
         }
@@ -298,22 +315,22 @@ export const NovelWriterForm = {
     // Memperbarui hanya sub-container daftar item agar tidak merusak fokus input pencarian
     updateListUI(type) {
         const db = this.getDatabase();
-        if (type === 'universe') {
+        if (type === 'universe' && typeof this.renderUniverseItems === 'function') {
             const el = document.getElementById('nw-universe-list-items');
             if (el) el.innerHTML = this.renderUniverseItems(db);
             const counter = document.getElementById('nw-universe-count');
             if (counter) counter.innerText = `(${this.state.selectedUniverseIds.length})`;
-        } else if (type === 'character') {
+        } else if (type === 'character' && typeof this.renderCharacterItems === 'function') {
             const el = document.getElementById('nw-character-list-items');
             if (el) el.innerHTML = this.renderCharacterItems(db);
             const counter = document.getElementById('nw-character-count');
             if (counter) counter.innerText = `(${this.state.selectedCharacterIds.length})`;
-        } else if (type === 'monster') {
+        } else if (type === 'monster' && typeof this.renderMonsterItems === 'function') {
             const el = document.getElementById('nw-monster-list-items');
             if (el) el.innerHTML = this.renderMonsterItems(db);
             const counter = document.getElementById('nw-monster-count');
             if (counter) counter.innerText = `(${this.state.selectedMonsterIds.length})`;
-        } else if (type === 'location') {
+        } else if (type === 'location' && typeof this.renderLocationItems === 'function') {
             const el = document.getElementById('nw-location-list-items');
             if (el) el.innerHTML = this.renderLocationItems(db);
             const counter = document.getElementById('nw-location-count');
@@ -323,7 +340,7 @@ export const NovelWriterForm = {
 
     updateShortcutUI() {
         const container = document.getElementById('nw-shortcuts-list-container');
-        if (container) {
+        if (container && typeof this.renderShortcutPanel === 'function') {
             container.innerHTML = this.renderShortcutPanel();
         }
     },
@@ -347,6 +364,7 @@ export const NovelWriterForm = {
                 this.state.referenceFiles[file.name] = e.target.result;
                 filesRead++;
                 if (filesRead === totalFiles) {
+                    this.novelWriterSaveState();
                     this.showNotification(`Berhasil memuat file referensi!`, "success");
                     this.refreshUI();
                 }
@@ -362,9 +380,61 @@ export const NovelWriterForm = {
     removeReferenceFile(fileName) {
         if (fileName in this.state.referenceFiles) {
             delete this.state.referenceFiles[fileName];
+            this.novelWriterSaveState();
             this.showNotification(`File "${fileName}" telah dihapus.`, "info");
             this.refreshUI();
         }
     },
-    
-}
+
+    // =========================================================================
+    // HELPER HIRARKI LOKASI (PARENT-CHILD)
+    // =========================================================================
+
+    // 1. Mengambil semua ID turunan (children & subLocations) dari suatu location ID secara rekursif
+    getDescendantLocationIds(locId, providedDb = null) {
+        const db = providedDb || this.getDatabase();
+        const allLocs = this.getAllLocations(db);
+        const findNodeById = (id) => allLocs.find(l => l.id === id);
+        
+        const descendantIds = new Set();
+        // Tandai rootId sebagai node yang sudah dikunjungi agar tidak ikut terdaftar sebagai descendant
+        const visitedNodes = new Set([locId]); 
+
+        const collectChildren = (node) => {
+            if (!node) return;
+            const childrenList = [...(node.children || []), ...(node.subLocations || [])];
+            childrenList.forEach(child => {
+                if (child && child.id && !visitedNodes.has(child.id)) {
+                    visitedNodes.add(child.id);
+                    descendantIds.add(child.id);
+                    const fullChildNode = findNodeById(child.id) || child;
+                    collectChildren(fullChildNode);
+                }
+            });
+        };
+
+        const rootNode = findNodeById(locId);
+        if (rootNode) collectChildren(rootNode);
+        return Array.from(descendantIds);
+    },
+
+    // 2. Mendapatkan Set ID child yang harus DISEMBUNYIKAN dari UI (karena parent-nya sudah dipilih)
+    getImplicitHiddenLocationIds(providedDb = null) {
+        const hiddenSet = new Set();
+        this.state.selectedLocationIds.forEach(selectedId => {
+            const descendantIds = this.getDescendantLocationIds(selectedId, providedDb);
+            descendantIds.forEach(id => hiddenSet.add(id));
+        });
+        return hiddenSet;
+    },
+
+    // 3. Mendapatkan seluruh ID lokasi efektif (Parent + semua Child-nya) untuk dikirimkan ke AI
+    getEffectiveSelectedLocationIds(providedDb = null) {
+        const effectiveSet = new Set(this.state.selectedLocationIds);
+        this.state.selectedLocationIds.forEach(selectedId => {
+            const descendantIds = this.getDescendantLocationIds(selectedId, providedDb);
+            descendantIds.forEach(id => effectiveSet.add(id));
+        });
+        return Array.from(effectiveSet);
+    },
+};

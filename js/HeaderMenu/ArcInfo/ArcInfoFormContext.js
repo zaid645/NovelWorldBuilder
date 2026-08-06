@@ -153,11 +153,6 @@ export const ArcInfoFormContext = {
      * FUNGSI UTAMA: Menambah/menghapus item checklist (Character, Location, Universe).
      * Otomatis menyimpan data ke storage.
      * 
-     * @param {string} arcId - ID Arc yang sedang aktif
-     * @param {'character'|'location'|'universe'} type - Kategori yang diperbarui
-     * @param {string} itemId - ID item yang dicentang/dilepas
-     * @param {boolean} [forceState] - Paksa true (centang) atau false (uncheck)
-     * @returns {boolean} Status akhir item (true jika terpilih, false jika tidak)
      */
     toggleContextItem(arcId, type, itemId, forceState = null) {
         const context = this.ensureArcContextSelection(arcId);
@@ -188,7 +183,6 @@ export const ArcInfoFormContext = {
                 isSelected = index !== -1;
             }
         } else {
-            // Toggle biasa
             if (index === -1) {
                 targetArray.push(itemId);
                 isSelected = true;
@@ -198,7 +192,12 @@ export const ArcInfoFormContext = {
             }
         }
 
-        // SIMPAN DATA OTOMATIS
+        // Pembersihan descendant lokasi dipindah ke bawah setelah `isSelected` ditentukan
+        if (type === 'location' && isSelected) {
+            const descendantIds = new Set(this.getDescendantLocationIds(itemId));
+            context.locationIds = context.locationIds.filter(id => !descendantIds.has(id));
+        }
+
         if (typeof this.saveData === 'function') {
             this.saveData();
         }
@@ -244,43 +243,132 @@ export const ArcInfoFormContext = {
     // ===================================================
     // 4. PERAKITAN PAYLOAD EFISIEN UNTUK AI ENCHANTER
     // ===================================================
-
     /**
      * Menghasilkan objek konteks yang HANYA berisi atribut penting
      * untuk dikirimkan ke AI (Diintegrasikan di ArcInfoFormAi.js).
      */
     buildAiContextPayload(arcId) {
         const selected = this.getSelectedContextDetails(arcId);
+        const effectiveLocIds = new Set(this.getEffectiveSelectedLocationIds(arcId));
 
-        // 1. Karakter: HANYA Nama, Watak, dan Latar Belakang
-        const charactersPayload = selected.characters.map(c => ({
-            id: c.id,
-            name: c.name,
-            category: c.category,
-            personality: c.personality || 'Tidak dijelaskan',
-            background: c.background || 'Tidak ada latar belakang'
-        }));
+        // 1. Karakter (Blacklist 'id')
+        const charactersPayload = selected.characters.map(({ id, universeId, ...rest }) => rest);
 
-        // 2. Lokasi: HANYA Nama, Path, dan Deskripsi
-        const locationsPayload = selected.locations.map(l => ({
-            id: l.id,
-            name: l.name,
-            path: l.path,
-            description: l.description || 'Tidak ada deskripsi'
-        }));
+        // 2. Lokasi (Blacklist 'id', hapus 'description' default, ubah ke struktur Tree)
+        const locationsPayload = [];
+        if (this.data && Array.isArray(this.data.universes)) {
+            this.data.universes.forEach(univ => {
+                if (univ.locations) {
+                    const tree = this.buildCleanLocationTree(univ.locations, effectiveLocIds);
+                    if (tree.length > 0) {
+                        locationsPayload.push(...tree);
+                    }
+                }
+            });
+        }
 
-        // 3. Semesta: Deskripsi dan Lore
-        const universesPayload = selected.universes.map(u => ({
-            id: u.id,
-            name: u.name,
-            description: u.description,
-            lores: u.lores
-        }));
+        // 3. Semesta (Blacklist 'id')
+        const universesPayload = selected.universes.map(({ id, ...rest }) => rest);
 
         return {
             charactersInvolved: charactersPayload,
             locationsInvolved: locationsPayload,
             multiverseLore: universesPayload
         };
-    }
+    },
+
+    // Helper Build Lokasi
+    buildCleanLocationTree(nodes, effectiveLocIds) {
+        if (!Array.isArray(nodes)) return [];
+
+        return nodes
+            .map(node => {
+                const rawChildren = node.children || node.subLocations;
+                const childTree = this.buildCleanLocationTree(rawChildren, effectiveLocIds);
+                const isNodeSelected = effectiveLocIds.has(node.id);
+
+                // Sertakan node HANYA jika node tersebut terpilih ATAU memiliki anak yang terpilih
+                if (!isNodeSelected && childTree.length === 0) {
+                    return null;
+                }
+
+                // Blacklist ID: Buat objek lokasi bersih
+                const cleanedNode = {
+                    name: node.name || 'Tanpa Nama Lokasi'
+                };
+
+                // Blacklist Description: Hapus jika kosong atau bernilai default
+                const desc = (node.description || node.notes || '').trim();
+                if (desc && desc !== 'Tidak ada deskripsi') {
+                    cleanedNode.description = desc;
+                }
+
+                // Masukkan anak dalam bentuk hirarki/tree jika ada
+                if (childTree.length > 0) {
+                    cleanedNode.subLocations = childTree;
+                }
+
+                return cleanedNode;
+            })
+            .filter(Boolean); // Filter elemen null
+    },
+    getDescendantLocationIds(locId) {
+        const allLocs = this.getFlattenedLocations();
+        const descendantIds = new Set();
+        const visited = new Set([locId]);
+
+        const collectChildren = (parentId) => {
+            if (!this.data || !this.data.universes) return;
+            
+            const findAndCollect = (nodeList) => {
+                if (!Array.isArray(nodeList)) return;
+                nodeList.forEach(node => {
+                    if (node.id === parentId) {
+                        const children = [...(node.children || []), ...(node.subLocations || [])];
+                        children.forEach(child => {
+                            if (child && child.id && !visited.has(child.id)) {
+                                visited.add(child.id);
+                                descendantIds.add(child.id);
+                                collectChildren(child.id);
+                            }
+                        });
+                    } else {
+                        if (node.children) findAndCollect(node.children);
+                        if (node.subLocations) findAndCollect(node.subLocations);
+                    }
+                });
+            };
+
+            this.data.universes.forEach(univ => {
+                if (univ.locations) findAndCollect(univ.locations);
+            });
+        };
+
+        collectChildren(locId);
+        return Array.from(descendantIds);
+    },
+
+    getImplicitHiddenLocationIds(arcId) {
+        const context = this.ensureArcContextSelection(arcId);
+        if (!context) return new Set();
+
+        const hiddenSet = new Set();
+        context.locationIds.forEach(selectedId => {
+            const descendants = this.getDescendantLocationIds(selectedId);
+            descendants.forEach(id => hiddenSet.add(id));
+        });
+        return hiddenSet;
+    },
+
+    getEffectiveSelectedLocationIds(arcId) {
+        const context = this.ensureArcContextSelection(arcId);
+        if (!context) return [];
+
+        const effectiveSet = new Set(context.locationIds);
+        context.locationIds.forEach(selectedId => {
+            const descendants = this.getDescendantLocationIds(selectedId);
+            descendants.forEach(id => effectiveSet.add(id));
+        });
+        return Array.from(effectiveSet);
+    },
 };

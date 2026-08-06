@@ -65,17 +65,14 @@ export const ArcInfoExport = {
         const md = [];
 
         // --- LEVEL 1: ARC HEADER ---
+        // 1. Header Arc & Sinopsis
         md.push(`# Arc: ${arc.name || 'Tanpa Nama'}\n`);
-
-        // Sinopsis Arc (Gabungkan baris baru menjadi 1 Paragraf Tunggal)
         if (arc.synopsis) {
             const cleanSynopsis = String(arc.synopsis).replace(/\n+/g, ' ').trim();
-            if (cleanSynopsis) {
-                md.push(`**Sinopsis:** ${cleanSynopsis}\n`);
-            }
+            if (cleanSynopsis) md.push(`**Sinopsis:** ${cleanSynopsis}\n`);
         }
-
-        md.push('---');
+        
+        md.push('---\n');
 
         // --- LEVEL 2: SUBARCS ---
         const subarcs = Array.isArray(arc.subarcs) ? arc.subarcs : [];
