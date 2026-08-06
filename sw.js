@@ -68,6 +68,9 @@ const LOCAL_ASSETS = [
   './js/HeaderMenu/ArcInfo/ArcInfoFormSub.js',
   './js/HeaderMenu/ArcInfo/ArcInfoShow.js',
   './js/HeaderMenu/ArcInfo/ArcInfoFormContext.js',
+  // - Outline
+  './js/HeaderMenu/OutlineManager/OutlineManagerForm.js',
+  './js/HeaderMenu/OutlineManager/OutlineManagerShow.js',
   // - NovelWriter
   './js/HeaderMenu/NovelWriter/NovelWriter.js',
   './js/HeaderMenu/NovelWriter/NovelWriterAi.js',

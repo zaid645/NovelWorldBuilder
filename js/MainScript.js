@@ -99,7 +99,6 @@ window.app = Object.assign(
 
     // Header
     NovelBasicInfoModule,
-    NovelWriterModule,
     { NovelWriterModule}, // <- SENGAJA ganda karena kalau dihapus malah error.
     ArcInfoModule,
     ChapterOutlineModule,
