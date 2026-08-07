@@ -155,7 +155,7 @@ export const ArcInfoFormAi = {
                 ...aiContextPayload
             },
             additional_instruction: {
-                focus: `Sempurnakan kerangka alur plot untuk sub-arc ini selaras dengan posisi runtutan ke-${currentIndex}. Fokuskan pada kejadian penting, pergerakan karakter, rintangan, atau penemuan strategis. Ini adalah dokumentasi struktur plot (BUKAN fiksi pendek/prosa). ${pacingFocus}`,
+                focus: `\nJabarkan kerangka plot (outline) atau kejadian spesifik untuk sub-arc ini: \n${pacingFocus} \nPENTING: Gunakan informasi world-building, tokoh, dan tempat dari konteks terpilih.\n\nFORMAT WAJIB:\n[Sinopsis]\n(KontenSinopsisSubarc)\n\n\n[Orientasi]\n(KontenPengenalanMasalah)\n\n[Komplikasi]\n(KontenMulaiTerlibatnyaTokohUtama)\n\n[Klimaks]\n(KontenPuncakKonflik)\n\n[Resolusi]\n(KontenPenyelesaianMasalah)\n\n[Koda]\n(KontenPendapatTokohAkanArcini)`,
                 tone: "Teknis, taktis, detail konflik yang tegas, tanpa bunga bahasa novel",
                 length: "Singkat dan padat, 1 hingga 2 paragraf deskriptif"
             }
