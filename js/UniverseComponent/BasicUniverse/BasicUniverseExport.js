@@ -11,13 +11,13 @@ export const BasicUniverseExport = {
 
         const cleanName = universe.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
 
-        if (format === 'md') {
+        // Tambahkan percabangan PDF
+        if (format === 'pdf') {
+            this.exportUniversePdf([universe]);
+        } else if (format === 'md') {
             const markdownContent = this.generateUniverseMarkdown([universe]);
             const filename = `semesta_${cleanName}_lore.md`;
-            
-            // Menggunakan helper unduh yang nama fungsinya sudah diperbarui
             this.saveMarkdownFile(filename, markdownContent);
-            
             app.showAlert("Data Semesta berhasil diekspor ke format Markdown (.md).", "success");
         } else {
             const populatedUniverse = this.populateUniverse(universe);
@@ -71,14 +71,19 @@ export const BasicUniverseExport = {
 
                 <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/60 space-y-2">
                     <span class="text-xs font-semibold text-slate-300 block">Format Berkas Ekspor:</span>
-                    <div class="flex items-center gap-4">
-                        <label class="flex items-center gap-2 text-xs text-slate-200 cursor-pointer">
+                    <!-- Tambahkan opsi PDF pada Radio Group -->
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-1.5 text-xs text-slate-200 cursor-pointer">
                             <input type="radio" name="exportFormatRadio" value="json" class="text-indigo-600 focus:ring-indigo-500 bg-slate-950 border-slate-700">
-                            JSON (Lengkap + ID)
+                            JSON
                         </label>
-                        <label class="flex items-center gap-2 text-xs text-slate-200 cursor-pointer">
+                        <label class="flex items-center gap-1.5 text-xs text-slate-200 cursor-pointer">
                             <input type="radio" name="exportFormatRadio" value="md" checked class="text-indigo-600 focus:ring-indigo-500 bg-slate-950 border-slate-700">
-                            Markdown (.md Rapi & Ringkas)
+                            Markdown (.md)
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs text-slate-200 cursor-pointer">
+                            <input type="radio" name="exportFormatRadio" value="pdf" class="text-indigo-600 focus:ring-indigo-500 bg-slate-950 border-slate-700">
+                            PDF
                         </label>
                     </div>
                 </div>
@@ -131,13 +136,13 @@ export const BasicUniverseExport = {
 
             const timestamp = new Date().toISOString().slice(0, 10);
 
-            if (format === 'md') {
+            // Perbaruan logika submit untuk format PDF
+            if (format === 'pdf') {
+                this.exportUniversePdf(targetUniverses);
+            } else if (format === 'md') {
                 const markdownContent = this.generateUniverseMarkdown(targetUniverses);
                 const filename = `multi_semesta_lore_${timestamp}.md`;
-                
-                // Menggunakan helper unduh yang nama fungsinya sudah diperbarui
                 this.saveMarkdownFile(filename, markdownContent);
-                
                 app.showAlert(`${targetUniverses.length} Semesta berhasil diekspor ke Markdown!`, "success");
             } else {
                 const exportedUniverses = targetUniverses.map(u => this.populateUniverse(u));

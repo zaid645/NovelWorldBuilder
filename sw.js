@@ -97,6 +97,7 @@ const LOCAL_ASSETS = [
   './js/UniverseComponent/BasicUniverse/BasicUniverseExport.js',
   './js/UniverseComponent/BasicUniverse/BasicUniverseExportJson.js',
   './js/UniverseComponent/BasicUniverse/BasicUniverseExportMd.js',
+  './js/UniverseComponent/BasicUniverse/BasicUniverseExportPdf.js',
   // - Universe Character
   './js/UniverseComponent/UniverseCharacter/UniverseCharacter.js',
   './js/UniverseComponent/UniverseCharacter/UniverseCharacterCategory.js',

@@ -102,6 +102,7 @@ export const UniverseCharacterFormMain = {
         }, 150);
     },
 
+    
     addCharacter(univId, category) {
         const safeCat = category.replace(/\s/g, '');
         const name = document.getElementById(`newName_${safeCat}`).value.trim();
@@ -111,7 +112,6 @@ export const UniverseCharacterFormMain = {
         const age = ageInput !== "" ? parseInt(ageInput, 10) : null;
         const gender = document.getElementById(`newGender_${safeCat}`).value;
 
-        // Ambil ID Ras terpilih dari Radio Button
         const selectedRaceNode = document.querySelector(`input[name="charRaceRadio_${safeCat}"]:checked`);
         const raceId = selectedRaceNode ? selectedRaceNode.value : "";
 
@@ -126,36 +126,42 @@ export const UniverseCharacterFormMain = {
         const universe = this.data.universes.find(u => u.id === univId);
 
         if (this.editCharId) {
+            // Mode Edit: Update data yang ada
             const char = universe.characters[category].find(c => c.id === this.editCharId);
             if (char) {
-                char.name = name; 
-                char.age = age;
-                char.gender = gender;
-                char.raceId = raceId;
-                char.personality = personality; 
-                char.background = background;
-                char.appearance = appearance;
-                char.skillIds = skillIds; 
-                char.itemIds = itemIds;
-                char.familiarIds = familiarIds; 
+                Object.assign(char, { name, age, gender, raceId, personality, background, appearance, skillIds, itemIds, familiarIds });
+                
+                // Sinkronkan snapshot state aktif jika ada
+                if (char.states && char.activeStateId) {
+                    const activeState = char.states.find(s => s.id === char.activeStateId);
+                    if (activeState) {
+                        activeState.snapshot = this.getCleanSnapshot(char);
+                    }
+                }
             }
             this.editCharId = null;
             this.showAlert("Tokoh berhasil diupdate", "success");
         } else {
+            // Mode Tambah Baru: Sertakan struktur State-Tracker sejak awal
+            const defaultStateId = this.generateId('st');
+            const initialSnapshot = {
+                name, age, gender, raceId, personality, 
+                background, appearance, skillIds, itemIds, 
+                familiarIds, notes: [], dialogues: [], relations: []
+            };
+
             universe.characters[category].push({
-                id: this.generateId('c'), 
-                name, 
-                age,
-                gender,
-                raceId,
-                personality, 
-                background, 
-                appearance, 
-                skillIds, 
-                itemIds, 
-                familiarIds,
-                notes: [],
-                dialogues: []
+                id: this.generateId('c'),
+                ...initialSnapshot,
+                activeStateId: defaultStateId,
+                states: [
+                    {
+                        id: defaultStateId,
+                        name: "Awal Cerita (Default)",
+                        createdAt: new Date().toISOString(),
+                        snapshot: structuredClone(initialSnapshot)
+                    }
+                ]
             });
             this.showAlert("Tokoh berhasil ditambahkan", "success");
         }
@@ -207,6 +213,150 @@ export const UniverseCharacterFormMain = {
 
             this.saveData(true); 
             this.switchView(univId);
+        }
+    },
+
+    // =====
+    // STATE CHARACTERS FUNC
+    // =====
+    // Helper untuk mengisolasi snapshot tanpa properti 'states' & 'activeStateId'
+    getCleanSnapshot(char) {
+        const { states, activeStateId, id, ...snapshotData } = char;
+        return structuredClone(snapshotData);
+    },
+
+    // 1. Buat State Baru dari State Saat Ini
+    addCharacterState(univId, category, charId, stateName) {
+        const universe = this.data.universes.find(u => u.id === univId);
+        const char = universe?.characters[category]?.find(c => c.id === charId);
+        if (!char || !stateName.trim()) return;
+
+        if (!char.states) char.states = [];
+
+        // Auto-update snapshot aktif sebelum membuat cabang baru
+        const currentState = char.states.find(s => s.id === char.activeStateId);
+        if (currentState) {
+            currentState.snapshot = this.getCleanSnapshot(char);
+        }
+
+        const newStatesId = this.generateId('st');
+        const newSnapshot = this.getCleanSnapshot(char);
+
+        char.states.push({
+            id: newStatesId,
+            name: stateName.trim(),
+            createdAt: new Date().toISOString(),
+            snapshot: newSnapshot
+        });
+
+        char.activeStateId = newStatesId; // Otomatis beralih ke state baru
+        this.saveData(true);
+        this.switchView(univId);
+    },
+
+    // 2. Perpindahan State via Dropdown
+    switchCharacterState(univId, category, charId, targetStateId) {
+        const universe = this.data.universes.find(u => u.id === univId);
+        const char = universe?.characters[category]?.find(c => c.id === charId);
+        if (!char || char.activeStateId === targetStateId) return;
+
+        // Simpan dulu kondisi aktif terkini ke snapshot lama
+        const currentState = char.states?.find(s => s.id === char.activeStateId);
+        if (currentState) {
+            currentState.snapshot = this.getCleanSnapshot(char);
+        }
+
+        // Ambil target snapshot
+        const targetState = char.states?.find(s => s.id === targetStateId);
+        if (!targetState) return;
+
+        // Timpa root karakter dengan data target snapshot
+        Object.assign(char, structuredClone(targetState.snapshot));
+        char.activeStateId = targetStateId;
+
+        this.saveData(true);
+        this.switchView(univId);
+    },
+
+    // --- HANDLER MODAL & UPDATE STATE ---
+
+    // 1. Modal Tambah State Baru
+    openAddStateModal(univId, category, charId) {
+        this.showPromptModal({
+            title: 'Tambah Timeline State Baru',
+            content: 'Masukkan nama state / arc baru untuk karakter ini:',
+            placeholder: 'misal: Arc 2 / Setelah Timeskip',
+            confirmText: 'Tambah State',
+            onConfirm: (newName) => {
+                if (!newName) {
+                    if (typeof this.showAlert === 'function') {
+                        this.showAlert('Nama state tidak boleh kosong!', 'error');
+                    } else {
+                        alert('Nama state tidak boleh kosong!');
+                    }
+                    return false; // Mencegah modal tertutup jika validasi gagal
+                }
+
+                // Panggil fungsi penambahan state & render ulang
+                this.addCharacterState(univId, category, charId, newName);
+            }
+        });
+    },
+
+    // 2. Modal Ganti Nama State Saat Ini
+    openRenameStateModal(univId, category, charId) {
+        const universe = this.data.universes.find(u => u.id === univId);
+        const char = universe?.characters?.[category]?.find(c => c.id === charId);
+        if (!char || !char.states) return;
+
+        // Cari state yang sedang aktif
+        const currentState = char.states.find(s => s.id === char.activeStateId) || char.states[0];
+
+        this.showPromptModal({
+            title: 'Ganti Nama State',
+            content: 'Masukkan nama baru untuk timeline state saat ini:',
+            defaultValue: currentState.name,
+            placeholder: 'Nama state...',
+            confirmText: 'Simpan Nama',
+            onConfirm: (newName) => {
+                if (!newName) {
+                    if (typeof this.showAlert === 'function') {
+                        this.showAlert('Nama state tidak boleh kosong!', 'error');
+                    } else {
+                        alert('Nama state tidak boleh kosong!');
+                    }
+                    return false; // Mencegah modal tertutup
+                }
+
+                // Panggil fungsionalitas pembaruan nama state
+                this.renameCharacterState(univId, category, charId, currentState.id, newName);
+            }
+        });
+    },
+
+    // 3. Eksekusi Pembaruan Nama State & Render Panel
+    renameCharacterState(univId, category, charId, stateId, newName) {
+        const universe = this.data.universes.find(u => u.id === univId);
+        const char = universe?.characters?.[category]?.find(c => c.id === charId);
+        if (!char) return;
+
+        const targetState = char.states.find(s => s.id === stateId);
+        if (targetState) {
+            targetState.name = newName;
+
+            // Simpan data jika ada modul penyimpanan (misal LocalStorage)
+            if (typeof this.saveData === 'function') {
+                this.saveData();
+            }
+
+            // Re-render UI untuk memperbarui isi panel
+            if (typeof this.switchView === 'function') {
+                this.switchView(univId);
+            }
+
+            if (typeof this.showAlert === 'function') {
+                this.showAlert('Nama state berhasil diperbarui', 'success');
+            }
         }
     }
 };

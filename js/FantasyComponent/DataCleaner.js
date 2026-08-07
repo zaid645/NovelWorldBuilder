@@ -1,13 +1,31 @@
 export const DataCleaner = {
     /**
      * Traversal universal untuk mengiterasi seluruh entitas (Character, Monster, Familiar, Item)
+     * termasuk seluruh histori State Snapshot di dalamnya.
      */
     _traverseAllEntities(appData, callback) {
         if (!appData) return;
 
+        // Helper untuk mengeksekusi callback ke root entity & seluruh state snapshot-nya
+        const processEntityAndStates = (entity) => {
+            if (!entity) return;
+
+            // 1. Eksekusi pembersihan pada root entitas
+            callback(entity);
+
+            // 2. Eksekusi pembersihan pada setiap snapshot state-tracker (jika ada)
+            if (Array.isArray(entity.states)) {
+                entity.states.forEach(state => {
+                    if (state && state.snapshot) {
+                        callback(state.snapshot);
+                    }
+                });
+            }
+        };
+
         // 1. Iterasi Root Master Data (Items & Familiars)
-        if (Array.isArray(appData.items)) appData.items.forEach(item => callback(item));
-        if (Array.isArray(appData.familiars)) appData.familiars.forEach(fam => callback(fam));
+        if (Array.isArray(appData.items)) appData.items.forEach(item => processEntityAndStates(item));
+        if (Array.isArray(appData.familiars)) appData.familiars.forEach(fam => processEntityAndStates(fam));
 
         // 2. Iterasi Entitas di dalam Universes
         if (appData.universes) {
@@ -23,7 +41,7 @@ export const DataCleaner = {
                     if (!groupObj || typeof groupObj !== 'object') return;
                     Object.values(groupObj).forEach(categoryArray => {
                         if (Array.isArray(categoryArray)) {
-                            categoryArray.forEach(entity => callback(entity));
+                            categoryArray.forEach(entity => processEntityAndStates(entity));
                         }
                     });
                 };

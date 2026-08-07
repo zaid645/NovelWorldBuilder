@@ -200,7 +200,7 @@ export const UniverseCharacterShow = {
 
                         <div class="flex flex-col gap-4">
                             ${universe.characters[category].length === 0 ? '<p class="text-sm text-slate-500 italic col-span-full text-center py-4 bg-slate-800/40 rounded border border-dashed border-slate-700">Belum ada tokoh.</p>' : ''}
-                            ${universe.characters[category].map((c, index) => this.renderCharacterCard(c, category, index)).join('')}
+                            ${universe.characters[category].map((c, index) => this.renderCharacterCard(universe.id, c, category, index)).join('')}
                         </div>
                     </div>
                 </div>`;
@@ -217,15 +217,57 @@ export const UniverseCharacterShow = {
         return html;
     },
 
-    renderCharacterCard(char, category, index) {
+    renderCharacterCard(univId, char, category, index) {
         app.collapsedCharCards = app.collapsedCharCards || {};
         if (app.collapsedCharCards[char.id] === undefined) {
             app.collapsedCharCards[char.id] = true;
         }
         const isCollapsed = app.collapsedCharCards[char.id] === true;
 
+        // --- AUTO-MIGRASI DATA LAMA (LEGACY DATA) ---
+        // Pastikan karakter lama yang belum punya states langsung di-upgrade
+        if (!char.states || !Array.isArray(char.states) || char.states.length === 0) {
+            const defaultStateId = 'st_default';
+            char.states = [
+                { id: defaultStateId, name: 'Awal Cerita (Default)', createdAt: new Date().toISOString(), snapshot: app.getCleanSnapshot ? app.getCleanSnapshot(char) : {} }
+            ];
+            char.activeStateId = defaultStateId;
+        }
+
+        const charStates = char.states;
+        const activeStateId = char.activeStateId || charStates[0].id;
+
+        // Render Dropdown State
+        const stateOptionsHtml = charStates.map(s => 
+            `<option value="${s.id}" ${s.id === activeStateId ? 'selected' : ''}>${s.name}</option>`
+        ).join('');
+
+        const stateTrackerUi = `
+        <div class="flex items-center space-x-2 my-2 bg-slate-950/60 p-1.5 rounded border border-slate-700/80 flex-wrap gap-y-1">
+            <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Timeline State:</span>
+            <select onchange="app.switchCharacterState('${univId}', '${category}', '${char.id}', this.value)" 
+                    class="bg-slate-900 text-xs text-indigo-300 border border-slate-700 rounded px-2 py-1 outline-none focus:border-indigo-500">
+                ${stateOptionsHtml}
+            </select>
+            
+            <!-- Tombol Edit Nama State Aktif -->
+            <button onclick="app.openRenameStateModal('${univId}', '${category}', '${char.id}')" 
+                    class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700/80 px-2 py-1 rounded transition flex items-center gap-1" 
+                    title="Ganti Nama State Saat Ini">
+                ✏️ Edit Nama
+            </button>
+
+            <!-- Tombol Tambah State Baru via CustomModal -->
+            <button onclick="app.openAddStateModal('${univId}', '${category}', '${char.id}')" 
+                    class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded transition" 
+                    title="Buat Snapshot State Baru">
+                + State Baru
+            </button>
+        </div>
+        `;
+
         // Visualisasi Ras (Emerald)
-        const allRaces = app.data.races || [];
+        const allRaces = (app.data && app.data.races) || [];
         let raceHtml = "";
         if (char.raceId) {
             const foundRace = allRaces.find(r => r.id === char.raceId);
@@ -237,7 +279,7 @@ export const UniverseCharacterShow = {
         }
 
         // Visualisasi Watak (Indigo)
-        const masterWatakList = app.data.watakList || [];
+        const masterWatakList = (app.data && app.data.watakList) || [];
         let parsedWataks = [];
         if (Array.isArray(char.personality)) {
             parsedWataks = char.personality;
@@ -252,46 +294,47 @@ export const UniverseCharacterShow = {
                 : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through mb-1" title="Watak dihapus dari Master">Invalid</span>`;
         }).join(' ');
 
-        // Visualisasi Umur & Kelamin Info Tag
         let bioInfoStr = [];
         if (char.gender) bioInfoStr.push(char.gender);
         if (char.age !== undefined && char.age !== null && char.age !== '') bioInfoStr.push(`${char.age} thn`);
         const bioInfoBadge = bioInfoStr.length > 0 ? `<span class="text-xs text-slate-400 font-normal ml-2">(${bioInfoStr.join(' • ')})</span>` : '';
 
-        // Relasi Skill, Item, Familiar
+        // --- PERBAIKAN: Gunakan app.data (bukan this.data) ---
+        const globalData = app.data || this.data || {};
         const charSkills = (char.skillIds || []).map(id => {
-            const skill = this.data.skills.find(s => s.id === id);
+            const skill = (globalData.skills || []).find(s => s.id === id);
             return skill ? `<span class="bg-indigo-900/50 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700 font-medium">${skill.name}</span>` : '';
         }).join(' ');
         
         const charItems = (char.itemIds || []).map(id => {
-            const item = this.data.items.find(i => i.id === id);
+            const item = (globalData.items || []).find(i => i.id === id);
             return item ? `<span class="bg-cyan-900/50 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-700 font-medium">${item.name}</span>` : '';
         }).join(' ');
         
         const charFamiliars = (char.familiarIds || []).map(id => {
-            const fam = this.data.familiars.find(f => f.id === id);
+            const fam = (globalData.familiars || []).find(f => f.id === id);
             return fam ? `<span class="bg-fuchsia-900/50 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded border border-fuchsia-700 font-medium">${fam.name}</span>` : '';
         }).join('');
 
-        const notesHtml = (char.notes || []).map((note, index) => `
+        // --- PERBAIKAN: Gunakan univId secara konsisten (bukan this.currentView) ---
+        const notesHtml = (char.notes || []).map((note, idx) => `
             <li class="flex justify-between items-start text-xs text-slate-300 border-l-2 border-amber-500/50 pl-2 py-1 group/note bg-slate-800/30 rounded-r">
                 <span class="flex-1 leading-relaxed whitespace-pre-wrap">${note}</span>
-                <button onclick="app.deleteNote('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/note:opacity-100 ml-2 px-1 transition" title="Hapus catatan ini">&times;</button>
+                <button onclick="app.deleteNote('${univId}', '${category}', '${char.id}', ${idx})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/note:opacity-100 ml-2 px-1 transition" title="Hapus catatan ini">&times;</button>
             </li>
         `).join('');
 
-        const relationsHtml = (char.relations || []).map((rel, index) => `
+        const relationsHtml = (char.relations || []).map((rel, idx) => `
             <li class="flex justify-between items-start text-xs text-slate-300 border-l-2 border-emerald-500/50 pl-2 py-1 group/rel bg-slate-800/30 rounded-r">
                 <span class="flex-1 leading-relaxed whitespace-pre-wrap">${rel}</span>
-                <button onclick="app.deleteRelation('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/rel:opacity-100 ml-2 px-1 transition" title="Hapus relasi ini">&times;</button>
+                <button onclick="app.deleteRelation('${univId}', '${category}', '${char.id}', ${idx})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/rel:opacity-100 ml-2 px-1 transition" title="Hapus relasi ini">&times;</button>
             </li>
         `).join('');
 
-        const dialoguesHtml = (char.dialogues || []).map((dlg, index) => `
+        const dialoguesHtml = (char.dialogues || []).map((dlg, idx) => `
             <li class="flex justify-between items-start text-xs italic text-slate-300 border-l-2 border-indigo-500/50 pl-2 py-1 group/dlg bg-slate-800/30 rounded-r">
                 <span class="flex-1 leading-relaxed">${dlg}</span>
-                <button onclick="app.deleteDialogue('${this.currentView}', '${category}', '${char.id}', ${index})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-2 px-1 transition" title="Hapus dialog ini">&times;</button>
+                <button onclick="app.deleteDialogue('${univId}', '${category}', '${char.id}', ${idx})" class="text-rose-500 hover:text-rose-400 text-xs opacity-0 group-hover/dlg:opacity-100 ml-2 px-1 transition" title="Hapus dialog ini">&times;</button>
             </li>
         `).join('');
 
@@ -300,7 +343,7 @@ export const UniverseCharacterShow = {
             
             <div class="absolute top-3 right-3 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition bg-slate-900 pl-2 rounded shadow-sm z-10">
                 ${index > 0 ? `
-                <button onclick="app.moveCharacterUp('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan Urutan">
+                <button onclick="app.moveCharacterUp('${univId}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Naikkan Urutan">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
                 </button>
                 ` : ''}
@@ -309,75 +352,68 @@ export const UniverseCharacterShow = {
                         ${isCollapsed ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>'}
                     </svg>
                 </button>
-                <button onclick="app.openEditCharacter('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Info Utama Tokoh">
+                <button onclick="app.openEditCharacter('${univId}', '${category}', '${char.id}')" class="text-slate-400 hover:text-amber-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Edit Info Utama Tokoh">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                 </button>
-                <button onclick="app.deleteCharacter('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Tokoh">
+                <button onclick="app.deleteCharacter('${univId}', '${category}', '${char.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Tokoh">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
-                <button onclick="app.moveCharacterToCategory('${this.currentView}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Pindahkan Kategori">
+                <button onclick="app.moveCharacterToCategory('${univId}', '${category}', '${char.id}')" class="text-slate-400 hover:text-indigo-400 p-1.5 bg-slate-800 rounded border border-slate-700 transition" title="Pindahkan Kategori">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
                 </button>
             </div>
 
-            <!-- HEADER KLIKABLE UNTUK TOGGLE SHOW/CLOSED -->
             <div class="border-b border-slate-700/50 pb-2 mb-2 cursor-pointer" onclick="app.toggleCharCard('${char.id}')">
                 <h4 class="font-bold text-indigo-400 text-lg mb-1 pr-24 flex items-center flex-wrap">
                     <span>${char.name}</span> 
                     ${bioInfoBadge}
                 </h4>
-                
-                <!-- Beda Baris: Ras ditempatkan di atas watak dengan warna Emerald -->
                 ${raceHtml ? `<div class="mb-1.5">${raceHtml}</div>` : ''}
-
-                <!-- Baris Watak (Indigo) -->
                 <div id="charWatak_${char.id}" class="flex flex-wrap gap-1 ${isCollapsed ? 'watak-collapsed' : ''}">${charWataks || '<span class="text-[10px] text-slate-500 italic bg-slate-800 px-2 py-0.5 rounded">Belum ada Watak</span>'}</div>
             </div>
 
-            <!-- BODY COLLAPSIBLE -->
             <div id="charBody_${char.id}" class="${isCollapsed ? 'hidden' : 'flex flex-col md:flex-row gap-6'}">
                 <div class="flex-1 space-y-3 pr-0 md:pr-4">
+                    ${stateTrackerUi}
+                    
                     <div class="grid grid-cols-1 gap-2">
                         <div class="text-[13px] text-slate-300"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Latar Belakang:</span> <span class="leading-relaxed whitespace-pre-wrap">${char.background || '-'}</span></div>
                         <div class="text-[13px] text-slate-300 pt-1.5"><span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-0.5">Rupa / Penampilan:</span> <span class="leading-relaxed whitespace-pre-wrap">${char.appearance || '-'}</span></div>
                     </div>
 
-                    <!-- Seksi Catatan Pribadi Tokoh -->
                     <div class="mt-4 pt-3 border-t border-slate-800/80">
                         <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-2">Catatan Karakter:</span>
                         <ul class="space-y-1 mb-2">
                             ${notesHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada catatan.</li>'}
                         </ul>
                         <div class="flex items-start space-x-1.5 pt-1">
-                            <textarea id="newNote_${char.id}" placeholder="Ketik catatan tambahan... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addNote('${this.currentView}', '${category}', '${char.id}'); }"></textarea>
-                            <button onclick="app.addNote('${this.currentView}', '${category}', '${char.id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
+                            <textarea id="newNote_${char.id}" placeholder="Ketik catatan tambahan... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addNote('${univId}', '${category}', '${char.id}'); }"></textarea>
+                            <button onclick="app.addNote('${univId}', '${category}', '${char.id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
                         </div>
                     </div>
 
-                    <!-- Seksi Catatan Relasi Tokoh -->
                     <div class="mt-4 pt-3 border-t border-slate-800/80">
                         <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-2">Catatan Relasi Tokoh:</span>
                         <ul class="space-y-1 mb-2">
                             ${relationsHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada catatan relasi.</li>'}
                         </ul>
                         <div class="flex items-start space-x-1.5 pt-1">
-                            <textarea id="newRelation_${char.id}" placeholder="Ketik relasi dengan tokoh lain... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addRelation('${this.currentView}', '${category}', '${char.id}'); }"></textarea>
-                            <button onclick="app.addRelation('${this.currentView}', '${category}', '${char.id}')" class="bg-emerald-600/80 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
+                            <textarea id="newRelation_${char.id}" placeholder="Ketik relasi dengan tokoh lain... (Tekan Enter)" rows="2" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); app.addRelation('${univId}', '${category}', '${char.id}'); }"></textarea>
+                            <button onclick="app.addRelation('${univId}', '${category}', '${char.id}')" class="bg-emerald-600/80 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded text-[11px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
                         </div>
                     </div>
 
-                    <!-- Seksi Contoh Dialog -->
                     <div class="mt-4 pt-3 border-t border-slate-800/80">
                         <div class="flex justify-between items-center mb-2">
                             <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block">Contoh Dialog / Kutipan:</span>
-                            <button id="btnAiDlgCard_${char.id}" onclick="app.generateCharDialogueAI('${this.currentView}', '${category}', '${char.id}')" class="text-[10px] bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 px-2 py-1 rounded transition font-medium flex items-center gap-1">✨ AI Dialog</button>
+                            <button id="btnAiDlgCard_${char.id}" onclick="app.generateCharDialogueAI('${univId}', '${category}', '${char.id}')" class="text-[10px] bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 px-2 py-1 rounded transition font-medium flex items-center gap-1">✨ AI Dialog</button>
                         </div>
                         <ul class="space-y-1 mb-2">
                             ${dialoguesHtml || '<li class="text-[11px] text-slate-500 italic">Belum ada dialog.</li>'}
                         </ul>
                         <div class="flex items-center space-x-1.5 pt-1">
-                            <input type="text" id="newDlg_${char.id}" placeholder="Ketik contoh kutipan... (Tekan Enter)" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 transition" onkeydown="if(event.key === 'Enter') app.addDialogue('${this.currentView}', '${category}', '${char.id}')">
-                            <button onclick="app.addDialogue('${this.currentView}', '${category}', '${char.id}')" class="bg-indigo-600/80 hover:bg-indigo-500 text-white px-2 py-1.5 rounded text-[10px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
+                            <input type="text" id="newDlg_${char.id}" placeholder="Ketik contoh kutipan... (Tekan Enter)" class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 transition" onkeydown="if(event.key === 'Enter') app.addDialogue('${univId}', '${category}', '${char.id}')">
+                            <button onclick="app.addDialogue('${univId}', '${category}', '${char.id}')" class="bg-indigo-600/80 hover:bg-indigo-500 text-white px-2 py-1.5 rounded text-[10px] transition shadow-sm h-[34px] flex items-center font-bold">+</button>
                         </div>
                     </div>
                 </div>
