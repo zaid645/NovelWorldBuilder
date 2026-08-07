@@ -139,10 +139,12 @@ export const NovelWriterShow = {
                                 onchange="app.NovelWriterModule.updateAIConfigField('maxOutputTokens', this.value)"
                                 class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
-                                <option value="1024" ${Number(aiConfig.maxOutputTokens) === 1024 ? 'selected' : ''}>1,024 Token (~750 kata)</option>
-                                <option value="2048" ${Number(aiConfig.maxOutputTokens) === 2048 ? 'selected' : ''}>2,048 Token (~1,500 kata)</option>
-                                <option value="4096" ${Number(aiConfig.maxOutputTokens) === 4096 ? 'selected' : ''}>4,096 Token (~3,000 kata)</option>
-                                <option value="8192" ${Number(aiConfig.maxOutputTokens) === 8192 ? 'selected' : ''}>8,192 Token (~6,000 kata)</option>
+                                <option value="1024" ${Number(aiConfig.maxOutputTokens) === 1024 ? 'selected' : ''}>1,024 Token</option>
+                                <option value="2048" ${Number(aiConfig.maxOutputTokens) === 2048 ? 'selected' : ''}>2,048 Token</option>
+                                <option value="4096" ${Number(aiConfig.maxOutputTokens) === 4096 ? 'selected' : ''}>4,096 Token</option>
+                                <option value="8192" ${Number(aiConfig.maxOutputTokens) === 8192 ? 'selected' : ''}>8,192 Token</option>
+                                <option value="16384" ${Number(aiConfig.maxOutputTokens) === 16384 ? 'selected' : ''}>16,384 Token</option>
+                                <option value="32768" ${Number(aiConfig.maxOutputTokens) === 32768 ? 'selected' : ''}>32,768 Token</option>
                             </select>
                         </div>
                     </div>
