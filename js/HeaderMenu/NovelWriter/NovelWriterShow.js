@@ -229,9 +229,14 @@ export const NovelWriterShow = {
                         </div>
                         <div class="flex flex-wrap gap-1.5 text-xs">
                             <button 
+                                onclick="app.NovelWriterModule.cleanBackslashes()"
+                                class="bg-amber-950/60 border border-amber-800 hover:bg-amber-900 text-amber-300 px-2.5 py-1 rounded transition text-[11px]"
+                                title="Hapus semua karakter backslash (\) dari naskah"
+                            >Bersihkan backslash</button>
+                            <button 
                                 onclick="app.NovelWriterModule.clearOutput();"
                                 class="bg-rose-950/60 border border-rose-800 hover:bg-rose-900 text-rose-300 px-2.5 py-1 rounded transition text-[11px]"
-                            >Bersihkan</button>
+                            >Hapus</button>
                             <button 
                                 onclick="app.NovelWriterModule.copyOutputToClipboard()"
                                 class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded transition text-[11px]"
@@ -323,12 +328,35 @@ export const NovelWriterShow = {
     // FUNGSI PEMBANTU UNTUK FORMAT PARAGRAF NOVEL
     formatAIOutput(rawText) {
         if (!rawText) return '';
-        return rawText
+        
+        // 1. Hapus backslash pembalik/escaping simbol (misal: \" menjadi ", \* menjadi *)
+        const cleanedText = rawText.replace(/\\/g, '');
+
+        // 2. Rapikan struktur paragraf
+        return cleanedText
             .replace(/\r\n/g, '\n')
             .split(/\n+/)
             .map(p => p.trim())
             .filter(p => p.length > 0)
             .join('\n\n');
+    },
+
+    cleanBackslashes() {
+        if (!this.state.outputContent) return;
+        
+        // Hapus semua karakter backslash dari state output
+        this.state.outputContent = this.state.outputContent.replace(/\\/g, '');
+        
+        // Perbarui UI textarea dan penghitung kata secara langsung
+        const area = document.getElementById('novel-output-area');
+        if (area) area.value = this.state.outputContent;
+        
+        this.updateWordCountUI(this.state.outputContent);
+        this.novelWriterSaveState();
+        
+        if (typeof this.showNotification === 'function') {
+            this.showNotification("Karakter '\\' berhasil dibersihkan!", "success");
+        }
     },
 
     // SUB-PANEL: SELEKSI KONTEKS ENTITAS (4 BOX GRID)
