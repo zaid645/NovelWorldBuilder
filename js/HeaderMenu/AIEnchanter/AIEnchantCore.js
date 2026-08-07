@@ -65,11 +65,25 @@ export const AIEnchanterCore = {
         let response;
         let lastError = null;
 
+        // --- FITUR THINKING PROCESS ---
+        // Deteksi apakah model mendukung thinking (model varian 'lite' biasanya tidak mendukung)
+        const isLiteModel = model.toLowerCase().includes('lite');
+        const supportsThinking = !isLiteModel && (config.enableThinking ?? true);
+
+        const generationConfig = {
+            maxOutputTokens: Number(config.maxOutputTokens) || 2048
+        };
+
+        // Tambahkan konfigurasi thinking jika model mendukung
+        if (supportsThinking) {
+            generationConfig.thinkingConfig = {
+                thinkingBudget: -1 // -1 mengaktifkan Dynamic Thinking
+            };
+        }
+
         const requestBody = {
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                maxOutputTokens: Number(config.maxOutputTokens) || 2048
-            }
+            generationConfig
         };
 
         while (attempts < 3) {
@@ -106,7 +120,11 @@ export const AIEnchanterCore = {
 
         try {
             const data = await response.json();
-            const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            // Mengambil teks respon dengan mengabaikan part 'thought' (jika ada)
+            const parts = data.candidates?.[0]?.content?.parts || [];
+            const answerPart = parts.find(part => !part.thought) || parts[parts.length - 1];
+            const generatedText = answerPart?.text;
             
             if (!generatedText) {
                 throw new Error("API merespon sukses tetapi teks kosong.");
