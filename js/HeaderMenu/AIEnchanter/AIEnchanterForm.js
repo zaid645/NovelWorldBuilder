@@ -4,6 +4,7 @@ export const AIEnchanterForm = {
         const defaultConfig = {
             apiKey: '',
             model: 'gemini-3.1-flash-lite',
+            temperature: 0.7,
             maxOutputTokens: 2048,
             downloadPromptOnly: false,
             systemRole: 'Penulis Novel dengan gaya Light Novel', // Default Role
@@ -21,16 +22,23 @@ export const AIEnchanterForm = {
         const parsed = JSON.parse(config);
         return {
             ...defaultConfig,
-            ...parsed
+            ...parsed,
+            temperature: typeof parsed.temperature !== 'undefined' ? Number(parsed.temperature) : 0.7
         };
     },
 
-    saveAIConfig(apiKey, model, outputRules, maxOutputTokens, downloadPromptOnly, systemRole, includeModuleName) {
+    saveAIConfig(apiKey, model, outputRules, maxOutputTokens, downloadPromptOnly, systemRole, includeModuleName, temperature) {
+        const parsedTemp = parseFloat(temperature);
+        const validTemp = (!isNaN(parsedTemp) && temperature !== '') 
+            ? Math.min(Math.max(parsedTemp, 0.0), 2.0) 
+            : 0.7;
+
         const config = { 
             apiKey, 
             model, 
             outputRules, 
             maxOutputTokens: Number(maxOutputTokens) || 2048,
+            temperature: validTemp,
             downloadPromptOnly: Boolean(downloadPromptOnly),
             systemRole: systemRole || 'Asisten Novelis Pro',
             includeModuleName: Boolean(includeModuleName)

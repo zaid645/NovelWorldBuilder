@@ -163,6 +163,9 @@ export const NovelWriterAi = {
         const selectedCharacters = this.resolveEntityIds(this.state.selectedCharacterIds, allCharacters).map(formatEntity);
         const selectedMonsters = this.resolveEntityIds(this.state.selectedMonsterIds, allMonsters).map(formatEntity);
 
+        const savedContexts = Array.isArray(this.state.savedContexts) ? this.state.savedContexts : [];
+
+
         // Buat String Markdown fullPromptContext untuk Kompatibilitas AI
         const fullPrompt = this.buildFullPromptString(
             db, 
@@ -170,7 +173,8 @@ export const NovelWriterAi = {
             selectedLocations, 
             selectedCharacters, 
             selectedMonsters, 
-            glossary
+            glossary,
+            savedContexts
         );
 
         // Mengembalikan payload tanpa duplikasi array JSON entitas
@@ -179,12 +183,22 @@ export const NovelWriterAi = {
             generatePrompt: this.state.generatePrompt.trim(),
             referenceFiles: this.state.referenceFiles, // Key terpisah berisi { "filename.txt": "konten" }
             previousContext: this.state.outputContent.trim(),
-            fullPromptContext: fullPrompt
+            fullPromptContext: fullPrompt,
+            savedContexts: savedContexts
         };
     },
 
-    buildFullPromptString(db, universes, locations, characters, monsters, glossary = {}) {
+    buildFullPromptString(db, universes, locations, characters, monsters, glossary = {}, savedContexts = []) {
         let payload = "";
+
+        // 0. KONTEKS TERSIMPAN (DITAMBAHKAN PADA URUTAN PERTAMA / UTAMA)
+        if (savedContexts.length > 0) {
+            payload += `# KONTEKS CERITA SEBELUMNYA (SIMPANAN)\n`;
+            savedContexts.forEach((ctx, idx) => {
+                payload += `### Bagian Konteks ${idx + 1}:\n${ctx.trim()}\n\n`;
+            });
+            payload += `---\n\n`;
+        }
 
         // Helper perubah objek karakter/monster ke Markdown bertingkat
         const renderEntityMarkdown = (entity) => {

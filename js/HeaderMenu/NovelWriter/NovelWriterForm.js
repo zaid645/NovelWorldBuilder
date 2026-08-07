@@ -44,7 +44,96 @@ export const NovelWriterForm = {
         referenceFiles: {},      // Dictionary: { "filename.txt": "content text..." }
 
         // Output Modul
-        outputContent: ""        // Teks naskah novel (konteks lanjutan)
+        outputContent: "",        // Teks naskah novel (konteks lanjutan)
+        savedContexts: []         // Simpanan konteks output AI (maksimal 3 item
+    },
+
+    // =========================================================================
+    // MANAGEMENT SAVED CONTEXTS
+    // =========================================================================
+    saveOutputAsContext() {
+        const text = this.state.outputContent ? this.state.outputContent.trim() : '';
+        if (!text) {
+            if (typeof this.showNotification === 'function') {
+                this.showNotification("Output naskah kosong, tidak ada teks untuk disimpan!", "warning");
+            }
+            return;
+        }
+
+        // Batasi maksimal 3 konteks: hapus item tertua (index 0) jika sudah mencapai limit
+        if (this.state.savedContexts.length >= 3) {
+            this.state.savedContexts.shift();
+        }
+
+        // Tambahkan konteks baru
+        this.state.savedContexts.push(text);
+
+        // Bersihkan output utama
+        this.state.outputContent = "";
+        
+        this.novelWriterSaveState();
+        this.refreshUI();
+
+        if (typeof this.showNotification === 'function') {
+            this.showNotification("Konteks berhasil disimpan dan dipindahkan!", "success");
+        }
+    },
+
+    removeSavedContext(index) {
+        if (index >= 0 && index < this.state.savedContexts.length) {
+            this.state.savedContexts.splice(index, 1);
+            this.novelWriterSaveState();
+            this.refreshUI();
+            if (typeof this.showNotification === 'function') {
+                this.showNotification("Konteks simpanan dihapus.", "info");
+            }
+        }
+    },
+
+    copySavedContextToClipboard(index = null) {
+        let textToCopy = "";
+        if (index !== null) {
+            textToCopy = this.state.savedContexts[index] || "";
+        } else {
+            textToCopy = this.state.savedContexts.join("\n\n---\n\n");
+        }
+
+        if (!textToCopy) return;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            if (typeof this.showNotification === 'function') {
+                this.showNotification("Konteks berhasil disalin ke clipboard!", "success");
+            }
+        });
+    },
+
+    downloadSavedContextAsTxt(index = null) {
+        let content = "";
+        let filename = "";
+
+        if (index !== null) {
+            content = this.state.savedContexts[index] || "";
+            filename = `konteks_simpanan_${index + 1}.txt`;
+        } else {
+            content = this.state.savedContexts.join("\n\n====================\n\n");
+            filename = `semua_konteks_simpanan.txt`;
+        }
+
+        if (!content) return;
+
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    },
+
+    // Helper untuk mengambil seluruh konteks simpanan saat menyusun prompt AI
+    getFormattedSavedContexts() {
+        if (!this.state.savedContexts || this.state.savedContexts.length === 0) return "";
+        return this.state.savedContexts.map((ctx, idx) => `[Konteks Simpanan ${idx + 1}]:\n${ctx}`).join("\n\n");
     },
 
     // =========================================================================

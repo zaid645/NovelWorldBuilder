@@ -229,6 +229,11 @@ export const NovelWriterShow = {
                         </div>
                         <div class="flex flex-wrap gap-1.5 text-xs">
                             <button 
+                                onclick="app.NovelWriterModule.saveOutputAsContext()"
+                                class="bg-indigo-950/80 border border-indigo-600 hover:bg-indigo-900 text-indigo-300 px-2.5 py-1 rounded transition text-[11px] font-semibold"
+                                title="Pindahkan naskah output ke panel konteks simpanan"
+                            >📌 Simpan sebagai Konteks</button>
+                            <button 
                                 onclick="app.NovelWriterModule.cleanBackslashes()"
                                 class="bg-amber-950/60 border border-amber-800 hover:bg-amber-900 text-amber-300 px-2.5 py-1 rounded transition text-[11px]"
                                 title="Hapus semua karakter backslash (\) dari naskah"
@@ -261,6 +266,8 @@ export const NovelWriterShow = {
                         "
                     >${this.state.outputContent}</textarea>
                 </div>
+
+                ${this.renderSavedContextPanel()}
             </div>
         `;
     },
@@ -662,6 +669,67 @@ export const NovelWriterShow = {
                         <span>Hubungan/Relasi</span>
                     </label>
                 </div>
+            </div>
+        `;
+    },
+
+    renderSavedContextPanel() {
+        const contexts = this.state.savedContexts || [];
+        
+        return `
+            <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 space-y-3 shadow-md">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-700 pb-2">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wide flex items-center gap-1.5">
+                            📦 Panel Konteks Simpanan (${contexts.length}/3)
+                        </h3>
+                        <span class="text-[10px] text-slate-400 italic">Otomatis disertakan dalam prompt AI</span>
+                    </div>
+                    ${contexts.length > 0 ? `
+                        <div class="flex gap-1.5 text-xs">
+                            <button 
+                                onclick="app.NovelWriterModule.copySavedContextToClipboard()"
+                                class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-0.5 rounded text-[10px]"
+                            >Salin Semua</button>
+                            <button 
+                                onclick="app.NovelWriterModule.downloadSavedContextAsTxt()"
+                                class="bg-emerald-700 hover:bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold"
+                            >Download Semua (.txt)</button>
+                        </div>
+                    ` : ''}
+                </div>
+
+                ${contexts.length === 0 ? `
+                    <p class="text-xs text-slate-500 italic py-2">Belum ada konteks yang disimpan. Tekan tombol "📌 Simpan sbg Konteks" pada output untuk menyimpan.</p>
+                ` : `
+                    <div class="space-y-3">
+                        ${contexts.map((ctx, index) => `
+                            <div class="bg-slate-900/90 border border-slate-700 rounded-lg p-3 space-y-2">
+                                <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                                    <span class="text-[11px] font-bold text-emerald-300">Konteks #${index + 1}</span>
+                                    <div class="flex items-center gap-1">
+                                        <button 
+                                            onclick="app.NovelWriterModule.copySavedContextToClipboard(${index})"
+                                            class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded border border-slate-700"
+                                            title="Salin konteks ini"
+                                        >Salin</button>
+                                        <button 
+                                            onclick="app.NovelWriterModule.downloadSavedContextAsTxt(${index})"
+                                            class="text-[10px] bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2 py-0.5 rounded border border-slate-700"
+                                            title="Unduh konteks ini sebagai TXT"
+                                        >Unduh .txt</button>
+                                        <button 
+                                            onclick="app.NovelWriterModule.removeSavedContext(${index})"
+                                            class="text-[10px] bg-rose-950/60 hover:bg-rose-900 text-rose-300 px-1.5 py-0.5 rounded border border-rose-800 font-bold ml-1"
+                                            title="Hapus konteks ini"
+                                        >✕</button>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-300 font-serif whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto custom-scrollbar p-1">${ctx}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
             </div>
         `;
     }

@@ -46,7 +46,7 @@ export const AIEnchanterShow = {
                                     class="w-full bg-slate-900 border border-slate-700 rounded p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
                             </div>
 
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-400 mb-1.5">Pilih Model AI</label>
                                     <select id="aiModel" onchange="app.handleSaveAIConfig(false)" class="w-full bg-slate-900 border border-slate-700 rounded p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
@@ -54,9 +54,17 @@ export const AIEnchanterShow = {
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Max Output Tokens</label>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Max Tokens</label>
                                     <input type="number" id="aiMaxTokens" value="${config.maxOutputTokens || 2048}" min="100" max="8192" step="100" oninput="app.handleSaveAIConfig(false)"
                                         class="w-full bg-slate-900 border border-slate-700 rounded p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Temperatur (Kreativitas)</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="aiTemperature" value="${config.temperature ?? 0.7}" min="0.0" max="2.0" step="0.1" 
+                                            oninput="app.handleSaveAIConfig(false)"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                                    </div>
                                 </div>
                             </div>
 

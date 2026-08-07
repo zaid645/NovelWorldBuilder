@@ -67,19 +67,21 @@ export const AIEnchanterDebug = {
     },
 
     handleSaveAIConfig(showToast = true) {
-        const apiKey = document.getElementById('aiApiKey').value.trim();
-        const model = document.getElementById('aiModel').value;
-        const maxTokens = document.getElementById('aiMaxTokens').value;
-        const downloadPromptOnly = document.getElementById('aiDownloadPromptOnly').checked;
-        const systemRole = document.getElementById('aiSystemRole').value.trim();
-        const includeModuleName = document.getElementById('aiIncludeModuleName').checked;
-        const rulesText = document.getElementById('aiOutputRules').value;
+        const apiKey = document.getElementById('aiApiKey')?.value.trim() || '';
+        const model = document.getElementById('aiModel')?.value || '';
+        const maxTokens = document.getElementById('aiMaxTokens')?.value || 2048;
+        const temperature = document.getElementById('aiTemperature')?.value || 0.7; // <-- Ambil nilai temperature
+        const downloadPromptOnly = document.getElementById('aiDownloadPromptOnly')?.checked || false;
+        const systemRole = document.getElementById('aiSystemRole')?.value.trim() || '';
+        const includeModuleName = document.getElementById('aiIncludeModuleName')?.checked || false;
+        const rulesText = document.getElementById('aiOutputRules')?.value || '';
 
         const outputRules = rulesText.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0);
 
-        this.saveAIConfig(apiKey, model, outputRules, maxTokens, downloadPromptOnly, systemRole, includeModuleName);
+        // Teruskan 'temperature' sebagai argumen terakhir
+        this.saveAIConfig(apiKey, model, outputRules, maxTokens, downloadPromptOnly, systemRole, includeModuleName, temperature);
         
         if (showToast) {
             this.showAlert("Konfigurasi AI berhasil disimpan!", "success");

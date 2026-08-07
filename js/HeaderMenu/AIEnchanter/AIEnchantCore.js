@@ -71,7 +71,8 @@ export const AIEnchanterCore = {
         const supportsThinking = !isLiteModel && (config.enableThinking ?? true);
 
         const generationConfig = {
-            maxOutputTokens: Number(config.maxOutputTokens) || 2048
+            maxOutputTokens: Number(config.maxOutputTokens) || 2048,
+            temperature: Number(payload.temperature ?? config.temperature ?? 0.7)
         };
 
         // Tambahkan konfigurasi thinking jika model mendukung
@@ -122,10 +123,23 @@ export const AIEnchanterCore = {
             const data = await response.json();
             
             // Mengambil teks respon dengan mengabaikan part 'thought' (jika ada)
-            const parts = data.candidates?.[0]?.content?.parts || [];
+            const candidate = data.candidates?.[0];
+
+            if (!candidate) {
+                throw new Error("API tidak mengembalikan kandidat jawaban.");
+            }
+
+            if (candidate.finishReason && candidate.finishReason !== "STOP") {
+                if (candidate.finishReason === "SAFETY") {
+                    throw new Error("Respon diblokir oleh filter keamanan API Gemini.");
+                }
+                throw new Error(`Proses terhenti dengan alasan: ${candidate.finishReason}`);
+            }
+
+            const parts = candidate.content?.parts || [];
             const answerPart = parts.find(part => !part.thought) || parts[parts.length - 1];
             const generatedText = answerPart?.text;
-            
+
             if (!generatedText) {
                 throw new Error("API merespon sukses tetapi teks kosong.");
             }
