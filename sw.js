@@ -49,6 +49,16 @@ const LOCAL_ASSETS = [
   './js/FantasyComponent/Race/RaceFloating.js',
   './js/FantasyComponent/Race/RaceForm.js',
   './js/FantasyComponent/Race/RaceView.js',
+  // - class
+  './js/FantasyComponent/Class/Class.js',
+  './js/FantasyComponent/Class/ClassFloating.js',
+  './js/FantasyComponent/Class/ClassForm.js',
+  './js/FantasyComponent/Class/ClassView.js',
+  // - title
+  './js/FantasyComponent/Title/Title.js',
+  './js/FantasyComponent/Title/TitleFloating.js',
+  './js/FantasyComponent/Title/TitleForm.js',
+  './js/FantasyComponent/Title/TitleView.js',
 
   // HEADER
   './js/HeaderMenu/DataSharing.js',

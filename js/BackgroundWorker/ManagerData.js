@@ -8,14 +8,16 @@ import { Dexie } from 'https://unpkg.com/dexie@latest/dist/modern/dexie.mjs';
 
 const db = new Dexie('NovelLoreDB');
 
-// Naikkan versi ke 2 untuk memperbarui skema
-db.version(4).stores({
+// Naikkan versi ke 5 untuk menambahkan tabel classes dan titles
+db.version(5).stores({
     keyval: 'key', 
     
     // Tambahkan index 'order' di samping 'id'
     universes: 'id, order',
     arcs: 'id, order',
     races: 'id, order',
+    classes: 'id, order',
+    titles: 'id, order',
     skills: 'id, order',
     items: 'id, order',
     familiars: 'id, order',
@@ -57,6 +59,8 @@ export const ManagerData = {
                 universes: [],
                 arcs: [],
                 races: [],
+                classes: [],
+                titles: [],
                 skills: [],
                 items: [],
                 familiars: [],
@@ -122,8 +126,10 @@ export const ManagerData = {
                             this.data = parsed;
                             this.ensureStructure(this.data, this.defaultData);
 
-                            // --- MIGRASI LAMA & KUSTOM (Dipertahankan) ---
+                            // --- MIGRASI LAMA & KUSTOM ---
                             if (!this.data.races) this.data.races = [];
+                            if (!this.data.classes) this.data.classes = [];
+                            if (!this.data.titles) this.data.titles = [];
 
                             if (!this.data.watakList || this.data.watakList.length === 0) {
                                 const oldWatak = localStorage.getItem('novel_watak_list_data');
@@ -185,9 +191,6 @@ export const ManagerData = {
 
                             // Migrasi selesai, Simpan Permanen ke IndexedDB
                             await this.saveData(true);
-                            // Opsional: hapus localstorage lama jika ingin bersih
-                            // localStorage.removeItem('novelLoreData');
-                            
                             this.updateLastSavedUI();
                             return;
                         }
@@ -212,10 +215,8 @@ export const ManagerData = {
                 const kvItemTags = await db.keyval.get('itemTags');
                 const kvFamiliarTags = await db.keyval.get('familiarTags');
                 const kvWriterForm = await db.keyval.get('writerFormState');
-                // const kvChapterOutlines = await db.keyval.get('chapterOutlines');
                 const kvChapterOffset = await db.keyval.get('chapterOffset');
                 const kvCalendarEvents = await db.keyval.get('calendarEvents');
-                
 
                 // Aggregate semua tabel menjadi 1 objek
                 this.data = {
@@ -229,11 +230,12 @@ export const ManagerData = {
                     chapterOffset: kvChapterOffset ? kvChapterOffset.value : 0,
                     calendarEvents: kvCalendarEvents ? kvCalendarEvents.value : [],
                     
-                    
                     // Ambil data yang sudah terurut berdasarkan indeks 'order'
                     universes: await db.universes.orderBy('order').toArray(),
                     arcs:      await db.arcs.orderBy('order').toArray(),
                     races:     await db.races.orderBy('order').toArray(),
+                    classes:   await db.classes.orderBy('order').toArray(),
+                    titles:    await db.titles.orderBy('order').toArray(),
                     skills:    await db.skills.orderBy('order').toArray(),
                     items:     await db.items.orderBy('order').toArray(),
                     familiars: await db.familiars.orderBy('order').toArray(),
@@ -254,7 +256,10 @@ export const ManagerData = {
         this.data.metadata.lastSaved = new Date().toISOString();
 
         try {
-            await db.transaction('rw', [db.keyval, db.universes, db.arcs, db.skills, db.items, db.familiars, db.races, db.chapterOutlines], async () => {
+            await db.transaction('rw', [
+                db.keyval, db.universes, db.arcs, db.skills, db.items, 
+                db.familiars, db.races, db.classes, db.titles, db.chapterOutlines
+            ], async () => {
                 
                 // 1. Simpan KeyVal Items
                 await db.keyval.put({ key: 'metadata', value: this.data.metadata });
@@ -279,6 +284,8 @@ export const ManagerData = {
                 await db.items.clear();     await db.items.bulkAdd(mapWithOrder(this.data.items));
                 await db.familiars.clear(); await db.familiars.bulkAdd(mapWithOrder(this.data.familiars));
                 await db.races.clear();     await db.races.bulkAdd(mapWithOrder(this.data.races));
+                await db.classes.clear();   await db.classes.bulkAdd(mapWithOrder(this.data.classes));
+                await db.titles.clear();    await db.titles.bulkAdd(mapWithOrder(this.data.titles));
                 await db.chapterOutlines.clear(); await db.chapterOutlines.bulkAdd(this.data.chapterOutlines || []);
             });
 
@@ -292,7 +299,6 @@ export const ManagerData = {
     },
 
     setupAutoSave() {
-        // Karena proses async cepat, setInterval berjalan normal
         setInterval(() => this.saveData(true), 2 * 60 * 1000);
     },
 

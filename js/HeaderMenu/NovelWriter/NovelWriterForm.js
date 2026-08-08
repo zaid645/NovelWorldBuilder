@@ -13,6 +13,7 @@ export const NovelWriterForm = {
             background: true,
             appearance: true,
             skillIds: true,
+            classIds: true,
             itemIds: true,
             familiarIds: true,
             dialogues: true,

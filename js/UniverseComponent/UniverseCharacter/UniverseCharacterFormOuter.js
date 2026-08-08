@@ -54,6 +54,116 @@ export const UniverseCharacterFormOuter = {
         container.innerHTML = html;
     },
 
+    // --- FUNGSI BANTUAN KELAS / CLASS ---
+    onCharClassSearchInput(event, univId, category) {
+        app.currentClassFilter = event.target.value;
+        app.renderCharClassCheckboxes(univId, category);
+    },
+
+    renderCharClassCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`charClassList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeChar = this.editCharId ? universe.characters[category]?.find(c => c.id === this.editCharId) : null;
+            allCheckedIds = activeChar ? (activeChar.classIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll(`.classCheck_${safeCat}:checked`);
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = (app.currentClassFilter || '').toLowerCase();
+        const allClasses = this.data.classes || app.data.classes || [];
+
+        const filteredClasses = allClasses.filter(c => 
+            !filterQuery || (c.name || '').toLowerCase().includes(filterQuery)
+        );
+
+        const classMap = new Map();
+        filteredClasses.forEach(c => classMap.set(c.id, c));
+
+        allCheckedIds.forEach(id => {
+            if (!classMap.has(id)) {
+                const originalClass = allClasses.find(c => c.id === id);
+                if (originalClass) classMap.set(originalClass.id, originalClass);
+            }
+        });
+
+        const displayClasses = Array.from(classMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (displayClasses.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada kelas yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayClasses.map(c => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${c.id}" class="classCheck_${safeCat} form-checkbox rounded text-indigo-500 bg-slate-800 border-slate-600 focus:ring-indigo-500" 
+                ${allCheckedIds.includes(c.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${c.name}">${c.name}</span>
+            </label>
+        `).join('');
+    },
+
+    // --- FUNGSI BANTUAN GELAR / TITLE ---
+    onCharTitleSearchInput(event, univId, category) {
+        app.currentTitleFilter = event.target.value;
+        app.renderCharTitleCheckboxes(univId, category);
+    },
+
+    renderCharTitleCheckboxes(univId, category, isInitial = false) {
+        const safeCat = category.replace(/\s/g, '');
+        const container = document.getElementById(`charTitleList_${safeCat}`);
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const universe = this.data.universes.find(u => u.id === univId);
+            const activeChar = this.editCharId ? universe.characters[category]?.find(c => c.id === this.editCharId) : null;
+            allCheckedIds = activeChar ? (activeChar.titleIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll(`.titleCheck_${safeCat}:checked`);
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = (app.currentTitleFilter || '').toLowerCase();
+        const allTitles = this.data.titles || app.data.titles || [];
+
+        const filteredTitles = allTitles.filter(t => 
+            !filterQuery || (t.name || '').toLowerCase().includes(filterQuery)
+        );
+
+        const titleMap = new Map();
+        filteredTitles.forEach(t => titleMap.set(t.id, t));
+
+        allCheckedIds.forEach(id => {
+            if (!titleMap.has(id)) {
+                const originalTitle = allTitles.find(t => t.id === id);
+                if (originalTitle) titleMap.set(originalTitle.id, originalTitle);
+            }
+        });
+
+        const displayTitles = Array.from(titleMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (displayTitles.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada gelar yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayTitles.map(t => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${t.id}" class="titleCheck_${safeCat} form-checkbox rounded text-amber-500 bg-slate-800 border-slate-600 focus:ring-amber-500" 
+                ${allCheckedIds.includes(t.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${t.name}">${t.name}</span>
+            </label>
+        `).join('');
+    },
+
     // --- FUNGSI BANTUAN WATAK ---
     onCharWatakSearchInput(event, univId, category) {
         app.currentWatakFilter = event.target.value;

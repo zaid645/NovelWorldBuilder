@@ -140,6 +140,40 @@ export const UniverseCharacterShow = {
                             </div>
 
                             <div class="space-y-4 mb-4">
+                            <!-- Kelas / Job (BARU) -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Kelas / Job</label>
+                                    </div>
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="charClassSearch_${safeCat}" 
+                                            value="${app.currentClassFilter || ''}"
+                                            placeholder="Cari & Filter Kelas..." 
+                                            oninput="app.onCharClassSearchInput(event, '${universe.id}', '${category}')"
+                                            class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-indigo-500 outline-none text-slate-300">
+                                    </div>
+                                    <div id="charClassList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    </div>
+                                </div>
+
+                                <!-- Gelar / Title (BARU) -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Gelar / Title</label>
+                                    </div>
+                                    <div class="mb-2 relative">
+                                        <input type="text" 
+                                            id="charTitleSearch_${safeCat}" 
+                                            value="${app.currentTitleFilter || ''}"
+                                            placeholder="Cari & Filter Gelar..." 
+                                            oninput="app.onCharTitleSearchInput(event, '${universe.id}', '${category}')"
+                                            class="bg-slate-950 border border-slate-700 rounded p-2 text-xs w-full focus:border-amber-500 outline-none text-slate-300">
+                                    </div>
+                                    <div id="charTitleList_${safeCat}" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    </div>
+                                </div>
+
                                 <!-- Skill Khusus -->
                                 <div>
                                     <div class="flex justify-between items-center mb-1">
@@ -272,7 +306,7 @@ export const UniverseCharacterShow = {
         if (char.raceId) {
             const foundRace = allRaces.find(r => r.id === char.raceId);
             if (foundRace) {
-                raceHtml = `<span class="bg-emerald-900/60 text-emerald-300 text-[10px] px-2 py-0.5 rounded border border-emerald-700/50 font-medium whitespace-nowrap inline-flex items-center gap-1" title="Ras/Spesies">🧬 ${foundRace.name}</span>`;
+                raceHtml = `<span class="bg-emerald-900/60 text-emerald-300 text-[10px] px-2 py-0.5 rounded border border-emerald-700/50 font-medium whitespace-nowrap inline-flex items-center gap-1" title="Ras/Spesies">${foundRace.name}</span>`;
             } else {
                 raceHtml = `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through" title="Ras telah dihapus">Invalid Ras</span>`;
             }
@@ -294,13 +328,25 @@ export const UniverseCharacterShow = {
                 : `<span class="bg-rose-900/50 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-700 font-medium line-through mb-1" title="Watak dihapus dari Master">Invalid</span>`;
         }).join(' ');
 
+        // Visualisasi Kelas (Indigo/Violet)
+        const globalData = app.data || this.data || {};
+        const charClasses = (char.classIds || []).map(id => {
+            const cls = (globalData.classes || []).find(c => c.id === id);
+            return cls ? `<span class="bg-violet-900/50 text-violet-300 text-[10px] px-2 py-0.5 rounded border border-violet-700/60 font-medium">${cls.name}</span>` : '';
+        }).filter(Boolean).join(' ');
+
+        // Visualisasi Gelar (Warna Amber Baru)
+        const charTitles = (char.titleIds || []).map(id => {
+            const title = (globalData.titles || []).find(t => t.id === id);
+            return title ? `<span class="bg-amber-900/50 text-amber-300 text-[10px] px-2 py-0.5 rounded border border-amber-700/60 font-medium">${title.name}</span>` : '';
+        }).filter(Boolean).join(' ');
+
         let bioInfoStr = [];
         if (char.gender) bioInfoStr.push(char.gender);
         if (char.age !== undefined && char.age !== null && char.age !== '') bioInfoStr.push(`${char.age} thn`);
         const bioInfoBadge = bioInfoStr.length > 0 ? `<span class="text-xs text-slate-400 font-normal ml-2">(${bioInfoStr.join(' • ')})</span>` : '';
 
         // --- PERBAIKAN: Gunakan app.data (bukan this.data) ---
-        const globalData = app.data || this.data || {};
         const charSkills = (char.skillIds || []).map(id => {
             const skill = (globalData.skills || []).find(s => s.id === id);
             return skill ? `<span class="bg-indigo-900/50 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-700 font-medium">${skill.name}</span>` : '';
@@ -368,7 +414,10 @@ export const UniverseCharacterShow = {
                     <span>${char.name}</span> 
                     ${bioInfoBadge}
                 </h4>
-                ${raceHtml ? `<div class="mb-1.5">${raceHtml}</div>` : ''}
+                <!-- Badge Ras -->
+                <div class="flex flex-wrap gap-1 mb-1.5">
+                    ${raceHtml}
+                </div>
                 <div id="charWatak_${char.id}" class="flex flex-wrap gap-1 ${isCollapsed ? 'watak-collapsed' : ''}">${charWataks || '<span class="text-[10px] text-slate-500 italic bg-slate-800 px-2 py-0.5 rounded">Belum ada Watak</span>'}</div>
             </div>
 
@@ -418,7 +467,16 @@ export const UniverseCharacterShow = {
                     </div>
                 </div>
 
+                <!-- Panel Kanan: Kelas, Gelar, Skill, Item, Familiar -->
                 <div class="w-full md:w-1/3 flex flex-col gap-3 border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6">
+                    <div>
+                        <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Kelas / Job:</span>
+                        <div class="flex flex-wrap gap-1">${charClasses || '<span class="text-[10px] text-slate-600 italic">Kosong</span>'}</div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-800/50">
+                        <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Gelar / Title:</span>
+                        <div class="flex flex-wrap gap-1">${charTitles || '<span class="text-[10px] text-slate-600 italic">Kosong</span>'}</div>
+                    </div>
                     <div>
                         <span class="font-semibold text-slate-500 uppercase tracking-wider text-[10px] block mb-1.5">Skill Dimiliki:</span>
                         <div class="flex flex-wrap gap-1">${charSkills || '<span class="text-[10px] text-slate-600 italic">Kosong</span>'}</div>

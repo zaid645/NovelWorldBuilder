@@ -16,7 +16,7 @@ export const BasicUniverseExportMd = {
             if (universe.description) md.push(app.cleanText(universe.description));
             md.push('');
 
-            // 1. Lore
+            // 1. Lore & Pengetahuan Semesta
             if (universe.lores && universe.lores.length > 0) {
                 md.push(`## Lore & Pengetahuan Semesta`);
                 universe.lores.forEach(lore => {
@@ -26,7 +26,28 @@ export const BasicUniverseExportMd = {
                 md.push('\n---');
             }
 
-            // 2. Karakter
+            // Pre-register seluruh Class dan Title semesta ke registry agar Glosarium memiliki data lengkap
+            const classList = app.data?.classes || [];
+            classList.forEach(cls => {
+                const fullClass = JSON.parse(JSON.stringify(cls));
+                if (fullClass.skillIds && Array.isArray(fullClass.skillIds) && app.data?.skills) {
+                    fullClass.skills = fullClass.skillIds
+                        .map(sId => app.data.skills.find(s => s.id === sId))
+                        .filter(Boolean);
+                    fullClass.skills.forEach(s => registry.skills.set(s.id, s));
+                }
+                registry.classes.set(fullClass.id, fullClass);
+            });
+
+            // Deklarasikan titleList sebelum melakukan perulangan
+            const titleList = app.data?.titles || [];
+            titleList.forEach(title => {
+                if (title && title.id) {
+                    registry.titles.set(title.id, title);
+                }
+            });
+
+            // 2. Karakter (Karakter menampilkan nama class & title, lalu mendaftarkannya ke registry)
             if (universe.characters && Object.keys(universe.characters).length > 0) {
                 md.push(`## Daftar Tokoh / Karakter`);
                 for (const [catName, charList] of Object.entries(universe.characters)) {
@@ -35,7 +56,43 @@ export const BasicUniverseExportMd = {
                     if (universe.charactersCategoryDescriptions?.[catName]) {
                         md.push(`*${universe.charactersCategoryDescriptions[catName]}*\n`);
                     }
-                    charList.forEach(char => md.push(app.renderEntity(char, registry)));
+                    
+                    charList.forEach(char => {
+                        // Klon entitas karakter agar dapat diisi data class & title tanpa merusak state utama
+                        const charToRender = JSON.parse(JSON.stringify(char));
+
+                        // Populate & mendaftarkan Class milik Karakter
+                        if (charToRender.classIds && Array.isArray(charToRender.classIds)) {
+                            charToRender.classes = charToRender.classIds
+                                .map(cId => classList.find(c => c.id === cId))
+                                .filter(Boolean)
+                                .map(cls => {
+                                    const fullClass = JSON.parse(JSON.stringify(cls));
+                                    if (fullClass.skillIds && Array.isArray(fullClass.skillIds) && app.data?.skills) {
+                                        fullClass.skills = fullClass.skillIds
+                                            .map(sId => app.data.skills.find(s => s.id === sId))
+                                            .filter(Boolean);
+                                        fullClass.skills.forEach(s => registry.addSkill?.(s));
+                                    }
+                                    registry.addClass?.(fullClass);
+                                    return fullClass;
+                                });
+                        }
+
+                        // Populate & mendaftarkan Title milik Karakter
+                        if (charToRender.titleIds && Array.isArray(charToRender.titleIds)) {
+                            charToRender.titles = charToRender.titleIds
+                                .map(tId => titleList.find(t => t.id === tId))
+                                .filter(Boolean)
+                                .map(title => {
+                                    registry.addTitle?.(title);
+                                    return title;
+                                });
+                        }
+
+                        // Render karakter (nama class & title akan muncul ringkas di sini)
+                        md.push(app.renderEntity(charToRender, registry));
+                    });
                 }
                 md.push('---');
             }
@@ -71,6 +128,7 @@ export const BasicUniverseExportMd = {
         });
 
         // 5. Glosarium Terintegrasi
+        // Di sini seluruh Class (dengan deskripsi & daftar skill-nya) serta Title akan dirinci secara lengkap
         md.push(app.renderGlossary(registry));
 
         return md.join('\n');

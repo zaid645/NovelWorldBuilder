@@ -16,6 +16,21 @@ export const BasicUniverseExportJson = {
                             .filter(Boolean);
                         delete char.skillIds;
                     }
+
+                    // 1. Populate Kelas & Gelar pada Karakter
+                    if (char.classIds && Array.isArray(char.classIds) && app.data.classes) {
+                        char.classes = char.classIds
+                            .map(cId => app.data.classes.find(c => c.id === cId))
+                            .filter(Boolean);
+                        delete char.classIds;
+                    }
+
+                    if (char.titleIds && Array.isArray(char.titleIds) && app.data.titles) {
+                        char.titles = char.titleIds
+                            .map(tId => app.data.titles.find(t => t.id === tId))
+                            .filter(Boolean);
+                        delete char.titleIds;
+                    }
                     
                     if (char.itemIds && Array.isArray(char.itemIds) && app.data.items) {
                         char.items = char.itemIds
@@ -91,6 +106,8 @@ export const BasicUniverseExportJson = {
             name: universe.name,
             description: universe.description,
             lores: universe.lores || [],
+            classes: universe.classes || app.data?.classes || [],
+            titles: universe.titles || app.data?.titles || [],
             charactersCategoryDescriptions: universe.charactersCategoryDescriptions || {},
             characters: populatedCharacters,
             monstersCategoryDescriptions: universe.monstersCategoryDescriptions || {},

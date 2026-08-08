@@ -24,6 +24,8 @@ import { RaceModule } from './FantasyComponent/Race/Race.js';
 import { SkillModule } from './FantasyComponent/Skill/Skill.js';
 import { ItemModule } from './FantasyComponent/Item/Item.js';
 import { PetModule } from './FantasyComponent/Pet/Pet.js';
+import { ClassModule } from './FantasyComponent/Class/Class.js';
+import { TitleModule } from './FantasyComponent/Title/Title.js';
 import { DataCleaner } from './FantasyComponent/DataCleaner.js';
 
 // Universe
@@ -46,15 +48,19 @@ const coreApp = {
 
     // State edit yang sedang aktif (untuk modal atau panel edit)
     editCharId: null,
-    editSkillId: null,
+
     currentRaceFilter: null,
+    editRaceId: null,
+    currentTitleFilter: null,
+    editTitleId: null,
+    currentClassFilter: null,
+    editClassId: null,
     currentSkillFilter: null,
-    editItemId: null,
+    editSkillId: null,
     currentItemFilter: null,
-    editFamiliarId: null,
+    editItemId: null,
     currentFamiliarFilter: null,
-    editArcId: null,       
-    editSubArcId: null,
+    editFamiliarId: null,
 
     async init() {
         // Tahan render sampai default data berhasil diambil
@@ -113,6 +119,8 @@ window.app = Object.assign(
     SkillModule,
     ItemModule,
     PetModule,
+    ClassModule,
+    TitleModule,
     DataCleaner,
 
     // Universe

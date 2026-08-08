@@ -1,13 +1,9 @@
 export const RaceForm = {
-    // State untuk mode edit (null jika sedang buat ras baru)
-    editRaceId: null,
-
     // ==========================================
     // --- KONTROL FORM UI ---
     // ==========================================
 
     openAddRaceForm() {
-        this.editRaceId = null;
         const panel = document.getElementById('raceFormPanel');
         if (!panel) return;
 

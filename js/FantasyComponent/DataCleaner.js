@@ -26,6 +26,7 @@ export const DataCleaner = {
         // 1. Iterasi Root Master Data (Items & Familiars)
         if (Array.isArray(appData.items)) appData.items.forEach(item => processEntityAndStates(item));
         if (Array.isArray(appData.familiars)) appData.familiars.forEach(fam => processEntityAndStates(fam));
+        if (Array.isArray(appData.classes)) appData.classes.forEach(cls => processEntityAndStates(cls));
 
         // 2. Iterasi Entitas di dalam Universes
         if (appData.universes) {
@@ -60,6 +61,24 @@ export const DataCleaner = {
         });
     },
 
+    removeClassId(classId, appData) {
+        if (!classId) return;
+        this._traverseAllEntities(appData, (entity) => {
+            if (Array.isArray(entity.classIds)) {
+                entity.classIds = entity.classIds.filter(id => id !== classId);
+            }
+        });
+    },
+
+    removeTitleId(titleId, appData) {
+        if (!titleId) return;
+        this._traverseAllEntities(appData, (entity) => {
+            if (Array.isArray(entity.titleIds)) {
+                entity.titleIds = entity.titleIds.filter(id => id !== titleId);
+            }
+        });
+    },
+
     removeSkillId(skillId, appData) {
         if (!skillId) return;
         this._traverseAllEntities(appData, (entity) => {
@@ -91,12 +110,16 @@ export const DataCleaner = {
         if (!appData) return;
 
         const validRaceIds = new Set((appData.races || []).map(r => r.id));
+        const validClassIds = new Set((appData.classes || []).map(c => c.id));
+        const validTitleIds = new Set((appData.titles || []).map(t => t.id));
         const validSkillIds = new Set((appData.skills || []).map(s => s.id));
         const validItemIds = new Set((appData.items || []).map(i => i.id));
         const validFamiliarIds = new Set((appData.familiars || []).map(f => f.id));
 
         this._traverseAllEntities(appData, (entity) => {
             if (entity.raceId && !validRaceIds.has(entity.raceId)) entity.raceId = "";
+            if (Array.isArray(entity.classIds)) entity.classIds = entity.classIds.filter(id => validClassIds.has(id));
+            if (Array.isArray(entity.titleIds)) entity.titleIds = entity.titleIds.filter(id => validTitleIds.has(id));
             if (Array.isArray(entity.skillIds)) entity.skillIds = entity.skillIds.filter(id => validSkillIds.has(id));
             if (Array.isArray(entity.itemIds)) entity.itemIds = entity.itemIds.filter(id => validItemIds.has(id));
             if (Array.isArray(entity.familiarIds)) entity.familiarIds = entity.familiarIds.filter(id => validFamiliarIds.has(id));

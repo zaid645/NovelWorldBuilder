@@ -26,6 +26,14 @@ export const UniverseCharacterFormMain = {
         if(watakSearchInput) watakSearchInput.value = app.currentWatakFilter || '';
         this.renderCharWatakCheckboxes(univId, category, true);
 
+        const classSearchInput = document.getElementById(`charClassSearch_${safeCat}`);
+        if(classSearchInput) classSearchInput.value = app.currentClassFilter || '';
+        this.renderCharClassCheckboxes(univId, category, true); 
+
+        const titleSearchInput = document.getElementById(`charTitleSearch_${safeCat}`);
+        if(titleSearchInput) titleSearchInput.value = app.currentTitleFilter || '';
+        this.renderCharTitleCheckboxes(univId, category, true);
+
         const skillSearchInput = document.getElementById(`charSkillSearch_${safeCat}`);
         if(skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
         this.renderCharSkillCheckboxes(univId, category, true); 
@@ -74,6 +82,14 @@ export const UniverseCharacterFormMain = {
         if(watakSearchInput) watakSearchInput.value = app.currentWatakFilter || '';
         this.renderCharWatakCheckboxes(univId, category, true);
 
+        const classSearchInput = document.getElementById(`charClassSearch_${safeCat}`);
+        if(classSearchInput) classSearchInput.value = app.currentClassFilter || '';
+        this.renderCharClassCheckboxes(univId, category, true);
+
+        const titleSearchInput = document.getElementById(`charTitleSearch_${safeCat}`);
+        if(titleSearchInput) titleSearchInput.value = app.currentTitleFilter || '';
+        this.renderCharTitleCheckboxes(univId, category, true);
+
         const skillSearchInput = document.getElementById(`charSkillSearch_${safeCat}`);
         if(skillSearchInput) skillSearchInput.value = app.currentSkillFilter || '';
         this.renderCharSkillCheckboxes(univId, category, true);
@@ -119,6 +135,8 @@ export const UniverseCharacterFormMain = {
         const appearance = document.getElementById(`newApp_${safeCat}`).value.trim();
         
         const personality = Array.from(document.querySelectorAll(`.charWatakCheck_${safeCat}:checked`)).map(cb => cb.value);
+        const classIds = Array.from(document.querySelectorAll(`.classCheck_${safeCat}:checked`)).map(cb => cb.value);
+        const titleIds = Array.from(document.querySelectorAll(`.titleCheck_${safeCat}:checked`)).map(cb => cb.value);
         const skillIds = Array.from(document.querySelectorAll(`.skillCheck_${safeCat}:checked`)).map(cb => cb.value);
         const itemIds = Array.from(document.querySelectorAll(`.itemCheck_${safeCat}:checked`)).map(cb => cb.value);
         const familiarIds = Array.from(document.querySelectorAll(`.familiarCheck_${safeCat}:checked`)).map(cb => cb.value);
@@ -126,27 +144,24 @@ export const UniverseCharacterFormMain = {
         const universe = this.data.universes.find(u => u.id === univId);
 
         if (this.editCharId) {
-            // Mode Edit: Update data yang ada
+            // Mode Edit
             const char = universe.characters[category].find(c => c.id === this.editCharId);
             if (char) {
-                Object.assign(char, { name, age, gender, raceId, personality, background, appearance, skillIds, itemIds, familiarIds });
+                Object.assign(char, { name, age, gender, raceId, personality, background, appearance, classIds, titleIds, skillIds, itemIds, familiarIds });
                 
-                // Sinkronkan snapshot state aktif jika ada
                 if (char.states && char.activeStateId) {
                     const activeState = char.states.find(s => s.id === char.activeStateId);
-                    if (activeState) {
-                        activeState.snapshot = this.getCleanSnapshot(char);
-                    }
+                    if (activeState) activeState.snapshot = this.getCleanSnapshot(char);
                 }
             }
             this.editCharId = null;
             this.showAlert("Tokoh berhasil diupdate", "success");
         } else {
-            // Mode Tambah Baru: Sertakan struktur State-Tracker sejak awal
+            // Mode Tambah Baru
             const defaultStateId = this.generateId('st');
             const initialSnapshot = {
                 name, age, gender, raceId, personality, 
-                background, appearance, skillIds, itemIds, 
+                background, appearance, classIds, titleIds, skillIds, itemIds, 
                 familiarIds, notes: [], dialogues: [], relations: []
             };
 

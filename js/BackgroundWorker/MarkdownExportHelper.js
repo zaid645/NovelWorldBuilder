@@ -100,6 +100,30 @@ export const MdExportHelper = {
             if (formattedWatak) meta.push(`**Watak:** ${formattedWatak}`);
         }
 
+
+
+        // TAMBAHAN: Kelas / Job (Hanya Tampilkan Nama Ringkas)
+        if (entity.classes && entity.classes.length > 0) {
+            const classNames = entity.classes.map(c => typeof c === 'object' ? c.name : c).filter(Boolean).join(', ');
+            if (classNames) meta.push(`**Kelas:** ${classNames}`);
+            if (registry) {
+                entity.classes.forEach(c => {
+                    if (typeof c === 'object' && c.id) registry.classes.set(c.id, c);
+                });
+            }
+        }
+
+        // TAMBAHAN: Gelar / Title (Hanya Tampilkan Nama Ringkas)
+        if (entity.titles && entity.titles.length > 0) {
+            const titleNames = entity.titles.map(t => typeof t === 'object' ? t.name : t).filter(Boolean).join(', ');
+            if (titleNames) meta.push(`**Gelar:** ${titleNames}`);
+            if (registry) {
+                entity.titles.forEach(t => {
+                    if (typeof t === 'object' && t.id) registry.titles.set(t.id, t);
+                });
+            }
+        }
+
         // Gabungkan seluruh metadata dalam satu baris ringkas
         if (meta.length > 0) md.push(meta.join(' | ') + '\n');
 
@@ -206,7 +230,9 @@ export const MdExportHelper = {
             familiars: new Map(),
             items: new Map(),
             skills: new Map(),
-            races: new Map()
+            races: new Map(),
+            classes: new Map(), // Tambahan
+            titles: new Map()   // Tambahan
         };
     },
 
@@ -313,6 +339,36 @@ export const MdExportHelper = {
             md.push('---');
         }
 
+        if (registry.classes && registry.classes.size > 0) {
+            md.push(`## Daftar Kelas / Job`);
+            registry.classes.forEach(cls => {
+                md.push(`### ${cls.name}`);
+                if (cls.description) md.push(`**Deskripsi Kelas:**\n${this.cleanText(cls.description)}`);
+
+                const clsSkills = cls.skills || (cls.skillIds || []).map(sId => (app.data?.skills || []).find(s => s.id === sId)).filter(Boolean);
+                if (clsSkills.length > 0) {
+                    md.push(`**Skill Bawaan Kelas:**`);
+                    clsSkills.forEach(s => {
+                        md.push(`- ${s.name}`);
+                        if (registry.skills) registry.skills.set(s.id, s); // Sekaligus daftarkan skill-nya ke glosarium
+                    });
+                }
+                md.push('');
+            });
+            md.push('---');
+        }
+
+        // TAMBAHAN: Detail Gelar / Title di Glosarium
+        if (registry.titles && registry.titles.size > 0) {
+            md.push(`## Daftar Gelar / Title`);
+            registry.titles.forEach(title => {
+                md.push(`### ${title.name}`);
+                if (title.description) md.push(`**Deskripsi Gelar:**\n${this.cleanText(title.description)}`);
+                md.push('');
+            });
+            md.push('---');
+        }
+
         if (registry.skills.size > 0) {
             md.push(`## Daftar Skill`);
             registry.skills.forEach(sk => {
@@ -351,28 +407,6 @@ export const MdExportHelper = {
         }
 
         return mdArray.join('\n');
-    },
-
-    generateUniverseMarkdown(universes = []) {
-        const md = [];
-        md.push(`# Lore Semesta\n`);
-
-        universes.forEach(u => {
-            md.push(`## Semesta: ${u.name || 'Tanpa Nama'}`);
-            if (u.description) md.push(`**Deskripsi Semesta:**\n${this.cleanText(u.description)}\n`);
-
-            if (u.locations && u.locations.length > 0) {
-                md.push(`### Lokasi & Wilayah`);
-                u.locations.forEach(loc => {
-                    const locArr = [];
-                    this.renderLocationRecursive(loc, 4, locArr);
-                    md.push(locArr.join('\n'));
-                });
-            }
-            md.push('---\n');
-        });
-
-        return md.join('\n');
     },
 
     generateStoryInfoMarkdown(info = {}, characters = []) {

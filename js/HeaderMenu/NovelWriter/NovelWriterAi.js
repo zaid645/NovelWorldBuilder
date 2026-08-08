@@ -56,7 +56,6 @@ export const NovelWriterAi = {
 
         // 2. Lokasi Data
         const allLocations = this.getAllLocations(db);
-        // Gunakan ID Efektif (Parent + Seluruh Child) jika method tersedia
         const effectiveLocationIds = typeof this.getEffectiveSelectedLocationIds === 'function' 
             ? this.getEffectiveSelectedLocationIds(db) 
             : this.state.selectedLocationIds;
@@ -68,9 +67,9 @@ export const NovelWriterAi = {
             visuals: l.visuals || ''
         }));
 
-        // Helper Ekstraksi Entitas Karakter/Monster
         // Inisialisasi Glossary Registry
         const glossary = {
+            classes: new Map(),
             races: new Map(),
             skills: new Map(),
             items: new Map(),
@@ -80,7 +79,6 @@ export const NovelWriterAi = {
         // Helper daftar item
         const registerItemToGlossary = (item) => {
             glossary.items.set(item.id || item.name, item);
-            // Ekstraksi skill bawaan dari item ke glossary.skills
             if (Array.isArray(item.skillIds) && db.skills) {
                 const itemSkills = this.resolveEntityIds(item.skillIds, db.skills);
                 itemSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
@@ -88,7 +86,6 @@ export const NovelWriterAi = {
         };
         
         const formatEntity = (entity) => {
-            // Hapus ID, gunakan langsung name
             const result = { name: entity.name };
 
             if (attrs.basicInfo) {
@@ -96,11 +93,19 @@ export const NovelWriterAi = {
                 result.age = entity.age || entity.umur || entity.usia || null;
                 result.gender = entity.gender || entity.jenisKelamin || null;
                 
+                // Resolusi Ras (Informasi dimasukkan ke Karakter, tetapi TIDAK dimasukkan ke Glosarium)
                 if (db.races && entity.raceId) {
                     const raceObj = this.resolveEntityIds([entity.raceId], db.races)[0];
                     if (raceObj) {
                         result.race = raceObj.name;
-                        glossary.races.set(raceObj.id || raceObj.name, raceObj);
+                        
+                        /* 
+                           ============================================================
+                           OPSI GLOSARIUM RAS:
+                           Uncomment baris di bawah jika ingin memasukkan Ras ke Glosarium
+                           ============================================================
+                        */
+                        // glossary.races.set(raceObj.id || raceObj.name, raceObj);
                     } else {
                         result.race = entity.raceId;
                     }
@@ -108,6 +113,23 @@ export const NovelWriterAi = {
                     result.race = entity.race || null;
                 }
             }
+
+            // Resolusi Class (Hanya Nama Class yang disertakan, Skill bawaannya didaftarkan ke Glosarium)
+            if (attrs.classIds && Array.isArray(entity.classIds)) {
+                const classRegistry = db.classes || (typeof window !== 'undefined' && window.app && window.app.data?.classes) || [];
+                const resolvedClasses = this.resolveEntityIds(entity.classIds, classRegistry);
+                
+                result.classes = resolvedClasses.map(c => c.name);
+
+                // Masukkan skill dalam Class tersebut ke Glosarium Skill
+                resolvedClasses.forEach(c => {
+                    if (Array.isArray(c.skillIds) && db.skills) {
+                        const classSkills = this.resolveEntityIds(c.skillIds, db.skills);
+                        classSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
+                    }
+                });
+            }
+
             if (attrs.personality && (entity.personality || entity.watak)) {
                 result.personality = entity.personality || entity.watak;
             }
@@ -117,6 +139,7 @@ export const NovelWriterAi = {
             if (attrs.appearance && entity.appearance) {
                 result.appearance = entity.appearance;
             }
+
             // Resolusi & Daftarkan ke Glosarium
             if (attrs.skillIds && Array.isArray(entity.skillIds) && db.skills) {
                 const resolvedSkills = this.resolveEntityIds(entity.skillIds, db.skills);
@@ -135,16 +158,14 @@ export const NovelWriterAi = {
                 resolvedFams.forEach(f => {
                     glossary.familiars.set(f.id || f.name, f);
                     
-                    // Ekstraksi sub-skill langsung milik Pet
                     if (Array.isArray(f.skillIds) && db.skills) {
                         const famSkills = this.resolveEntityIds(f.skillIds, db.skills);
                         famSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
                     }
                     
-                    // Ekstraksi sub-item milik Pet BESERTA skill bawaan item tersebut
                     if (Array.isArray(f.itemIds) && db.items) {
                         const famItems = this.resolveEntityIds(f.itemIds, db.items);
-                        famItems.forEach(i => registerItemToGlossary(i)); // <-- Menggunakan helper
+                        famItems.forEach(i => registerItemToGlossary(i));
                     }
                 });
             }
@@ -165,8 +186,6 @@ export const NovelWriterAi = {
 
         const savedContexts = Array.isArray(this.state.savedContexts) ? this.state.savedContexts : [];
 
-
-        // Buat String Markdown fullPromptContext untuk Kompatibilitas AI
         const fullPrompt = this.buildFullPromptString(
             db, 
             selectedUniverses, 
@@ -177,11 +196,10 @@ export const NovelWriterAi = {
             savedContexts
         );
 
-        // Mengembalikan payload tanpa duplikasi array JSON entitas
         return {
             mainInstruction: this.state.mainInstruction.trim(),
             generatePrompt: this.state.generatePrompt.trim(),
-            referenceFiles: this.state.referenceFiles, // Key terpisah berisi { "filename.txt": "konten" }
+            referenceFiles: this.state.referenceFiles,
             previousContext: this.state.outputContent.trim(),
             fullPromptContext: fullPrompt,
             savedContexts: savedContexts
@@ -191,7 +209,7 @@ export const NovelWriterAi = {
     buildFullPromptString(db, universes, locations, characters, monsters, glossary = {}, savedContexts = []) {
         let payload = "";
 
-        // 0. KONTEKS TERSIMPAN (DITAMBAHKAN PADA URUTAN PERTAMA / UTAMA)
+        // 0. KONTEKS TERSIMPAN
         if (savedContexts.length > 0) {
             payload += `# KONTEKS CERITA SEBELUMNYA (SIMPANAN)\n`;
             savedContexts.forEach((ctx, idx) => {
@@ -207,6 +225,7 @@ export const NovelWriterAi = {
             if (entity.age) md += `- **Umur**: ${entity.age}\n`;
             if (entity.gender) md += `- **Gender**: ${entity.gender}\n`;
             if (entity.race) md += `- **Ras**: ${entity.race}\n`;
+            if (entity.classes && entity.classes.length > 0) md += `- **Class**: ${entity.classes.join(', ')}\n`;
             if (entity.personality) md += `- **Kepribadian**: ${entity.personality}\n`;
             if (entity.background) md += `- **Latar Belakang**: ${entity.background}\n`;
             if (entity.appearance) md += `- **Penampilan**: ${entity.appearance}\n`;
@@ -248,69 +267,54 @@ export const NovelWriterAi = {
             payload += "\n---\n\n";
         }
 
-        // 3. Karakter Terlibat (Format Markdown)
+        // 3. Karakter Terlibat
         if (characters.length > 0) {
             payload += `## KARAKTER TERLIBAT\n`;
             characters.forEach(c => payload += renderEntityMarkdown(c) + "\n");
             payload += "---\n\n";
         }
 
-        // 4. Monster Terlibat (Format Markdown)
+        // 4. Monster Terlibat
         if (monsters.length > 0) {
             payload += `## MONSTER / MUSUH TERLIBAT\n`;
             monsters.forEach(m => payload += renderEntityMarkdown(m) + "\n");
             payload += "---\n\n";
         }
 
-        // 5. Glosarium Entitas Terkait (Skill, Item, Pet/Familiar)
+        // 5. Glosarium Entitas Terkait
         if (glossary && (glossary.races?.size > 0 || glossary.skills?.size > 0 || glossary.items?.size > 0 || glossary.familiars?.size > 0)) {
             payload += `## GLOSARIUM DETAIL ENTITAS\n`;
-            
 
             if (glossary.familiars?.size > 0) {
                 payload += `### Pet & Familiar\n`;
                 glossary.familiars.forEach(f => {
                     const details = [];
-
                     if (f.description) details.push(`Deskripsi: ${f.description}`);
                     if (f.appearance) details.push(`Penampilan: ${f.appearance}`);
-
-                    // Personality (Array / String)
                     if (f.personality && f.personality.length) {
                         const pText = Array.isArray(f.personality) ? f.personality.join(', ') : f.personality;
                         details.push(`Kepribadian: ${pText}`);
                     }
-
-                    // Resolusi skillIds -> Nama Skill
                     if (Array.isArray(f.skillIds) && db.skills) {
                         const fSkills = this.resolveEntityIds(f.skillIds, db.skills).map(s => s.name);
                         if (fSkills.length > 0) details.push(`Skill: ${fSkills.join(', ')}`);
                     }
-
-                    // Resolusi itemIds -> Nama Item
                     if (Array.isArray(f.itemIds) && db.items) {
                         const fItems = this.resolveEntityIds(f.itemIds, db.items).map(i => i.name);
                         if (fItems.length > 0) details.push(`Item: ${fItems.join(', ')}`);
                     }
-
-                    // Dialogues (Array)
                     if (f.dialogues && f.dialogues.length) {
                         const dText = Array.isArray(f.dialogues) ? f.dialogues.join(' / ') : f.dialogues;
                         details.push(`Gaya Dialog: ${dText}`);
                     }
-
-                    // Notes (Array / String)
                     if (f.notes && f.notes.length) {
                         const nText = Array.isArray(f.notes) ? f.notes.join('; ') : f.notes;
                         details.push(`Catatan: ${nText}`);
                     }
-
-                    // Relations (Array / String)
                     if (f.relations && f.relations.length) {
                         const rText = Array.isArray(f.relations) ? f.relations.join(', ') : f.relations;
                         details.push(`Relasi: ${rText}`);
                     }
-
                     const infoStr = details.length > 0 ? details.join(' | ') : 'Tidak ada deskripsi';
                     payload += `- **${f.name}**: ${infoStr}\n`;
                 });
@@ -329,6 +333,14 @@ export const NovelWriterAi = {
                     payload += `- **${i.name}**: ${i.description || i.effect || 'Tidak ada deskripsi'}${itemSkillsInfo}\n`;
                 });
             }
+
+            if (glossary.classes?.size > 0) {
+                payload += `### Class & Profesi\n`;
+                glossary.classes.forEach(c => {
+                    payload += `- **${c.name}**: ${c.description || 'Tidak ada deskripsi'}\n`;
+                });
+            }
+
             if (glossary.skills?.size > 0) {
                 payload += `### Skill & Kemampuan\n`;
                 glossary.skills.forEach(s => {
@@ -371,7 +383,7 @@ export const NovelWriterAi = {
 
         const payload = {
             moduleName: "NovelWriterModule",
-            targetData: structuredData, // Payload data terstruktur lengkap
+            targetData: structuredData,
             hasPreviousText: Boolean(structuredData.previousContext),
             hasReferenceFiles: Object.keys(this.state.referenceFiles).length > 0,
             additional_instruction: {
