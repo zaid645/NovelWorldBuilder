@@ -1,4 +1,4 @@
-// Render tampilan utama pet
+// Render Tampilan Utama Pet / Familiar
 
 export const PetView = {
 
@@ -77,7 +77,7 @@ export const PetView = {
                             
                             <!-- FORM TAMBAH/EDIT FAMILIAR -->
                             <div id="addFamiliarForm" class="hidden bg-slate-900 border border-slate-600 p-4 rounded-lg mb-6 shadow-inner relative">
-                                <button onclick="app.togglePanel('addFamiliarForm')" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition text-lg">&times;</button>
+                                <button onclick="app.setPanelState('addFamiliarForm', false); app.editFamiliarId = null;" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 transition text-lg">&times;</button>
                                 <h4 id="familiarFormTitle" class="text-sm font-bold text-fuchsia-400 mb-4 border-b border-slate-700 pb-2">Buat Familiar Baru</h4>
                                 
                                 <!-- Kebutuhan Dasar, Umur & Kelamin (Grid 3 Kolom) -->
@@ -119,6 +119,41 @@ export const PetView = {
                                     </div>
                                     <div id="famRaceList" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                                         <!-- Dirender via app.renderFamRaceRadioButtons() -->
+                                    </div>
+                                </div>
+
+                                <!-- PILIHAN & PENCARIAN CLASS DAN TITLE (GELAR) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                    <!-- Filter & Checklist Class -->
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Class / Peran:</label>
+                                        <div class="mb-2 relative">
+                                            <input type="text" 
+                                                id="famClassSearch" 
+                                                value="${app.currentClassFilter || ''}"
+                                                placeholder="Cari Class..." 
+                                                oninput="app.onFamClassSearchInput(event)"
+                                                class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:border-emerald-500 outline-none text-slate-300">
+                                        </div>
+                                        <div id="famClassList" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-36 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
+                                            <!-- Dirender via app.renderFamClassCheckboxes() -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Filter & Checklist Title -->
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Pilih Gelar / Title:</label>
+                                        <div class="mb-2 relative">
+                                            <input type="text" 
+                                                id="famTitleSearch" 
+                                                value="${app.currentTitleFilter || ''}"
+                                                placeholder="Cari Title..." 
+                                                oninput="app.onFamTitleSearchInput(event)"
+                                                class="bg-slate-800 border border-slate-700 rounded p-1.5 text-xs w-full focus:border-yellow-500 outline-none text-slate-300">
+                                        </div>
+                                        <div id="famTitleList" class="bg-slate-900 border border-slate-600 rounded p-2 max-h-36 overflow-y-auto grid grid-cols-2 gap-2 text-xs">
+                                            <!-- Dirender via app.renderFamTitleCheckboxes() -->
+                                        </div>
                                     </div>
                                 </div>
 
@@ -186,7 +221,7 @@ export const PetView = {
                                     <textarea id="newFamBackground" placeholder="Dari mana ia berasal? Kenapa ia ikut dengan masternya? Tulis draf untuk referensi AI..." class="bg-slate-800 border border-slate-600 rounded p-2.5 text-sm w-full outline-none focus:border-fuchsia-500" rows="3"></textarea>
                                 </div>
                                 
-                                <!-- Integrasi Komponen Lain -->
+                                <!-- Integrasi Skill & Item -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                     <!-- Filter & Checklist Skill -->
                                     <div>
@@ -249,6 +284,19 @@ export const PetView = {
                             <div id="floatingFamTags" class="flex flex-wrap gap-1.5 mb-1.5"></div>
                             <div id="floatingFamWataks" class="flex flex-wrap gap-1.5"></div>
                         </div>
+                        
+                        <!-- Badges Dedicated Class & Title -->
+                        <div class="pt-2 border-t border-slate-700/60 flex flex-col gap-2">
+                            <div>
+                                <span class="font-semibold text-emerald-400 uppercase tracking-wider text-[10px] block mb-1">Class / Peran:</span>
+                                <div id="floatingFamClasses" class="flex flex-wrap gap-1.5"></div>
+                            </div>
+                            <div>
+                                <span class="font-semibold text-yellow-400 uppercase tracking-wider text-[10px] block mb-1">Gelar / Title:</span>
+                                <div id="floatingFamTitles" class="flex flex-wrap gap-1.5"></div>
+                            </div>
+                        </div>
+
                         <div class="pt-2 border-t border-slate-700/60 flex flex-col gap-2">
                             <div>
                                 <span class="font-semibold text-indigo-400 uppercase tracking-wider text-[10px] block mb-1.5">Skill Tambahan:</span>
@@ -260,6 +308,10 @@ export const PetView = {
                             </div>
                         </div>
                         <hr class="border-slate-700/60">
+                        <!-- State Cerita Snapshot -->
+                        <div id="floatingFamStateContainer"></div>
+                        
+                        <hr class="border-slate-700/60">
                         <div>
                             <span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block mb-1.5">Wujud / Penampilan:</span>
                             <div id="floatingFamApp" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
@@ -269,7 +321,7 @@ export const PetView = {
                             <span class="font-semibold text-emerald-400 uppercase tracking-wider text-[10px] block mb-1.5">Latar Belakang:</span>
                             <div id="floatingFamDesc" class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
                         </div>
-                        <!-- Seksi Catatan Relasi -->
+                        <!-- Seksi Catatan Relasi & Dialog -->
                         <hr class="border-slate-700/60">
                         <div>
                             <span class="font-semibold text-amber-400 uppercase tracking-wider text-[10px] block mb-1.5">Catatan</span>
@@ -300,7 +352,7 @@ export const PetView = {
     // ==========================================
     renderFamiliarGrid() {
         const container = document.getElementById('familiarGridContainer');
-        if(!container) return;
+        if (!container) return;
         const query = (app.currentFamiliarFilter || '').toLowerCase();
 
         const famData = this.data.familiars.map(fam => {
@@ -313,6 +365,8 @@ export const PetView = {
                 tagIds: fam.tagIds || [],
                 skillIds: fam.skillIds || [],
                 itemIds: fam.itemIds || [],
+                classIds: fam.classIds || [],
+                titleIds: fam.titleIds || [],
                 tagNames 
             };
         });
@@ -362,11 +416,13 @@ export const PetView = {
         
         const hasSkills = fam.skillIds && fam.skillIds.length > 0;
         const hasItems = fam.itemIds && fam.itemIds.length > 0;
+        const hasClasses = fam.classIds && fam.classIds.length > 0;
+        const hasTitles = fam.titleIds && fam.titleIds.length > 0;
         const hasDialogues = fam.dialogues && fam.dialogues.length > 0;
         const hasNotes = fam.notes && fam.notes.length > 0;
 
         return `
-        <div onclick="app.showFamiliarDetailFloating('${fam.id}')" class="bg-slate-900 border border-slate-700 rounded-lg p-3 relative group shadow-md transition-all duration-300 hover:border-fuchsia-500/70 hover:shadow-fuchsia-900/20 cursor-pointer flex flex-col justify-between min-h-[95px] overflow-hidden">
+        <div onclick="app.showFamiliarDetailFloating('${fam.id}')" class="bg-slate-900 border border-slate-700 rounded-lg p-3 relative group shadow-md transition-all duration-300 hover:border-fuchsia-500/70 hover:shadow-fuchsia-900/20 cursor-pointer flex flex-col justify-between min-h-[110px] overflow-hidden">
             
             <div class="z-10">
                 <h4 class="font-bold text-fuchsia-400 text-sm truncate mb-1.5 drop-shadow-md" title="${fam.name}">${fam.name}</h4>
@@ -377,11 +433,13 @@ export const PetView = {
                     ${(!famWataks && !famTags) ? '<span class="text-[9px] text-slate-600 italic bg-slate-800 px-1.5 py-0.5 rounded">Tanpa Label</span>' : ''}
                 </div>
                 
-                <!-- Indikator Ekstra -->
-                <div class="flex gap-1 mt-1">
+                <!-- Indikator Fitur Terpasang -->
+                <div class="flex gap-1.5 mt-2">
+                    ${hasClasses ? '<span class="text-[9px] text-emerald-400" title="Memiliki Class">🛡️</span>' : ''}
+                    ${hasTitles ? '<span class="text-[9px] text-yellow-400" title="Memiliki Title">👑</span>' : ''}
                     ${hasSkills ? '<span class="text-[9px] text-indigo-400" title="Memiliki Skill">✨</span>' : ''}
                     ${hasItems ? '<span class="text-[9px] text-cyan-400" title="Memiliki Item">🎒</span>' : ''}
-                    ${hasDialogues ? '<span class="text-[9px] text-yellow-400" title="Memiliki Dialog">💬</span>' : ''}
+                    ${hasDialogues ? '<span class="text-[9px] text-blue-400" title="Memiliki Dialog">💬</span>' : ''}
                     ${hasNotes ? '<span class="text-[9px] text-amber-400" title="Memiliki Catatan">📝</span>' : ''}
                 </div>
             </div>
@@ -391,24 +449,17 @@ export const PetView = {
                 <svg class="w-8 h-8 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
             </div>
 
-            <!-- Tombol Aksi Melayang -->
-            <div class="absolute top-1.5 right-1.5 flex space-x-1 opacity-0 group-hover:opacity-100 transition z-20 bg-slate-900/80 p-0.5 rounded backdrop-blur-sm">
-                <button onclick="event.stopPropagation(); app.openEditFamiliar('${fam.id}')" class="text-slate-400 hover:text-amber-400 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Edit Familiar">
+            <!-- Tombol Aksi Melayang (Edit & Delete) -->
+            <div class="absolute top-1.5 right-1.5 flex space-x-1 opacity-0 group-hover:opacity-100 transition z-20 bg-slate-900/90 p-1 rounded-md border border-slate-700 backdrop-blur-sm">
+                <button onclick="event.stopPropagation(); app.openEditFamiliar('${fam.id}')" class="text-amber-400 hover:text-amber-300 p-0.5 rounded transition" title="Edit Familiar">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                 </button>
-                <button onclick="event.stopPropagation(); app.deleteFamiliar('${fam.id}')" class="text-slate-400 hover:text-rose-500 p-1 bg-slate-800 rounded border border-slate-700 transition" title="Hapus Familiar">
+                <button onclick="event.stopPropagation(); app.deleteFamiliar('${fam.id}')" class="text-rose-500 hover:text-rose-400 p-0.5 rounded transition" title="Hapus Familiar">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
             </div>
+
         </div>
         `;
-    },
-
-    // ==========================================
-    // --- BANTUAN PENCARIAN FAMILIAR ---    
-    // ==========================================
-    onSearchFamiliarInput(e) {
-        app.currentFamiliarFilter = e.target.value;
-        this.renderFamiliarGrid();
     }
-}
+};

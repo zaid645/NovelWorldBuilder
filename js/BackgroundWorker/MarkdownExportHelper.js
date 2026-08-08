@@ -1,5 +1,4 @@
-// Helper Terpadu untuk Rendering Export Markdown (.md)
-
+// Helper Rendering Export Markdown - REVISED
 export const MdExportHelper = {
     cleanText(text) {
         if (!text) return '';
@@ -22,9 +21,6 @@ export const MdExportHelper = {
         URL.revokeObjectURL(url);
     },
 
-    // ==========================================
-    // --- RENDER ENTITAS KARAKTER (DAPATKAN METADATA LENGKAP) ---
-    // ==========================================
     renderEntity(entity, registry, options = {}) {
         const md = [];
         const headingLevel = options.headingLevel || '####';
@@ -33,24 +29,15 @@ export const MdExportHelper = {
 
         const meta = [];
 
-        // 1. Peran / Role
-        const role = entity.role || entity.peran;
-        if (role) meta.push(`**Peran:** ${role}`);
-
-        // 2. Kategori
+        if (entity.role || entity.peran) meta.push(`**Peran:** ${entity.role || entity.peran}`);
         if (entity.category || entity.kategori) meta.push(`**Kategori:** ${entity.category || entity.kategori}`);
-
-        // 3. Semesta
         if (entity.universeName || entity.universe) meta.push(`**Semesta:** ${entity.universeName || entity.universe}`);
 
-        // 4. Faksi / Organisasi
         const faction = entity.faction || entity.faksi;
         if (faction) meta.push(`**Faksi:** ${faction}`);
-
-        // 5. Status Tokoh
         if (entity.status) meta.push(`**Status:** ${entity.status}`);
 
-        // 6. Penanganan Ras Fleksibel
+        // Ras
         let raceName = '';
         if (entity.race && typeof entity.race === 'object' && entity.race.name) {
             raceName = entity.race.name;
@@ -58,7 +45,6 @@ export const MdExportHelper = {
         } else if (entity.raceName) {
             raceName = entity.raceName;
         } else if (typeof entity.race === 'string' && entity.race.trim() !== '') {
-            // Cek apakah entity.race adalah ID ras di app.data atau nama langsung
             const foundRace = (app.data?.races || []).find(r => r.id === entity.race || r.name === entity.race);
             if (foundRace) {
                 raceName = foundRace.name;
@@ -75,7 +61,7 @@ export const MdExportHelper = {
         }
         if (raceName) meta.push(`**Ras:** ${raceName}`);
 
-        // 7. Gender / Jenis Kelamin
+        // Gender & Umur
         const genderRaw = entity.gender || entity.jenisKelamin;
         if (genderRaw && String(genderRaw).toLowerCase() !== 'none') {
             const gLower = String(genderRaw).toLowerCase();
@@ -87,11 +73,9 @@ export const MdExportHelper = {
             meta.push(`**Gender:** ${genderText}`);
         }
 
-        // 8. Umur / Usia (Menambahkan dukungan kunci 'umur')
         const age = entity.age || entity.usia || entity.umur;
         if (age !== undefined && age !== null && age !== '') meta.push(`**Umur:** ${age}`);
 
-        // 9. Watak / Kepribadian
         const watakRaw = entity.watak || entity.personality || entity.sifat;
         if (watakRaw) {
             const formattedWatak = Array.isArray(watakRaw) 
@@ -100,41 +84,39 @@ export const MdExportHelper = {
             if (formattedWatak) meta.push(`**Watak:** ${formattedWatak}`);
         }
 
-
-
-        // TAMBAHAN: Kelas / Job (Hanya Tampilkan Nama Ringkas)
-        if (entity.classes && entity.classes.length > 0) {
-            const classNames = entity.classes.map(c => typeof c === 'object' ? c.name : c).filter(Boolean).join(', ');
+        // Kelas / Job (Dengan fallback resolution dari classIds)
+        const classes = entity.classes || (entity.classIds || []).map(cId => (app.data?.classes || []).find(c => c.id === cId)).filter(Boolean);
+        if (classes.length > 0) {
+            const classNames = classes.map(c => typeof c === 'object' ? c.name : c).filter(Boolean).join(', ');
             if (classNames) meta.push(`**Kelas:** ${classNames}`);
             if (registry) {
-                entity.classes.forEach(c => {
+                classes.forEach(c => {
                     if (typeof c === 'object' && c.id) registry.classes.set(c.id, c);
                 });
             }
         }
 
-        // TAMBAHAN: Gelar / Title (Hanya Tampilkan Nama Ringkas)
-        if (entity.titles && entity.titles.length > 0) {
-            const titleNames = entity.titles.map(t => typeof t === 'object' ? t.name : t).filter(Boolean).join(', ');
+        // Gelar / Title (Dengan fallback resolution dari titleIds)
+        const titles = entity.titles || (entity.titleIds || []).map(tId => (app.data?.titles || []).find(t => t.id === tId)).filter(Boolean);
+        if (titles.length > 0) {
+            const titleNames = titles.map(t => typeof t === 'object' ? t.name : t).filter(Boolean).join(', ');
             if (titleNames) meta.push(`**Gelar:** ${titleNames}`);
             if (registry) {
-                entity.titles.forEach(t => {
+                titles.forEach(t => {
                     if (typeof t === 'object' && t.id) registry.titles.set(t.id, t);
                 });
             }
         }
 
-        // Gabungkan seluruh metadata dalam satu baris ringkas
         if (meta.length > 0) md.push(meta.join(' | ') + '\n');
 
-        // Tujuan & Motivasi
+        // Deskripsi Tambahan
         const goalRaw = entity.goal || entity.motivation || entity.tujuan;
         if (goalRaw) {
             const cleanGoal = this.cleanText(goalRaw);
             if (cleanGoal) md.push(`**Tujuan & Motivasi:**\n${cleanGoal}\n`);
         }
 
-        // Kelebihan & Kelemahan
         if (entity.strengths || entity.weaknesses || entity.flaws) {
             if (entity.strengths) md.push(`**Kelebihan:** ${this.cleanText(entity.strengths)}`);
             const flaws = entity.weaknesses || entity.flaws;
@@ -153,7 +135,7 @@ export const MdExportHelper = {
             if (cleanBg) md.push(`**Latar Belakang:**\n${cleanBg}\n`);
         }
 
-        // Skill
+        // Skills
         const skills = entity.skills || (entity.skillIds || []).map(sId => (app.data?.skills || []).find(s => s.id === sId)).filter(Boolean);
         if (skills.length > 0) {
             md.push(`**Skill:**`);
@@ -164,7 +146,7 @@ export const MdExportHelper = {
             md.push('');
         }
 
-        // Item
+        // Items
         const items = entity.items || (entity.itemIds || []).map(iId => (app.data?.items || []).find(i => i.id === iId)).filter(Boolean);
         if (items.length > 0) {
             md.push(`**Item:**`);
@@ -179,7 +161,7 @@ export const MdExportHelper = {
             md.push('');
         }
 
-        // Pet / Familiar
+        // Pet / Familiar (Termasuk pendaftaran Class & Title milik Pet)
         const familiars = entity.familiars || (entity.familiarIds || []).map(fId => (app.data?.familiars || []).find(f => f.id === fId)).filter(Boolean);
         if (familiars.length > 0) {
             md.push(`**Pet / Familiar:**`);
@@ -190,32 +172,46 @@ export const MdExportHelper = {
                         const famRace = (app.data?.races || []).find(r => r.id === fam.raceId);
                         if (famRace) registry.races.set(famRace.id, famRace);
                     }
+                    // Daftarkan Class & Title Pet ke Registry
+                    const famClasses = fam.classes || (fam.classIds || []).map(cId => (app.data?.classes || []).find(c => c.id === cId)).filter(Boolean);
+                    famClasses.forEach(c => registry.classes.set(c.id, c));
+
+                    const famTitles = fam.titles || (fam.titleIds || []).map(tId => (app.data?.titles || []).find(t => t.id === tId)).filter(Boolean);
+                    famTitles.forEach(t => registry.titles.set(t.id, t));
+
                     const famSkills = fam.skills || (fam.skillIds || []).map(sId => (app.data?.skills || []).find(s => s.id === sId)).filter(Boolean);
                     famSkills.forEach(s => registry.skills.set(s.id, s));
                     
                     const famItems = fam.items || (fam.itemIds || []).map(iId => (app.data?.items || []).find(i => i.id === iId)).filter(Boolean);
                     famItems.forEach(i => registry.items.set(i.id, i));
                 }
-                md.push(`- ${fam.name}`);
+
+                // Render ringkas nama Pet dengan Class/Title
+                const famClasses = fam.classes || (fam.classIds || []).map(cId => (app.data?.classes || []).find(c => c.id === cId)).filter(Boolean);
+                const famTitles = fam.titles || (fam.titleIds || []).map(tId => (app.data?.titles || []).find(t => t.id === tId)).filter(Boolean);
+                
+                const extraInfo = [];
+                if (famClasses.length > 0) extraInfo.push(`Kelas: ${famClasses.map(c => c.name).join(', ')}`);
+                if (famTitles.length > 0) extraInfo.push(`Gelar: ${famTitles.map(t => t.name).join(', ')}`);
+                
+                const label = extraInfo.length > 0 ? `${fam.name} (${extraInfo.join(' | ')})` : fam.name;
+                md.push(`- ${label}`);
             });
             md.push('');
         }
 
-        // Relasi
         if (entity.relations && entity.relations.length > 0) {
             md.push(`**Relasi:**`);
             entity.relations.filter(Boolean).forEach(r => md.push(`- ${r}`));
             md.push('');
         }
 
-        // Catatan
         if (entity.notes && entity.notes.length > 0) {
             md.push(`**Catatan:**`);
             entity.notes.filter(Boolean).forEach(n => md.push(`- ${n}`));
             md.push('');
         }
 
-        // Dialog Khas
         if (entity.dialogues && entity.dialogues.length > 0) {
             md.push(`**Dialog Khas:**`);
             entity.dialogues.filter(Boolean).forEach(d => md.push(`- ${d}`));
@@ -231,20 +227,21 @@ export const MdExportHelper = {
             items: new Map(),
             skills: new Map(),
             races: new Map(),
-            classes: new Map(), // Tambahan
-            titles: new Map()   // Tambahan
+            classes: new Map(),
+            titles: new Map()
         };
     },
 
     renderGlossary(registry) {
         const md = [];
-        const hasData = registry.races.size > 0 || registry.familiars.size > 0 || registry.items.size > 0 || registry.skills.size > 0;
+        const hasData = registry.races.size > 0 || registry.familiars.size > 0 || registry.items.size > 0 || registry.skills.size > 0 || registry.classes.size > 0 || registry.titles.size > 0;
 
         if (!hasData) return '';
 
         md.push(`# Glosarium / Lampiran Ensiklopedia`);
-        md.push(`*Daftar rincian detail seluruh Ras, Familiar, Item, dan Skill yang terikat pada entitas di atas.*\n`);
+        md.push(`*Daftar rincian detail seluruh Ras, Familiar, Item, Kelas, Gelar, dan Skill yang terikat pada entitas di atas.*\n`);
 
+        // Glosarium Pet / Familiar
         if (registry.familiars.size > 0) {
             md.push(`## Daftar Familiar / Pet`);
             registry.familiars.forEach(fam => {
@@ -257,6 +254,17 @@ export const MdExportHelper = {
                     if (r) raceName = r.name;
                 }
                 if (raceName) details.push(`**Ras:** ${raceName}`);
+
+                // Tampilkan Kelas & Gelar milik Pet di Glosarium
+                const famClasses = fam.classes || (fam.classIds || []).map(cId => (app.data?.classes || []).find(c => c.id === cId)).filter(Boolean);
+                if (famClasses.length > 0) {
+                    details.push(`**Kelas:** ${famClasses.map(c => c.name).join(', ')}`);
+                }
+
+                const famTitles = fam.titles || (fam.titleIds || []).map(tId => (app.data?.titles || []).find(t => t.id === tId)).filter(Boolean);
+                if (famTitles.length > 0) {
+                    details.push(`**Gelar:** ${famTitles.map(t => t.name).join(', ')}`);
+                }
 
                 const famGender = fam.gender || fam.jenisKelamin;
                 if (famGender && famGender !== 'none') {
@@ -350,7 +358,7 @@ export const MdExportHelper = {
                     md.push(`**Skill Bawaan Kelas:**`);
                     clsSkills.forEach(s => {
                         md.push(`- ${s.name}`);
-                        if (registry.skills) registry.skills.set(s.id, s); // Sekaligus daftarkan skill-nya ke glosarium
+                        if (registry.skills) registry.skills.set(s.id, s);
                     });
                 }
                 md.push('');
@@ -358,7 +366,6 @@ export const MdExportHelper = {
             md.push('---');
         }
 
-        // TAMBAHAN: Detail Gelar / Title di Glosarium
         if (registry.titles && registry.titles.size > 0) {
             md.push(`## Daftar Gelar / Title`);
             registry.titles.forEach(title => {

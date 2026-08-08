@@ -1,25 +1,46 @@
-// Logika CRUD Familiar dan integrasi AI
+// Logika CRUD Familiar, Manajemen State/Snapshot, dan Integrasi AI
 
 export const PetForm = {
+
+    // ==========================================
+    // --- HELPER DUKUNGAN KODE & ID ---
+    // ==========================================
+    _getId(prefix) {
+        if (typeof this.generateId === 'function') {
+            return this.generateId(prefix);
+        }
+        if (typeof app !== 'undefined' && typeof app.generateId === 'function') {
+            return app.generateId(prefix);
+        }
+        return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    },
 
     // ==========================================
     // --- LOGIKA FORM & CRUD PET ---
     // ==========================================
     openAddFamiliar() {
         this.editFamiliarId = null;
-        document.getElementById('familiarFormTitle').innerText = "Buat Familiar Baru";
+        const titleEl = document.getElementById('familiarFormTitle');
+        if (titleEl) titleEl.innerText = "Buat Familiar Baru";
         
-        document.getElementById('newFamiliarName').value = '';
-        document.getElementById('newFamiliarAge').value = ''; // FIX: Reset Umur
+        // Reset Input Teks & Umur
+        const nameEl = document.getElementById('newFamiliarName');
+        if (nameEl) nameEl.value = '';
         
-        // FIX: Reset Kelamin ke 'Tidak Berlaku'
+        const ageEl = document.getElementById('newFamiliarAge');
+        if (ageEl) ageEl.value = '';
+        
+        // Reset Kelamin ke 'Tidak Berlaku' (none)
         const genderDefault = document.querySelector('input[name="famGender"][value="none"]');
         if (genderDefault) genderDefault.checked = true;
 
-        document.getElementById('newFamiliarApp').value = '';
-        document.getElementById('newFamBackground').value = ''; 
+        const appEl = document.getElementById('newFamiliarApp');
+        if (appEl) appEl.value = '';
+        
+        const bgEl = document.getElementById('newFamBackground');
+        if (bgEl) bgEl.value = ''; 
                 
-        // Reset Search Input & Render Watak, Ras, Skill, Item
+        // Reset Search Input & Render Watak, Ras, Class, Title, Skill, Item
         const famWatakSearch = document.getElementById('famWatakSearch');
         if (famWatakSearch) famWatakSearch.value = '';
         this.renderFamWatakCheckboxes(true);
@@ -27,141 +48,207 @@ export const PetForm = {
         const famRaceSearch = document.getElementById('famRaceSearch');
         if (famRaceSearch) famRaceSearch.value = '';
         this.renderFamRaceRadioButtons(true);
+
+        const famClassSearch = document.getElementById('famClassSearch');
+        if (famClassSearch) famClassSearch.value = (typeof app !== 'undefined' ? app.currentClassFilter : '') || '';
+        this.renderFamClassCheckboxes(true);
+
+        const famTitleSearch = document.getElementById('famTitleSearch');
+        if (famTitleSearch) famTitleSearch.value = (typeof app !== 'undefined' ? app.currentTitleFilter : '') || '';
+        this.renderFamTitleCheckboxes(true);
 
         document.querySelectorAll('.familiarTagCheck').forEach(cb => cb.checked = false);
         
         const famSkillSearch = document.getElementById('famSkillSearch');
-        if (famSkillSearch) famSkillSearch.value = app.currentSkillFilter || '';
+        if (famSkillSearch) famSkillSearch.value = (typeof app !== 'undefined' ? app.currentSkillFilter : '') || '';
         this.renderFamSkillCheckboxes(true);
 
         const famItemSearch = document.getElementById('famItemSearch');
-        if (famItemSearch) famItemSearch.value = app.currentItemFilter || '';
+        if (famItemSearch) famItemSearch.value = (typeof app !== 'undefined' ? app.currentItemFilter : '') || '';
         this.renderFamItemCheckboxes(true);
         
-        this.setPanelState('addFamiliarForm', true);
-        document.getElementById('saveFamiliarBtn').innerText = "Simpan Familiar";
+        // Atur UI Panel
+        if (typeof this.setPanelState === 'function') {
+            this.setPanelState('addFamiliarForm', true);
+        }
         
-        document.getElementById('aiFamUniverse').value = '';
-        document.getElementById('aiFamDeepLore').checked = false;
+        const saveBtn = document.getElementById('saveFamiliarBtn');
+        if (saveBtn) saveBtn.innerText = "Simpan Familiar";
         
-        document.getElementById('addFamiliarForm').scrollIntoView({ behavior: 'smooth' });
+        const aiUniv = document.getElementById('aiFamUniverse');
+        if (aiUniv) aiUniv.value = '';
+        
+        const aiLore = document.getElementById('aiFamDeepLore');
+        if (aiLore) aiLore.checked = false;
+        
+        const formEl = document.getElementById('addFamiliarForm');
+        if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
     },
 
     openEditFamiliar(id) {
-        const fam = this.data.familiars.find(f => f.id === id);
-        if(!fam) return;
+        const fam = (this.data?.familiars || []).find(f => f.id === id);
+        if (!fam) return;
         
         this.editFamiliarId = id;
-        document.getElementById('familiarFormTitle').innerText = `Edit Familiar: ${fam.name}`;
+        const titleEl = document.getElementById('familiarFormTitle');
+        if (titleEl) titleEl.innerText = `Edit Familiar: ${fam.name}`;
         
-        document.getElementById('newFamiliarName').value = fam.name;
-        document.getElementById('newFamiliarAge').value = fam.age || ''; // FIX: Load Umur
+        const nameEl = document.getElementById('newFamiliarName');
+        if (nameEl) nameEl.value = fam.name || '';
         
-        // FIX: Load Kelamin
+        const ageEl = document.getElementById('newFamiliarAge');
+        if (ageEl) ageEl.value = fam.age || '';
+        
+        // Load Kelamin
         const genderValue = fam.gender || 'none';
         const genderRadio = document.querySelector(`input[name="famGender"][value="${genderValue}"]`);
         if (genderRadio) genderRadio.checked = true;
 
-        document.getElementById('newFamiliarApp').value = fam.appearance || '';
-        document.getElementById('newFamBackground').value = fam.description || ''; 
+        const appEl = document.getElementById('newFamiliarApp');
+        if (appEl) appEl.value = fam.appearance || '';
+        
+        const bgEl = document.getElementById('newFamBackground');
+        if (bgEl) bgEl.value = fam.description || ''; 
 
-        // FIX: Render & Centang Watak
+        // Render & Centang Watak, Ras, Class, Title, Tag, Skill, Item
         const famWatakSearch = document.getElementById('famWatakSearch');
         if (famWatakSearch) famWatakSearch.value = '';
         this.renderFamWatakCheckboxes(true);
 
-        // FIX: Render & Pilih Ras
         const famRaceSearch = document.getElementById('famRaceSearch');
         if (famRaceSearch) famRaceSearch.value = '';
         this.renderFamRaceRadioButtons(true);
+
+        const famClassSearch = document.getElementById('famClassSearch');
+        if (famClassSearch) famClassSearch.value = (typeof app !== 'undefined' ? app.currentClassFilter : '') || '';
+        this.renderFamClassCheckboxes(true);
+
+        const famTitleSearch = document.getElementById('famTitleSearch');
+        if (famTitleSearch) famTitleSearch.value = (typeof app !== 'undefined' ? app.currentTitleFilter : '') || '';
+        this.renderFamTitleCheckboxes(true);
 
         document.querySelectorAll('.familiarTagCheck').forEach(cb => {
             cb.checked = (fam.tagIds || []).includes(cb.value);
         });
         
         const famSkillSearch = document.getElementById('famSkillSearch');
-        if (famSkillSearch) famSkillSearch.value = app.currentSkillFilter || '';
+        if (famSkillSearch) famSkillSearch.value = (typeof app !== 'undefined' ? app.currentSkillFilter : '') || '';
         this.renderFamSkillCheckboxes(true);
 
         const famItemSearch = document.getElementById('famItemSearch');
-        if (famItemSearch) famItemSearch.value = app.currentItemFilter || '';
+        if (famItemSearch) famItemSearch.value = (typeof app !== 'undefined' ? app.currentItemFilter : '') || '';
         this.renderFamItemCheckboxes(true);
 
-        document.getElementById('aiFamUniverse').value = '';
-        document.getElementById('aiFamDeepLore').checked = false;
-
-        this.setPanelState('addFamiliarForm', true);
-        document.getElementById('saveFamiliarBtn').innerText = "Update Familiar";
+        const aiUniv = document.getElementById('aiFamUniverse');
+        if (aiUniv) aiUniv.value = '';
         
-        document.getElementById('addFamiliarForm').scrollIntoView({ behavior: 'smooth' });
+        const aiLore = document.getElementById('aiFamDeepLore');
+        if (aiLore) aiLore.checked = false;
+
+        if (typeof this.setPanelState === 'function') {
+            this.setPanelState('addFamiliarForm', true);
+        }
+        
+        const saveBtn = document.getElementById('saveFamiliarBtn');
+        if (saveBtn) saveBtn.innerText = "Update Familiar";
+        
+        const formEl = document.getElementById('addFamiliarForm');
+        if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
     },
 
     saveFamiliar() {
-        const name = document.getElementById('newFamiliarName').value.trim(); 
-        const age = document.getElementById('newFamiliarAge').value.trim(); // FIX: Ambil Umur
+        const nameInput = document.getElementById('newFamiliarName');
+        const name = nameInput ? nameInput.value.trim() : '';
         
-        // FIX: Ambil Kelamin
+        if (!name) {
+            if (typeof this.showAlert === 'function') {
+                return this.showAlert("Nama familiar wajib diisi", "error");
+            }
+            return alert("Nama familiar wajib diisi");
+        }
+
+        const ageInput = document.getElementById('newFamiliarAge');
+        const age = ageInput ? ageInput.value.trim() : '';
+
         const selectedGender = document.querySelector('input[name="famGender"]:checked');
         const gender = selectedGender ? selectedGender.value : 'none';
 
-        // FIX: Ambil Ras (Radio)
         const selectedRace = document.querySelector('input[name="famRace"]:checked');
         const raceId = selectedRace ? selectedRace.value : null;
 
-        const appearance = document.getElementById('newFamiliarApp').value.trim();
-        const description = document.getElementById('newFamBackground').value.trim(); 
-        
-        if (!name) return this.showAlert("Nama familiar wajib diisi", "error");
+        const appInput = document.getElementById('newFamiliarApp');
+        const appearance = appInput ? appInput.value.trim() : '';
+
+        const descInput = document.getElementById('newFamBackground');
+        const description = descInput ? descInput.value.trim() : '';
 
         const personality = Array.from(document.querySelectorAll('.famWatakCheck:checked')).map(cb => cb.value);
         const tagIds = Array.from(document.querySelectorAll('.familiarTagCheck:checked')).map(cb => cb.value);
         const skillIds = Array.from(document.querySelectorAll('.famSkillCheck:checked')).map(cb => cb.value);
         const itemIds = Array.from(document.querySelectorAll('.famItemCheck:checked')).map(cb => cb.value); 
+        const classIds = Array.from(document.querySelectorAll('.famClassCheck:checked')).map(cb => cb.value);
+        const titleIds = Array.from(document.querySelectorAll('.famTitleCheck:checked')).map(cb => cb.value);
+
+        const familiarData = {
+            name, age, gender, raceId, personality, appearance, 
+            description, tagIds, skillIds, itemIds, classIds, titleIds,
+            dialogues: [],
+            notes: [],
+            relations: []
+        };
 
         if (this.editFamiliarId) {
-            const fam = this.data.familiars.find(f => f.id === this.editFamiliarId);
+            // Mode EDIT: Update familiar yang ada
+            const fam = (this.data?.familiars || []).find(f => f.id === this.editFamiliarId);
             if (fam) {
-                fam.name = name;
-                fam.age = age; // FIX: Update Umur
-                fam.gender = gender; // FIX: Update Kelamin
-                fam.raceId = raceId; // FIX: Update Ras
-                fam.personality = personality;
-                fam.appearance = appearance;
-                fam.description = description;
-                fam.tagIds = tagIds;
-                fam.skillIds = skillIds;
-                fam.itemIds = itemIds; 
+                // Perbarui properti root
+                Object.assign(fam, { 
+                    name, age, gender, raceId, personality, appearance, 
+                    description, tagIds, skillIds, itemIds, classIds, titleIds 
+                });
+                
+                // Perbarui snapshot pada state aktif jika ada
+                if (fam.states && fam.activeStateId) {
+                    const activeState = fam.states.find(s => s.id === fam.activeStateId);
+                    if (activeState) {
+                        activeState.snapshot = this.getCleanFamiliarSnapshot(fam); 
+                    }
+                }
             }
             this.editFamiliarId = null;
-            this.showAlert("Familiar berhasil diupdate", "success");
+            if (typeof this.showAlert === 'function') this.showAlert("Familiar berhasil diupdate", "success");
         } else {
+            // Mode TAMBAH BARU: Buat state awal dan simpan SATU KALI
+            const defaultStateId = this._getId('fst');
+            const initialSnapshot = structuredClone(familiarData);
+            
+            if (!this.data.familiars) this.data.familiars = [];
+            
             this.data.familiars.push({
-                id: this.generateId('f'),
-                name,
-                age, // FIX: Simpan Umur
-                gender, // FIX: Simpan Kelamin
-                raceId, // FIX: Simpan Ras
-                personality,
-                appearance,
-                description,
-                dialogues: [],
-                notes: [],
-                relations: [], // FIX: Inisialisasi Catatan Relasi
-                tagIds,
-                skillIds,
-                itemIds
+                id: this._getId('f'),
+                ...familiarData,
+                activeStateId: defaultStateId,
+                states: [
+                    {
+                        id: defaultStateId,
+                        name: "Awal Cerita (Default)",
+                        createdAt: new Date().toISOString(),
+                        snapshot: initialSnapshot
+                    }
+                ]
             });
-            this.showAlert("Familiar baru disimpan", "success");
+
+            if (typeof this.showAlert === 'function') this.showAlert("Familiar baru disimpan", "success");
         }
 
-        this.closeFamiliarDetailFloating();
-        this.setPanelState('addFamiliarForm', false);
-        this.saveData(true);
-        this.switchView('familiars'); 
+        if (typeof this.closeFamiliarDetailFloating === 'function') this.closeFamiliarDetailFloating();
+        if (typeof this.setPanelState === 'function') this.setPanelState('addFamiliarForm', false);
+        if (typeof this.saveData === 'function') this.saveData(true);
+        if (typeof this.switchView === 'function') this.switchView('familiars'); 
     },
     
     deleteFamiliar(id) {
-        const fam = this.data.familiars.find(f => f.id === id);
+        const fam = (this.data?.familiars || []).find(f => f.id === id);
         if (!fam) return;
 
         const content = `
@@ -171,51 +258,56 @@ export const PetForm = {
             </div>
         `;
 
-        this.showCustomModal({
-            title: "Hapus Familiar",
-            content: content,
-            confirmText: "Hapus Familiar",
-            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
-            onConfirm: () => {
-                this.data.familiars = this.data.familiars.filter(f => f.id !== id);
-                this.removeFamiliarId(id, this.data);
-                
-                this.closeFamiliarDetailFloating();
-                this.setPanelState('addFamiliarForm', false);
-                this.saveData();
-                this.switchView('familiars');
-                this.showAlert(`Familiar "${fam.name}" berhasil dihapus.`, "success");
-                return true;
-            }
-        });
+        if (typeof this.showCustomModal === 'function') {
+            this.showCustomModal({
+                title: "Hapus Familiar",
+                content: content,
+                confirmText: "Hapus Familiar",
+                confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+                onConfirm: () => {
+                    this.data.familiars = this.data.familiars.filter(f => f.id !== id);
+                    if (typeof this.removeFamiliarId === 'function') {
+                        this.removeFamiliarId(id, this.data);
+                    }
+                    
+                    if (typeof this.closeFamiliarDetailFloating === 'function') this.closeFamiliarDetailFloating();
+                    if (typeof this.setPanelState === 'function') this.setPanelState('addFamiliarForm', false);
+                    if (typeof this.saveData === 'function') this.saveData();
+                    if (typeof this.switchView === 'function') this.switchView('familiars');
+                    if (typeof this.showAlert === 'function') this.showAlert(`Familiar "${fam.name}" berhasil dihapus.`, "success");
+                    return true;
+                }
+            });
+        }
     },
 
-    // --- LOGIKA ARRAY DIALOG PET SECARA CEPAT DARI CARD/FLOATING ---
+    // --- LOGIKA ARRAY DIALOG PET ---
     addFamiliarDialogue(famId) {
-    const inputEl = document.getElementById(`newFamDlg_${famId}`);
+        const inputEl = document.getElementById(`newFamDlg_${famId}`);
         let text = inputEl ? inputEl.value.trim() : "";
         
         if (text) {
-            const fam = this.data.familiars.find(f => f.id === famId);
-            if (!fam.dialogues) fam.dialogues = [];
-            
-            if (!text.includes('"')) text = `"${text}"`;
-            fam.dialogues.push(text);
-            
-            this.saveData(true);
-            this.renderFamiliarGrid();
-            
-            if (this.activeFamId === famId) {
-                this.showFamiliarDetailFloating(famId, { 
-                    preserveScroll: true, 
-                    focusInputId: `newFamDlg_${famId}` 
-                });
+            const fam = (this.data?.familiars || []).find(f => f.id === famId);
+            if (fam) {
+                if (!fam.dialogues) fam.dialogues = [];
+                if (!text.includes('"')) text = `"${text}"`;
+                fam.dialogues.push(text);
+                
+                if (typeof this.saveData === 'function') this.saveData(true);
+                if (typeof this.renderFamiliarGrid === 'function') this.renderFamiliarGrid();
+                
+                if (this.activeFamId === famId && typeof this.showFamiliarDetailFloating === 'function') {
+                    this.showFamiliarDetailFloating(famId, { 
+                        preserveScroll: true, 
+                        focusInputId: `newFamDlg_${famId}` 
+                    });
+                }
             }
         }
     },
 
     deleteFamiliarDialogue(famId, dlgIndex) {
-        const fam = this.data.familiars.find(f => f.id === famId);
+        const fam = (this.data?.familiars || []).find(f => f.id === famId);
         if (!fam || !fam.dialogues || fam.dialogues[dlgIndex] === undefined) return;
 
         const dialogueText = fam.dialogues[dlgIndex];
@@ -227,24 +319,25 @@ export const PetForm = {
             </div>
         `;
 
-        this.showCustomModal({
-            title: "Hapus Dialog",
-            content: content,
-            confirmText: "Hapus Dialog",
-            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
-            onConfirm: () => {
-                fam.dialogues.splice(dlgIndex, 1);
-                this.saveData(true);
-                this.renderFamiliarGrid();
-                
-                if (this.activeFamId === famId) {
-                    // Tambahkan { preserveScroll: true } sebagai opsi
-                    this.showFamiliarDetailFloating(famId, { preserveScroll: true });
+        if (typeof this.showCustomModal === 'function') {
+            this.showCustomModal({
+                title: "Hapus Dialog",
+                content: content,
+                confirmText: "Hapus Dialog",
+                confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+                onConfirm: () => {
+                    fam.dialogues.splice(dlgIndex, 1);
+                    if (typeof this.saveData === 'function') this.saveData(true);
+                    if (typeof this.renderFamiliarGrid === 'function') this.renderFamiliarGrid();
+                    
+                    if (this.activeFamId === famId && typeof this.showFamiliarDetailFloating === 'function') {
+                        this.showFamiliarDetailFloating(famId, { preserveScroll: true });
+                    }
+                    if (typeof this.showAlert === 'function') this.showAlert("Dialog berhasil dihapus.", "success");
+                    return true;
                 }
-                this.showAlert("Dialog berhasil dihapus.", "success");
-                return true;
-            }
-        });
+            });
+        }
     },
 
     addFamiliarNote(famId) {
@@ -252,25 +345,26 @@ export const PetForm = {
         let text = inputEl ? inputEl.value.trim() : "";
         
         if (text) {
-            const fam = this.data.familiars.find(f => f.id === famId);
-            if (!fam.notes) fam.notes = [];
-            
-            fam.notes.push(text);
-            
-            this.saveData(true);
-            this.renderFamiliarGrid();
-            
-            if (this.activeFamId === famId) {
-                this.showFamiliarDetailFloating(famId, { 
-                    preserveScroll: true, 
-                    focusInputId: `newFamNote_${famId}` 
-                });
+            const fam = (this.data?.familiars || []).find(f => f.id === famId);
+            if (fam) {
+                if (!fam.notes) fam.notes = [];
+                fam.notes.push(text);
+                
+                if (typeof this.saveData === 'function') this.saveData(true);
+                if (typeof this.renderFamiliarGrid === 'function') this.renderFamiliarGrid();
+                
+                if (this.activeFamId === famId && typeof this.showFamiliarDetailFloating === 'function') {
+                    this.showFamiliarDetailFloating(famId, { 
+                        preserveScroll: true, 
+                        focusInputId: `newFamNote_${famId}` 
+                    });
+                }
             }
         }
     },
 
     deleteFamiliarNote(famId, noteIndex) {
-        const fam = this.data.familiars.find(f => f.id === famId);
+        const fam = (this.data?.familiars || []).find(f => f.id === famId);
         if (!fam || !fam.notes || fam.notes[noteIndex] === undefined) return;
 
         const noteText = fam.notes[noteIndex];
@@ -282,24 +376,25 @@ export const PetForm = {
             </div>
         `;
 
-        this.showCustomModal({
-            title: "Hapus Catatan",
-            content: content,
-            confirmText: "Hapus Catatan",
-            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
-            onConfirm: () => {
-                fam.notes.splice(noteIndex, 1);
-                this.saveData(true);
-                this.renderFamiliarGrid();
-                
-                if (this.activeFamId === famId) {
-                    // Tambahkan { preserveScroll: true } sebagai opsi
-                    this.showFamiliarDetailFloating(famId, { preserveScroll: true });
+        if (typeof this.showCustomModal === 'function') {
+            this.showCustomModal({
+                title: "Hapus Catatan",
+                content: content,
+                confirmText: "Hapus Catatan",
+                confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+                onConfirm: () => {
+                    fam.notes.splice(noteIndex, 1);
+                    if (typeof this.saveData === 'function') this.saveData(true);
+                    if (typeof this.renderFamiliarGrid === 'function') this.renderFamiliarGrid();
+                    
+                    if (this.activeFamId === famId && typeof this.showFamiliarDetailFloating === 'function') {
+                        this.showFamiliarDetailFloating(famId, { preserveScroll: true });
+                    }
+                    if (typeof this.showAlert === 'function') this.showAlert("Catatan berhasil dihapus.", "success");
+                    return true;
                 }
-                this.showAlert("Catatan berhasil dihapus.", "success");
-                return true;
-            }
-        });
+            });
+        }
     },
 
     addFamiliarRelation(famId) {
@@ -307,22 +402,23 @@ export const PetForm = {
         let text = inputEl ? inputEl.value.trim() : "";
         
         if (text) {
-            const fam = this.data.familiars.find(f => f.id === famId);
-            if (!fam.relations) fam.relations = [];
-            
-            fam.relations.push(text);
-            
-            this.saveData(true);
-            this.renderFamiliarGrid();
-            
-            if (this.activeFamId === famId) {
-                this.showFamiliarDetailFloating(famId);
+            const fam = (this.data?.familiars || []).find(f => f.id === famId);
+            if (fam) {
+                if (!fam.relations) fam.relations = [];
+                fam.relations.push(text);
+                
+                if (typeof this.saveData === 'function') this.saveData(true);
+                if (typeof this.renderFamiliarGrid === 'function') this.renderFamiliarGrid();
+                
+                if (this.activeFamId === famId && typeof this.showFamiliarDetailFloating === 'function') {
+                    this.showFamiliarDetailFloating(famId, { preserveScroll: true });
+                }
             }
         }
     },
 
     deleteFamiliarRelation(famId, relIndex) {
-        const fam = this.data.familiars.find(f => f.id === famId);
+        const fam = (this.data?.familiars || []).find(f => f.id === famId);
         if (!fam || !fam.relations || fam.relations[relIndex] === undefined) return;
 
         const relText = fam.relations[relIndex];
@@ -334,37 +430,154 @@ export const PetForm = {
             </div>
         `;
 
-        this.showCustomModal({
-            title: "Hapus Relasi",
-            content: content,
-            confirmText: "Hapus Relasi",
-            confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
-            onConfirm: () => {
-                fam.relations.splice(relIndex, 1);
-                this.saveData(true);
-                this.renderFamiliarGrid();
-                
-                if (this.activeFamId === famId) {
-                    // Tambahkan { preserveScroll: true } sebagai opsi
-                    this.showFamiliarDetailFloating(famId, { preserveScroll: true });
+        if (typeof this.showCustomModal === 'function') {
+            this.showCustomModal({
+                title: "Hapus Relasi",
+                content: content,
+                confirmText: "Hapus Relasi",
+                confirmColor: "bg-rose-600 hover:bg-rose-500 text-white",
+                onConfirm: () => {
+                    fam.relations.splice(relIndex, 1);
+                    if (typeof this.saveData === 'function') this.saveData(true);
+                    if (typeof this.renderFamiliarGrid === 'function') this.renderFamiliarGrid();
+                    
+                    if (this.activeFamId === famId && typeof this.showFamiliarDetailFloating === 'function') {
+                        this.showFamiliarDetailFloating(famId, { preserveScroll: true });
+                    }
+                    if (typeof this.showAlert === 'function') this.showAlert("Catatan relasi berhasil dihapus.", "success");
+                    return true;
                 }
-                this.showAlert("Catatan relasi berhasil dihapus.", "success");
-                return true;
-            }
-        });
+            });
+        }
     },
 
     // ==========================================
-    // --- BANTUAN FILTER FAMILIAR ---
+    // --- BANTUAN FILTER CLASS & TITLE ---
     // ==========================================
+    onFamClassSearchInput(event) {
+        if (typeof app !== 'undefined') app.currentClassFilter = event.target.value;
+        this.renderFamClassCheckboxes();
+    },
+
+    renderFamClassCheckboxes(isInitial = false) {
+        const container = document.getElementById('famClassList');
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const activeFam = this.editFamiliarId ? (this.data?.familiars || []).find(f => f.id === this.editFamiliarId) : null;
+            allCheckedIds = activeFam ? (activeFam.classIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll('.famClassCheck:checked');
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = ((typeof app !== 'undefined' ? app.currentClassFilter : '') || document.getElementById('famClassSearch')?.value || '').toLowerCase();
+        const allClasses = this.data?.classes || [];
+        const classMasterTags = this.data?.classTags || [];
+
+        const filteredClasses = allClasses.filter(c => {
+            if (!filterQuery) return true;
+            const matchName = (c.name || '').toLowerCase().includes(filterQuery);
+            const matchTag = (c.tagIds || []).some(tagId => {
+                const tagObj = classMasterTags.find(t => t.id === tagId);
+                return tagObj && (tagObj.name || '').toLowerCase().includes(filterQuery);
+            });
+            return matchName || matchTag;
+        });
+
+        const classMap = new Map();
+        filteredClasses.forEach(c => classMap.set(c.id, c));
+
+        allCheckedIds.forEach(id => {
+            if (!classMap.has(id)) {
+                const originalClass = allClasses.find(c => c.id === id);
+                if (originalClass) classMap.set(originalClass.id, originalClass);
+            }
+        });
+
+        const displayClasses = Array.from(classMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (displayClasses.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada class yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayClasses.map(c => `
+            <label class="flex items-center space-x-2 cursor-pointer w-full">
+                <input type="checkbox" value="${c.id}" class="famClassCheck form-checkbox rounded text-emerald-500 bg-slate-700 border-slate-600 focus:ring-emerald-500"
+                ${allCheckedIds.includes(c.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${c.name}">${c.name}</span>
+            </label>
+        `).join('');
+    },
+
+    onFamTitleSearchInput(event) {
+        if (typeof app !== 'undefined') app.currentTitleFilter = event.target.value;
+        this.renderFamTitleCheckboxes();
+    },
+
+    renderFamTitleCheckboxes(isInitial = false) {
+        const container = document.getElementById('famTitleList');
+        if (!container) return;
+
+        let allCheckedIds = [];
+
+        if (isInitial) {
+            const activeFam = this.editFamiliarId ? (this.data?.familiars || []).find(f => f.id === this.editFamiliarId) : null;
+            allCheckedIds = activeFam ? (activeFam.titleIds || []) : [];
+        } else {
+            const currentCheckedNodes = document.querySelectorAll('.famTitleCheck:checked');
+            allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
+        }
+
+        const filterQuery = ((typeof app !== 'undefined' ? app.currentTitleFilter : '') || document.getElementById('famTitleSearch')?.value || '').toLowerCase();
+        const allTitles = this.data?.titles || [];
+        const titleMasterTags = this.data?.titleTags || [];
+
+        const filteredTitles = allTitles.filter(t => {
+            if (!filterQuery) return true;
+            const matchName = (t.name || '').toLowerCase().includes(filterQuery);
+            const matchTag = (t.tagIds || []).some(tagId => {
+                const tagObj = titleMasterTags.find(tg => tg.id === tagId);
+                return tagObj && (tagObj.name || '').toLowerCase().includes(filterQuery);
+            });
+            return matchName || matchTag;
+        });
+
+        const titleMap = new Map();
+        filteredTitles.forEach(t => titleMap.set(t.id, t));
+
+        allCheckedIds.forEach(id => {
+            if (!titleMap.has(id)) {
+                const originalTitle = allTitles.find(t => t.id === id);
+                if (originalTitle) titleMap.set(originalTitle.id, originalTitle);
+            }
+        });
+
+        const displayTitles = Array.from(titleMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (displayTitles.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-500 italic col-span-full">Tidak ada title yang ditemukan.</span>';
+            return;
+        }
+
+        container.innerHTML = displayTitles.map(t => `
+            <label class="flex items-center space-x-2 cursor-pointer w-full">
+                <input type="checkbox" value="${t.id}" class="famTitleCheck form-checkbox rounded text-yellow-500 bg-slate-700 border-slate-600 focus:ring-yellow-500"
+                ${allCheckedIds.includes(t.id) ? 'checked' : ''}>
+                <span class="truncate text-slate-300 hover:text-white transition" title="${t.name}">${t.name}</span>
+            </label>
+        `).join('');
+    },
 
     // --- SKILL FILTER ---
     onFamSkillSearchInput(event) {
-        app.currentSkillFilter = event.target.value;
+        if (typeof app !== 'undefined') app.currentSkillFilter = event.target.value;
         this.renderFamSkillCheckboxes();
     },
 
-    // --- SKILL FILTER ---
     renderFamSkillCheckboxes(isInitial = false) {
         const container = document.getElementById('famSkillList');
         if (!container) return;
@@ -372,18 +585,17 @@ export const PetForm = {
         let allCheckedIds = [];
 
         if (isInitial) {
-            const activeFam = this.editFamiliarId ? this.data.familiars.find(f => f.id === this.editFamiliarId) : null;
+            const activeFam = this.editFamiliarId ? (this.data?.familiars || []).find(f => f.id === this.editFamiliarId) : null;
             allCheckedIds = activeFam ? (activeFam.skillIds || []) : [];
         } else {
             const currentCheckedNodes = document.querySelectorAll('.famSkillCheck:checked');
             allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
         }
 
-        const filterQuery = (app.currentSkillFilter || '').toLowerCase();
-        const allSkills = this.data.skills || [];
-        const skillMasterTags = this.data.skillTags || []; // Ambil master tag skill
+        const filterQuery = ((typeof app !== 'undefined' ? app.currentSkillFilter : '') || document.getElementById('famSkillSearch')?.value || '').toLowerCase();
+        const allSkills = this.data?.skills || [];
+        const skillMasterTags = this.data?.skillTags || [];
 
-        // Filter berdasarkan nama skill ATAU nama tag
         const filteredSkills = allSkills.filter(s => {
             if (!filterQuery) return true;
 
@@ -399,7 +611,6 @@ export const PetForm = {
         const skillMap = new Map();
         filteredSkills.forEach(s => skillMap.set(s.id, s));
 
-        // Pertahankan skill yang tercentang agar tidak hilang saat di-filter
         allCheckedIds.forEach(id => {
             if (!skillMap.has(id)) {
                 const originalSkill = allSkills.find(s => s.id === id);
@@ -425,11 +636,10 @@ export const PetForm = {
 
     // --- ITEM FILTER ---
     onFamItemSearchInput(event) {
-        app.currentItemFilter = event.target.value;
+        if (typeof app !== 'undefined') app.currentItemFilter = event.target.value;
         this.renderFamItemCheckboxes();
     },
 
-    // --- ITEM FILTER ---
     renderFamItemCheckboxes(isInitial = false) {
         const container = document.getElementById('famItemList');
         if (!container) return;
@@ -437,18 +647,17 @@ export const PetForm = {
         let allCheckedIds = [];
 
         if (isInitial) {
-            const activeFam = this.editFamiliarId ? this.data.familiars.find(f => f.id === this.editFamiliarId) : null;
+            const activeFam = this.editFamiliarId ? (this.data?.familiars || []).find(f => f.id === this.editFamiliarId) : null;
             allCheckedIds = activeFam ? (activeFam.itemIds || []) : [];
         } else {
             const currentCheckedNodes = document.querySelectorAll('.famItemCheck:checked');
             allCheckedIds = Array.from(currentCheckedNodes).map(cb => cb.value);
         }
 
-        const filterQuery = (app.currentItemFilter || '').toLowerCase();
-        const allItems = this.data.items || [];
-        const itemMasterTags = this.data.itemTags || []; // Ambil master tag item
+        const filterQuery = ((typeof app !== 'undefined' ? app.currentItemFilter : '') || document.getElementById('famItemSearch')?.value || '').toLowerCase();
+        const allItems = this.data?.items || [];
+        const itemMasterTags = this.data?.itemTags || [];
 
-        // Filter berdasarkan nama item ATAU nama tag
         const filteredItems = allItems.filter(i => {
             if (!filterQuery) return true;
 
@@ -464,7 +673,6 @@ export const PetForm = {
         const itemMap = new Map();
         filteredItems.forEach(i => itemMap.set(i.id, i));
 
-        // Pertahankan item yang tercentang agar tidak hilang saat di-filter
         allCheckedIds.forEach(id => {
             if (!itemMap.has(id)) {
                 const originalItem = allItems.find(i => i.id === id);
@@ -499,7 +707,7 @@ export const PetForm = {
         let checkedWataks = [];
 
         if (isInitial) {
-            const activeFam = this.editFamiliarId ? this.data.familiars.find(f => f.id === this.editFamiliarId) : null;
+            const activeFam = this.editFamiliarId ? (this.data?.familiars || []).find(f => f.id === this.editFamiliarId) : null;
             if (activeFam) {
                 if (Array.isArray(activeFam.personality)) {
                     checkedWataks = activeFam.personality;
@@ -513,7 +721,7 @@ export const PetForm = {
         }
 
         const filterQuery = (document.getElementById('famWatakSearch')?.value || '').toLowerCase();
-        const allWataks = this.data.watakList || [];
+        const allWataks = this.data?.watakList || [];
 
         const filteredWataks = allWataks.filter(w => w.toLowerCase().includes(filterQuery));
 
@@ -543,7 +751,7 @@ export const PetForm = {
         let selectedRaceId = null;
 
         if (isInitial) {
-            const activeFam = this.editFamiliarId ? this.data.familiars.find(f => f.id === this.editFamiliarId) : null;
+            const activeFam = this.editFamiliarId ? (this.data?.familiars || []).find(f => f.id === this.editFamiliarId) : null;
             selectedRaceId = activeFam ? activeFam.raceId : null;
         } else {
             const currentSelected = document.querySelector('input[name="famRace"]:checked');
@@ -551,7 +759,7 @@ export const PetForm = {
         }
 
         const filterQuery = (document.getElementById('famRaceSearch')?.value || '').toLowerCase();
-        const allRaces = this.data.races || [];
+        const allRaces = this.data?.races || [];
 
         const filteredRaces = allRaces.filter(r => (r.name || '').toLowerCase().includes(filterQuery));
 
@@ -577,10 +785,61 @@ export const PetForm = {
     },
 
     // ==========================================
+    // --- STATE / SNAPSHOT MANAJEMEN ---
+    // ==========================================
+    getCleanFamiliarSnapshot(fam) {
+        const { states, activeStateId, id, ...snapshotData } = fam;
+        return structuredClone(snapshotData);
+    },
+
+    addFamiliarState(famId, stateName) {
+        const fam = (this.data?.familiars || []).find(f => f.id === famId);
+        if (!fam || !stateName.trim()) return;
+        if (!fam.states) fam.states = [];
+
+        // Auto-update snapshot aktif sebelum membuat state baru
+        const currentState = fam.states.find(s => s.id === fam.activeStateId);
+        if (currentState) currentState.snapshot = this.getCleanFamiliarSnapshot(fam);
+
+        const newStatesId = this._getId('fst');
+        const newSnapshot = this.getCleanFamiliarSnapshot(fam);
+
+        fam.states.push({
+            id: newStatesId,
+            name: stateName.trim(),
+            createdAt: new Date().toISOString(),
+            snapshot: newSnapshot
+        });
+
+        fam.activeStateId = newStatesId;
+        if (typeof this.saveData === 'function') this.saveData(true);
+        if (typeof this.renderFamiliarGrid === 'function') this.renderFamiliarGrid();
+    },
+
+    switchFamiliarState(famId, targetStateId) {
+        const fam = (this.data?.familiars || []).find(f => f.id === famId);
+        if (!fam || fam.activeStateId === targetStateId) return;
+
+        // Simpan kondisi terkini ke snapshot lama
+        const currentState = fam.states?.find(s => s.id === fam.activeStateId);
+        if (currentState) currentState.snapshot = this.getCleanFamiliarSnapshot(fam);
+
+        const targetState = fam.states?.find(s => s.id === targetStateId);
+        if (!targetState) return;
+
+        // Timpa data root familiar dengan data dari target snapshot
+        Object.assign(fam, structuredClone(targetState.snapshot));
+        fam.activeStateId = targetStateId;
+
+        if (typeof this.saveData === 'function') this.saveData(true);
+        if (typeof this.renderFamiliarGrid === 'function') this.renderFamiliarGrid();
+    },
+
+    // ==========================================
     // --- INTEGRASI AI ENCHANTER KHUSUS PET ---
     // ==========================================
     async generateFamAI(targetField) {
-        const nameInput = document.getElementById('newFamiliarName').value.trim();
+        const nameInput = document.getElementById('newFamiliarName')?.value.trim();
         const checkedWataks = Array.from(document.querySelectorAll('.famWatakCheck:checked')).map(cb => cb.value);
 
         // Validasi Pre-requisite
@@ -613,17 +872,16 @@ export const PetForm = {
             aiLengthRule = "OUTPUT WAJIB berupa baris-baris kalimat secara langsung (tiap dialog dipisahkan dengan Enter/Garis Baru). DILARANG KERAS memberikan nomor (1, 2, 3), bullet point, atau pengantar. Buat kalimat yang to-the-point dan faktual.";
         }
 
+        if (!targetEl) return;
         const draftText = targetEl.value.trim();
 
-        // ----------------------------------------
         // Konstruksi Konteks Semesta (Volatile)
-        // ----------------------------------------
-        const univId = document.getElementById('aiFamUniverse').value;
-        const useDeepLore = document.getElementById('aiFamDeepLore').checked;
+        const univId = document.getElementById('aiFamUniverse')?.value;
+        const useDeepLore = document.getElementById('aiFamDeepLore')?.checked;
         let universeContext = "Semesta tidak ditentukan secara spesifik (General Fantasy).";
         let improviseInstruction = "";
 
-        if (univId) {
+        if (univId && typeof app !== 'undefined' && app.data?.universes) {
             const universe = app.data.universes.find(u => u.id === univId);
             if (universe) {
                 universeContext = `Nama Latar/Semesta: ${universe.name}\nDeskripsi Semesta: ${universe.description || '-'}\n`;
@@ -633,7 +891,7 @@ export const PetForm = {
                     universeContext += `\nDaftar Tempat/Lokasi di Semesta ini: ${locs}\n`;
                 }
 
-                improviseInstruction = `\nATURAN IMPROVISASI PENTING: Jika latar semesta atau tempat (misal: Perkantoran Cyberpunk) terasa tidak logis secara literal dengan nama/wujud familiar (misal: Kambing Purba), Anda diizinkan untuk BERIMPROVISASI CERDAS mengenai perannya (misal: kambing mutan, maskot digital, atau hal lain yang nyambung) KECUALI jika Draf Tambahan Pengguna di bawah sudah mengatur skenarionya secara spesifik. Utamakan draf pengguna jika ada.`;
+                improviseInstruction = `\nATURAN IMPROVISASI PENTING: Jika latar semesta atau tempat terasa tidak logis secara literal dengan wujud familiar, Anda diizinkan BERIMPROVISASI CERDAS KECUALI jika Draf Tambahan Pengguna sudah mengatur skenarionya secara spesifik. Utamakan draf pengguna jika ada.`;
             }
         }
 
@@ -655,33 +913,40 @@ export const PetForm = {
 
         // UI Loading
         btnEl = document.getElementById(btnId);
-        btnEl.disabled = true;
-        btnEl.classList.add('opacity-50', 'cursor-wait');
-        originalBtnText = btnEl.innerHTML;
-        btnEl.innerHTML = "✨ Memproses...";
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.classList.add('opacity-50', 'cursor-wait');
+            originalBtnText = btnEl.innerHTML;
+            btnEl.innerHTML = "✨ Memproses...";
+        }
 
         try {
-            const resultText = await app.requestEnchant(payload);
-            
-            // Pembersihan ekstra khusus dialog untuk menghilangkan angka dan membungkus petik dua
-            if (targetField === 'dialogues') {
-                const cleanedDialogues = resultText.split('\n')
-                    .map(line => line.replace(/^[\d\.\-\*\"\' ]+/, '').trim()) // Menghapus nomor/bullet point di awal
-                    .filter(line => line.length > 0)
-                    .map(line => `"${line}"`) // Memastikan terbungkus tanda petik dua
-                    .join('\n');
-                targetEl.value = cleanedDialogues;
-            } else {
-                targetEl.value = resultText;
-            }
+            if (typeof app !== 'undefined' && typeof app.requestEnchant === 'function') {
+                const resultText = await app.requestEnchant(payload);
+                
+                if (targetField === 'dialogues') {
+                    const cleanedDialogues = resultText.split('\n')
+                        .map(line => line.replace(/^[\d\.\-\*\"\' ]+/, '').trim())
+                        .filter(line => line.length > 0)
+                        .map(line => `"${line}"`)
+                        .join('\n');
+                    targetEl.value = cleanedDialogues;
+                } else {
+                    targetEl.value = resultText;
+                }
 
-            app.showAlert(`Berhasil men-generate AI untuk ${targetField}!`, "success");
+                if (typeof app.showAlert === 'function') app.showAlert(`Berhasil men-generate AI untuk ${targetField}!`, "success");
+            } else {
+                alert("Fungsi Enchanter AI (app.requestEnchant) tidak ditemukan.");
+            }
         } catch (error) {
             alert("Gagal memanggil AI: " + error.message);
         } finally {
-            btnEl.disabled = false;
-            btnEl.classList.remove('opacity-50', 'cursor-wait');
-            btnEl.innerHTML = originalBtnText;
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.classList.remove('opacity-50', 'cursor-wait');
+                btnEl.innerHTML = originalBtnText;
+            }
         }
     }
-}
+};

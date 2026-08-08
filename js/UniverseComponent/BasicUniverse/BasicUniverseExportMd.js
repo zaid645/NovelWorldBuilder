@@ -1,5 +1,5 @@
+// Generator Export Markdown - REVISED
 export const BasicUniverseExportMd = {
-    // Fungsi khusus untuk pemicu ekspor semesta
     exportUniverseMarkdown(universesInput) {
         const content = this.generateUniverseMarkdown(universesInput);
         const filename = `Export_Semesta.md`;
@@ -26,7 +26,7 @@ export const BasicUniverseExportMd = {
                 md.push('\n---');
             }
 
-            // Pre-register seluruh Class dan Title semesta ke registry agar Glosarium memiliki data lengkap
+            // Pre-register seluruh Class dan Title semesta ke registry
             const classList = app.data?.classes || [];
             classList.forEach(cls => {
                 const fullClass = JSON.parse(JSON.stringify(cls));
@@ -39,7 +39,6 @@ export const BasicUniverseExportMd = {
                 registry.classes.set(fullClass.id, fullClass);
             });
 
-            // Deklarasikan titleList sebelum melakukan perulangan
             const titleList = app.data?.titles || [];
             titleList.forEach(title => {
                 if (title && title.id) {
@@ -47,7 +46,7 @@ export const BasicUniverseExportMd = {
                 }
             });
 
-            // 2. Karakter (Karakter menampilkan nama class & title, lalu mendaftarkannya ke registry)
+            // 2. Karakter
             if (universe.characters && Object.keys(universe.characters).length > 0) {
                 md.push(`## Daftar Tokoh / Karakter`);
                 for (const [catName, charList] of Object.entries(universe.characters)) {
@@ -58,10 +57,9 @@ export const BasicUniverseExportMd = {
                     }
                     
                     charList.forEach(char => {
-                        // Klon entitas karakter agar dapat diisi data class & title tanpa merusak state utama
                         const charToRender = JSON.parse(JSON.stringify(char));
 
-                        // Populate & mendaftarkan Class milik Karakter
+                        // Populate & daftarkan Class milik Karakter (Fix method call: .set())
                         if (charToRender.classIds && Array.isArray(charToRender.classIds)) {
                             charToRender.classes = charToRender.classIds
                                 .map(cId => classList.find(c => c.id === cId))
@@ -72,25 +70,24 @@ export const BasicUniverseExportMd = {
                                         fullClass.skills = fullClass.skillIds
                                             .map(sId => app.data.skills.find(s => s.id === sId))
                                             .filter(Boolean);
-                                        fullClass.skills.forEach(s => registry.addSkill?.(s));
+                                        fullClass.skills.forEach(s => registry.skills.set(s.id, s));
                                     }
-                                    registry.addClass?.(fullClass);
+                                    registry.classes.set(fullClass.id, fullClass);
                                     return fullClass;
                                 });
                         }
 
-                        // Populate & mendaftarkan Title milik Karakter
+                        // Populate & daftarkan Title milik Karakter (Fix method call: .set())
                         if (charToRender.titleIds && Array.isArray(charToRender.titleIds)) {
                             charToRender.titles = charToRender.titleIds
                                 .map(tId => titleList.find(t => t.id === tId))
                                 .filter(Boolean)
                                 .map(title => {
-                                    registry.addTitle?.(title);
+                                    registry.titles.set(title.id, title);
                                     return title;
                                 });
                         }
 
-                        // Render karakter (nama class & title akan muncul ringkas di sini)
                         md.push(app.renderEntity(charToRender, registry));
                     });
                 }
@@ -128,7 +125,6 @@ export const BasicUniverseExportMd = {
         });
 
         // 5. Glosarium Terintegrasi
-        // Di sini seluruh Class (dengan deskripsi & daftar skill-nya) serta Title akan dirinci secara lengkap
         md.push(app.renderGlossary(registry));
 
         return md.join('\n');

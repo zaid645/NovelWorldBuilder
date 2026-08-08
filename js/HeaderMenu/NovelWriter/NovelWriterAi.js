@@ -91,21 +91,26 @@ export const NovelWriterAi = {
         const formatEntity = (entity) => {
             const result = { name: entity.name };
 
+            // 1. Basic Info & Ras (Tunduk pada attrs.basicInfo)
             if (attrs.basicInfo) {
                 result.role = entity.role || entity.peran || null;
                 result.age = entity.age || entity.umur || entity.usia || null;
                 result.gender = entity.gender || entity.jenisKelamin || null;
                 
-                // Resolusi Ras
                 if (db.races && entity.raceId) {
                     const raceObj = this.resolveEntityIds([entity.raceId], db.races)[0];
-                    result.race = raceObj ? raceObj.name : entity.raceId;
+                    if (raceObj) {
+                        result.race = raceObj.name;
+                        glossary.races.set(raceObj.id || raceObj.name, raceObj); // Pendaftaran Ras ke Glossary
+                    } else {
+                        result.race = entity.raceId;
+                    }
                 } else {
                     result.race = entity.race || null;
                 }
             }
 
-            // Resolusi Class (Diperbaiki agar toleran jika attrs.classIds bernilai undefined/true)
+            // 2. Class & Profesi (Tunduk pada attrs.classIds)
             const isClassActive = attrs.classIds !== false;
             const rawClassIds = entity.classIds || entity.classes;
             if (isClassActive && Array.isArray(rawClassIds) && rawClassIds.length > 0) {
@@ -114,11 +119,10 @@ export const NovelWriterAi = {
                 
                 if (resolvedClasses.length > 0) {
                     result.classes = resolvedClasses.map(c => c.name);
-
                     resolvedClasses.forEach(c => {
                         glossary.classes.set(c.id || c.name, c);
-
-                        if (Array.isArray(c.skillIds) && db.skills) {
+                        // Skill bawaan Class hanya diikutkan jika attrs.skillIds aktif
+                        if (attrs.skillIds && Array.isArray(c.skillIds) && db.skills) {
                             const classSkills = this.resolveEntityIds(c.skillIds, db.skills);
                             classSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
                         }
@@ -136,34 +140,65 @@ export const NovelWriterAi = {
                 result.appearance = entity.appearance;
             }
 
-            // Resolusi Skill, Item, Familiar
+            // 3. Skill Entitas Utama (Tunduk pada attrs.skillIds)
             if (attrs.skillIds && Array.isArray(entity.skillIds) && db.skills) {
                 const resolvedSkills = this.resolveEntityIds(entity.skillIds, db.skills);
                 result.skills = resolvedSkills.map(s => s.name);
                 resolvedSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
             }
+
+            // 4. Item Entitas Utama (Tunduk pada attrs.itemIds)
             if (attrs.itemIds && Array.isArray(entity.itemIds) && db.items) {
                 const resolvedItems = this.resolveEntityIds(entity.itemIds, db.items);
                 result.items = resolvedItems.map(i => i.name);
                 resolvedItems.forEach(i => registerItemToGlossary(i));
             }
+
+            // 5. Familiar & Sub-Atributnya (Setiap sub-atribut tunduk pada attrs masing-masing)
             if (attrs.familiarIds && Array.isArray(entity.familiarIds) && (db.familiars || db.pets)) {
                 const famList = db.familiars || db.pets || [];
                 const resolvedFams = this.resolveEntityIds(entity.familiarIds, famList);
                 result.familiars = resolvedFams.map(f => f.name);
+                
                 resolvedFams.forEach(f => {
                     glossary.familiars.set(f.id || f.name, f);
                     
-                    if (Array.isArray(f.skillIds) && db.skills) {
+                    // Sub-Ras Familiar -> Cek attrs.basicInfo
+                    if (attrs.basicInfo && db.races && f.raceId) {
+                        const raceObj = this.resolveEntityIds([f.raceId], db.races)[0];
+                        if (raceObj) glossary.races.set(raceObj.id || raceObj.name, raceObj);
+                    }
+
+                    // Sub-Class Familiar -> Cek attrs.classIds
+                    if (isClassActive) {
+                        const rawFamClasses = f.classIds || f.classes;
+                        if (Array.isArray(rawFamClasses) && rawFamClasses.length > 0) {
+                            const classRegistry = db.classes || (typeof window !== 'undefined' && window.app && window.app.data?.classes) || [];
+                            const resolvedFamClasses = this.resolveEntityIds(rawFamClasses, classRegistry);
+                            resolvedFamClasses.forEach(c => {
+                                glossary.classes.set(c.id || c.name, c);
+                                if (attrs.skillIds && Array.isArray(c.skillIds) && db.skills) {
+                                    const classSkills = this.resolveEntityIds(c.skillIds, db.skills);
+                                    classSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
+                                }
+                            });
+                        }
+                    }
+
+                    // Sub-Skill Familiar -> Cek attrs.skillIds
+                    if (attrs.skillIds && Array.isArray(f.skillIds) && db.skills) {
                         const famSkills = this.resolveEntityIds(f.skillIds, db.skills);
                         famSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
                     }
-                    if (Array.isArray(f.itemIds) && db.items) {
+
+                    // Sub-Item Familiar -> Cek attrs.itemIds
+                    if (attrs.itemIds && Array.isArray(f.itemIds) && db.items) {
                         const famItems = this.resolveEntityIds(f.itemIds, db.items);
                         famItems.forEach(i => registerItemToGlossary(i));
                     }
                 });
             }
+
             if (attrs.dialogues && Array.isArray(entity.dialogues)) {
                 result.dialogues = entity.dialogues;
             }
@@ -199,16 +234,16 @@ export const NovelWriterAi = {
         // Buat struktur Markdown langsung sebagai string murni
         let formattedMarkdown = "";
         if (mainInstruction) {
-            formattedMarkdown += `### Instruksi Utama\n${mainInstruction}\n\n`;
+            formattedMarkdown += `# [INSTRUKSI UTAMA]\n${mainInstruction}\n\n`;
         }
         if (generatePrompt) {
-            formattedMarkdown += `### Adegan / Penggalan Cerita yang Dikembangkan\n${generatePrompt}\n\n`;
+            formattedMarkdown += `# [PENGEMBANGAN CERITA]\n${generatePrompt}\n\n`;
         }
         if (previousContext) {
-            formattedMarkdown += `### Teks / Konteks Sebelumnya\n${previousContext}\n\n`;
+            formattedMarkdown += `# [KONTEKS SEBELUMNYA]\n${previousContext}\n\n`;
         }
         if (fullPrompt) {
-            formattedMarkdown += `### Detail Entitas & Dunia Cerita\n${fullPrompt}\n\n`;
+            formattedMarkdown += `# [LORE CERITA]\n${fullPrompt}\n\n`;
         }
 
         return {
@@ -277,9 +312,40 @@ export const NovelWriterAi = {
         // 2. Lokasi Terlibat
         if (locations.length > 0) {
             payload += `## LOKASI TERLIBAT\n`;
-            locations.forEach(l => {
-                payload += `- **${l.name}**: ${l.description || ''} ${l.visuals || ''}\n`;
-            });
+            
+            const effectiveSet = new Set(locations.map(l => l.id));
+
+            // Helper sanitasi string agar tidak merusak format Markdown
+            const sanitizeInlineText = (text) => (text || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+            const renderLocationNodes = (nodes, depth = 0) => {
+                let output = '';
+                const indent = '  '.repeat(depth);
+
+                nodes.forEach(node => {
+                    if (effectiveSet.has(node.id)) {
+                        const cleanDesc = sanitizeInlineText(node.description);
+                        const cleanVisuals = sanitizeInlineText(node.visuals);
+                        const fullDetails = [cleanDesc, cleanVisuals].filter(Boolean).join(' ');
+
+                        output += `${indent}- **${node.name}**${fullDetails ? `: ${fullDetails}` : ''}\n`;
+                    }
+                    
+                    const children = node.children || node.subLocations;
+                    if (Array.isArray(children) && children.length > 0) {
+                        const nextDepth = effectiveSet.has(node.id) ? depth + 1 : depth;
+                        output += renderLocationNodes(children, nextDepth);
+                    }
+                });
+
+                return output;
+            };
+
+            const rawLocationTree = db.universes 
+                ? db.universes.flatMap(u => u.locations || [])
+                : (db.locations || []);
+
+            payload += renderLocationNodes(rawLocationTree);
             payload += "\n---\n\n";
         }
 
@@ -305,6 +371,25 @@ export const NovelWriterAi = {
                 payload += `### Pet & Familiar\n`;
                 glossary.familiars.forEach(f => {
                     const details = [];
+
+                    // 1. Tampilkan Ras milik Familiar
+                    if (db.races && f.raceId) {
+                        const raceObj = this.resolveEntityIds([f.raceId], db.races)[0];
+                        if (raceObj) details.push(`Ras: ${raceObj.name}`);
+                    } else if (f.race) {
+                        details.push(`Ras: ${f.race}`);
+                    }
+
+                    // 2. Tampilkan Class milik Familiar
+                    const rawFamClasses = f.classIds || f.classes;
+                    if (Array.isArray(rawFamClasses) && rawFamClasses.length > 0) {
+                        const classRegistry = db.classes || (typeof window !== 'undefined' && window.app && window.app.data?.classes) || [];
+                        const resolvedFamClasses = this.resolveEntityIds(rawFamClasses, classRegistry);
+                        if (resolvedFamClasses.length > 0) {
+                            details.push(`Class: ${resolvedFamClasses.map(c => c.name).join(', ')}`);
+                        }
+                    }
+
                     if (f.description) details.push(`Deskripsi: ${f.description}`);
                     if (f.appearance) details.push(`Penampilan: ${f.appearance}`);
                     if (f.personality && f.personality.length) {
@@ -375,7 +460,7 @@ export const NovelWriterAi = {
 
         // 6. File Referensi
         if (Object.keys(this.state.referenceFiles).length > 0) {
-            payload += `## DICTIONARY FILE REFERENSI\n`;
+            payload += `## [FILE REFERENSI]\n`;
             Object.entries(this.state.referenceFiles).forEach(([fname, content]) => {
                 payload += `### FILE: ${fname}\n${content.trim()}\n\n`;
             });
@@ -403,7 +488,7 @@ export const NovelWriterAi = {
             hasPreviousText: Boolean(structuredData.previousContext),
             hasReferenceFiles: Object.keys(this.state.referenceFiles).length > 0,
             additional_instruction: {
-                focus: "\n    1. Tulis narasi/prosa novel secara utuh sesuai [mainInstruction] dalam '--- DATA UTAMA ---'\n    2. SESUAIKAN dengan [previousContext] dan [referenceFiles] bila ada.",
+                focus: "\n    1. Tulis narasi/prosa novel secara utuh berdasarkan [PENGEMBANGAN CERITA] dengan mematuhi [INSTRUKSI UTAMA]\n    2. SESUAIKAN dengan [KONTEKS SEBELUMNYA] dan [FILE REFERENSI] bila ada.",
                 mainInstruction: structuredData.mainInstruction,
                 sceneToDevelop: structuredData.generatePrompt
             }
