@@ -8,22 +8,39 @@ export const AIEnchanterCore = {
 
         const { moduleName, targetData, additional_instruction } = payload;
 
-        // 1. Ambil Role dan Opsi Sertakan Nama Modul (bisa dari payload atau config default)
-        const systemRole = payload.systemRole || config.systemRole || "Asisten Novelis Pro";
+        
+        const systemRole = payload.systemRole || config.systemRole || "Asisten AI Profesional";
         const includeModuleName = payload.includeModuleName ?? config.includeModuleName ?? false;
-        
-        // 2. Konstruksi Prompt Dinamis (Tidak ada data tersembunyi)
+
         let prompt = `Anda adalah ${systemRole}.\n`;
-        
-        // Opsi untuk menyertakan nama modul (Default: false)
-        if (includeModuleName && moduleName) {
+
+        // 1. Utamakan taskInstruction dari payload jika disediakan oleh modul pemanggil
+        if (payload.taskInstruction && typeof payload.taskInstruction === 'string') {
+            prompt += `${payload.taskInstruction.trim()}\n\n`;
+        } 
+        // 2. Jika tidak ada, gunakan logika standar berdasarkan moduleName
+        else if (includeModuleName && moduleName) {
             prompt += `Tugas Anda saat ini adalah mengembangkan draf atau informasi dari modul: ${moduleName}.\n\n`;
-        } else {
+        } 
+        // 3. Fallback default
+        else {
             prompt += `Tugas Anda saat ini adalah mengembangkan draf atau informasi yang diberikan.\n\n`;
         }
         
         prompt += `--- DATA UTAMA ---\n`;
-        prompt += `${JSON.stringify(targetData, null, 2)}\n\n`;
+        // Evaluasi format targetData secara fleksibel
+        let mainDataContent = "";
+        if (typeof targetData === 'string') {
+            mainDataContent = targetData.trim();
+        } else if (targetData && typeof targetData.formattedMarkdown === 'string' && targetData.formattedMarkdown.trim() !== '') {
+            // Jika modul (seperti NovelWriter) menyediakan Markdown siap pakai
+            mainDataContent = targetData.formattedMarkdown.trim();
+        } else {
+            // Fallback ke JSON jika modul lain mengirimkan objek biasa tanpa formattedMarkdown
+            mainDataContent = JSON.stringify(targetData, null, 2);
+        }
+
+        prompt += `${mainDataContent}\n\n`;
         
         prompt += `--- PETUNJUK UTAMA PENGEMBANGAN ---\n`;
         if (typeof additional_instruction === 'string') {

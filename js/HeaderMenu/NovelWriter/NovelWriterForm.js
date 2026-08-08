@@ -177,6 +177,7 @@ export const NovelWriterForm = {
         // Pastikan Info Dasar dan Watak selalu true setelah data dimuat
         this.state.globalAttributes.basicInfo = true;
         this.state.globalAttributes.personality = true;
+        this.state.globalAttributes.classIds = true;
         
         this.novelWriteSanitizeSelectedIds();
     },

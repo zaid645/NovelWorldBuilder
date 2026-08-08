@@ -44,15 +44,17 @@ export const NovelWriterAi = {
     // =========================================================================
     buildStructuredPayload(providedDb = null) {
         const db = this.getDatabase(providedDb);
-        const attrs = this.state.globalAttributes;
+        const attrs = this.state.globalAttributes || {};
 
         // 1. Semesta Data
-        const selectedUniverses = (db.universes || []).filter(u => this.state.selectedUniverseIds.includes(u.id)).map(u => ({
-            id: u.id,
-            name: u.name,
-            description: u.description || '',
-            lore: u.lores || []
-        }));
+        const selectedUniverses = (db.universes || [])
+            .filter(u => this.state.selectedUniverseIds.includes(u.id))
+            .map(u => ({
+                id: u.id,
+                name: u.name,
+                description: u.description || '',
+                lore: u.lores || []
+            }));
 
         // 2. Lokasi Data
         const allLocations = this.getAllLocations(db);
@@ -76,7 +78,7 @@ export const NovelWriterAi = {
             familiars: new Map()
         };
 
-        // Helper daftar item
+        // Helper pendaftaran item ke glosarium
         const registerItemToGlossary = (item) => {
             glossary.items.set(item.id || item.name, item);
             if (Array.isArray(item.skillIds) && db.skills) {
@@ -85,6 +87,7 @@ export const NovelWriterAi = {
             }
         };
         
+        // Helper pemformatan entitas (Karakter & Monster)
         const formatEntity = (entity) => {
             const result = { name: entity.name };
 
@@ -93,41 +96,34 @@ export const NovelWriterAi = {
                 result.age = entity.age || entity.umur || entity.usia || null;
                 result.gender = entity.gender || entity.jenisKelamin || null;
                 
-                // Resolusi Ras (Informasi dimasukkan ke Karakter, tetapi TIDAK dimasukkan ke Glosarium)
+                // Resolusi Ras
                 if (db.races && entity.raceId) {
                     const raceObj = this.resolveEntityIds([entity.raceId], db.races)[0];
-                    if (raceObj) {
-                        result.race = raceObj.name;
-                        
-                        /* 
-                           ============================================================
-                           OPSI GLOSARIUM RAS:
-                           Uncomment baris di bawah jika ingin memasukkan Ras ke Glosarium
-                           ============================================================
-                        */
-                        // glossary.races.set(raceObj.id || raceObj.name, raceObj);
-                    } else {
-                        result.race = entity.raceId;
-                    }
+                    result.race = raceObj ? raceObj.name : entity.raceId;
                 } else {
                     result.race = entity.race || null;
                 }
             }
 
-            // Resolusi Class (Hanya Nama Class yang disertakan, Skill bawaannya didaftarkan ke Glosarium)
-            if (attrs.classIds && Array.isArray(entity.classIds)) {
+            // Resolusi Class (Diperbaiki agar toleran jika attrs.classIds bernilai undefined/true)
+            const isClassActive = attrs.classIds !== false;
+            const rawClassIds = entity.classIds || entity.classes;
+            if (isClassActive && Array.isArray(rawClassIds) && rawClassIds.length > 0) {
                 const classRegistry = db.classes || (typeof window !== 'undefined' && window.app && window.app.data?.classes) || [];
-                const resolvedClasses = this.resolveEntityIds(entity.classIds, classRegistry);
+                const resolvedClasses = this.resolveEntityIds(rawClassIds, classRegistry);
                 
-                result.classes = resolvedClasses.map(c => c.name);
+                if (resolvedClasses.length > 0) {
+                    result.classes = resolvedClasses.map(c => c.name);
 
-                // Masukkan skill dalam Class tersebut ke Glosarium Skill
-                resolvedClasses.forEach(c => {
-                    if (Array.isArray(c.skillIds) && db.skills) {
-                        const classSkills = this.resolveEntityIds(c.skillIds, db.skills);
-                        classSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
-                    }
-                });
+                    resolvedClasses.forEach(c => {
+                        glossary.classes.set(c.id || c.name, c);
+
+                        if (Array.isArray(c.skillIds) && db.skills) {
+                            const classSkills = this.resolveEntityIds(c.skillIds, db.skills);
+                            classSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
+                        }
+                    });
+                }
             }
 
             if (attrs.personality && (entity.personality || entity.watak)) {
@@ -140,7 +136,7 @@ export const NovelWriterAi = {
                 result.appearance = entity.appearance;
             }
 
-            // Resolusi & Daftarkan ke Glosarium
+            // Resolusi Skill, Item, Familiar
             if (attrs.skillIds && Array.isArray(entity.skillIds) && db.skills) {
                 const resolvedSkills = this.resolveEntityIds(entity.skillIds, db.skills);
                 result.skills = resolvedSkills.map(s => s.name);
@@ -162,7 +158,6 @@ export const NovelWriterAi = {
                         const famSkills = this.resolveEntityIds(f.skillIds, db.skills);
                         famSkills.forEach(s => glossary.skills.set(s.id || s.name, s));
                     }
-                    
                     if (Array.isArray(f.itemIds) && db.items) {
                         const famItems = this.resolveEntityIds(f.itemIds, db.items);
                         famItems.forEach(i => registerItemToGlossary(i));
@@ -186,6 +181,7 @@ export const NovelWriterAi = {
 
         const savedContexts = Array.isArray(this.state.savedContexts) ? this.state.savedContexts : [];
 
+        // Generasi String Konteks Utama (Full Prompt)
         const fullPrompt = this.buildFullPromptString(
             db, 
             selectedUniverses, 
@@ -196,13 +192,33 @@ export const NovelWriterAi = {
             savedContexts
         );
 
+        const mainInstruction = (this.state.mainInstruction || '').trim();
+        const generatePrompt = (this.state.generatePrompt || '').trim();
+        const previousContext = (this.state.outputContent || '').trim();
+
+        // Buat struktur Markdown langsung sebagai string murni
+        let formattedMarkdown = "";
+        if (mainInstruction) {
+            formattedMarkdown += `### Instruksi Utama\n${mainInstruction}\n\n`;
+        }
+        if (generatePrompt) {
+            formattedMarkdown += `### Adegan / Penggalan Cerita yang Dikembangkan\n${generatePrompt}\n\n`;
+        }
+        if (previousContext) {
+            formattedMarkdown += `### Teks / Konteks Sebelumnya\n${previousContext}\n\n`;
+        }
+        if (fullPrompt) {
+            formattedMarkdown += `### Detail Entitas & Dunia Cerita\n${fullPrompt}\n\n`;
+        }
+
         return {
-            mainInstruction: this.state.mainInstruction.trim(),
-            generatePrompt: this.state.generatePrompt.trim(),
-            referenceFiles: this.state.referenceFiles,
-            previousContext: this.state.outputContent.trim(),
+            mainInstruction,
+            generatePrompt,
+            referenceFiles: this.state.referenceFiles || {},
+            previousContext,
             fullPromptContext: fullPrompt,
-            savedContexts: savedContexts
+            savedContexts,
+            formattedMarkdown: formattedMarkdown.trim()
         };
     },
 
@@ -282,7 +298,7 @@ export const NovelWriterAi = {
         }
 
         // 5. Glosarium Entitas Terkait
-        if (glossary && (glossary.races?.size > 0 || glossary.skills?.size > 0 || glossary.items?.size > 0 || glossary.familiars?.size > 0)) {
+        if (glossary && (glossary.classes?.size > 0 || glossary.races?.size > 0 || glossary.skills?.size > 0 || glossary.items?.size > 0 || glossary.familiars?.size > 0)) {
             payload += `## GLOSARIUM DETAIL ENTITAS\n`;
 
             if (glossary.familiars?.size > 0) {
@@ -387,7 +403,7 @@ export const NovelWriterAi = {
             hasPreviousText: Boolean(structuredData.previousContext),
             hasReferenceFiles: Object.keys(this.state.referenceFiles).length > 0,
             additional_instruction: {
-                focus: "Tulis narasi/prosa novel secara utuh, imersif, kaya deskripsi panca indera. Lanjutkan adegan secara mulus jika ada teks sebelumnya.",
+                focus: "\n    1. Tulis narasi/prosa novel secara utuh sesuai [mainInstruction] dalam '--- DATA UTAMA ---'\n    2. SESUAIKAN dengan [previousContext] dan [referenceFiles] bila ada.",
                 mainInstruction: structuredData.mainInstruction,
                 sceneToDevelop: structuredData.generatePrompt
             }

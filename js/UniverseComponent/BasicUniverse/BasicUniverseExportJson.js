@@ -106,8 +106,6 @@ export const BasicUniverseExportJson = {
             name: universe.name,
             description: universe.description,
             lores: universe.lores || [],
-            classes: universe.classes || app.data?.classes || [],
-            titles: universe.titles || app.data?.titles || [],
             charactersCategoryDescriptions: universe.charactersCategoryDescriptions || {},
             characters: populatedCharacters,
             monstersCategoryDescriptions: universe.monstersCategoryDescriptions || {},
